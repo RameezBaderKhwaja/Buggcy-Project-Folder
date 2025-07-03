@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickPik - Shop smarter, not harder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'brand-green': '#22C55E',
+                        'brand-blue': '#1E40AF',
+                        'brand-red': '#EF4444'
+                    },
+                    animation: {
+                        'fade-slide-ordered': 'fadeSlide3 9s infinite ease-in-out',                       
+                        'fade-in': 'fadeIn 1s ease-in',
+                        'slide-in': 'slideIn 0.5s ease-out',
+                        'float': 'float 6s ease-in-out infinite',
+                        'blink': 'blink 1s infinite',
+                    },
+                    keyframes: {
+                        fadeSlide3: {
+                             '0%':   { opacity: '0', transform: 'translateY(10px)' },
+                             '10%':  { opacity: '1', transform: 'translateY(0)' },
+                             '90%':  { opacity: '1', transform: 'translateY(0)' },
+                             '100%': { opacity: '0', transform: 'translateY(-10px)' }
+                        },
+
+                        slideIn: {
+                            '0%': { transform: 'translateX(-100%)' },
+                            '100%': { transform: 'translateX(0)' }
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' }
+                        },
+                        typewriter: {
+                            '0%': { width: '0ch' },
+                            '100%': { width: '20ch' }
+                        },
+                        blink: {
+                            '0%, 50%': { 'border-color': 'transparent' },
+                            '51%, 100%': { 'border-color': '#22C55E' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .animate-button {
+            transition: all 0.3s ease;
+        }
+        .animate-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
+        }
+        .dropdown:focus-within .dropdown-menu,
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+        #sidebar-toggle:checked ~ .sidebar-overlay {
+            display: block;
+        }
+        #sidebar-toggle:checked ~ .sidebar-overlay .sidebar {
+            transform: translateX(0);
+        }
+        .sidebar-overlay {
+            display: none;
+        }
+        .sidebar {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .green-tick::before {
+            content: "✓";
+            color: #22C55E;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .testimonial-nav {
+            cursor: pointer;
+        }
+        .gradient-bg {
+            background: linear-gradient(90deg, #86EFAC 0%, #ffffff 50%, #86EFAC 100%);
+        }
+        .text-sequence {
+            position: relative;
+        }
+        .animated-text-container {
+            position: relative;
+            height: 1.2em;
+            overflow: hidden;
+          }
+
+            .animated-text-container span {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            animation: rotateText 9s infinite;
+            }
+
+            .animated-text-container span:nth-child(1) {
+            animation-delay: 0s;
+            }
+            .animated-text-container span:nth-child(2) {
+            animation-delay: 3s;
+            }
+            .animated-text-container span:nth-child(3) {
+            animation-delay: 6s;
+            }
+
+            @keyframes rotateText {
+            0%, 10% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            10%, 30% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            30%, 100% {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            }
+
+        .search-container {
+            position: relative;
+        }
+        .search-icon {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            background: #22C55E;
+            border-radius: 0 0.375rem 0.375rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- sidebar toggle -->
+    <input type="checkbox" id="sidebar-toggle" class="hidden">
+    
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-40 sidebar-overlay">
+        <div class="fixed left-0 top-0 h-full w-80 bg-white shadow-lg sidebar">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-8">
+                    <span class="text-2xl font-bold text-gray-900">Quick<span class="text-brand-green">Pik</span></span>
+                    <label for="sidebar-toggle" class="text-gray-500 hover:text-gray-700 cursor-pointer">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </label>
+                </div>
+                <nav class="space-y-4">
+                    <a href="#" class="block text-gray-700 hover:text-brand-green transition-colors py-2">Home</a>
+                    <a href="#" class="block text-gray-700 hover:text-brand-green transition-colors py-2">About us</a>
+                    <a href="#" class="block text-gray-700 hover:text-brand-green transition-colors py-2">Products</a>
+                    <a href="#" class="block text-gray-700 hover:text-brand-green transition-colors py-2">Services</a>
+                    <a href="#" class="block text-gray-700 hover:text-brand-green transition-colors py-2">Contact us</a>
+                </nav>
+                <button class="bg-brand-green text-white px-6 py-3 rounded-md hover:bg-green-600 transition-colors animate-button mt-8 w-full">
+                    ShopNow
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm relative z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <label for="sidebar-toggle" class="md:hidden mr-4 text-gray-700 cursor-pointer">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </label>
+                    <span class="text-2xl font-bold text-gray-900">Quick<span class="text-brand-green">Pik</span></span>
+                </div>
+                
+                <!-- Navigation -->
+                <nav class="hidden md:flex space-x-8">
+                    <a href="#" class="text-gray-700 hover:text-brand-green transition-colors">Home</a>
+                    <a href="#" class="text-gray-700 hover:text-brand-green transition-colors">About us</a>
+                    <a href="#" class="text-gray-700 hover:text-brand-green transition-colors">Products</a>
+                    <a href="#" class="text-gray-700 hover:text-brand-green transition-colors">Services</a>
+                    <a href="#" class="text-gray-700 hover:text-brand-green transition-colors">Contact us</a>
+                </nav>
+                
+                <!-- Actions -->
+                <div class="flex items-center space-x-4">
+                    <button class="hidden md:block bg-brand-green text-white px-6 py-2 rounded-md hover:bg-green-600 transition-colors animate-button">
+                        ShopNow
+                    </button>
+                    <button class="text-gray-700 hover:text-brand-green">
+                        <img src="images/Profile.png" alt="Profile" class="w-8 h-8 rounded-full object-cover">
+                    </button>
+                    <button class="text-gray-700 hover:text-brand-green">
+                        <img src="images/cart.png" alt="Cart" class="w-8 h-8 object-cover">
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search Bar -->
+    <div class="bg-gray-100 py-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center space-x-4">
+                <div class="relative dropdown">
+                    <button class="flex items-center space-x-2 text-gray-700 hover:text-brand-green transition-colors bg-white border border-gray-300 rounded-md px-4 py-2 h-10">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                        <span class="hidden sm:inline">All Categories</span>
+                    </button>
+                    <div class="dropdown-menu absolute top-full left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50 hidden">
+                        <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Grocery</a>
+                        <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Shoes</a>
+                        <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Phones</a>
+                        <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Google Home</a>
+                        <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-100">Alarm Clocks</a>
+                    </div>
+                </div>
+                <div class="flex-1 search-container">
+                    <input type="text" placeholder="What are you looking for ?" class="w-full px-4 py-2 h-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green focus:border-transparent pr-12">
+                    <button class="search-icon text-white hover:bg-green-600 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="bg-white py-8 md:py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col lg:flex-row items-center justify-between">
+                <div class="flex-1 max-w-xl mb-8 lg:mb-0">
+                    <div class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm mb-6">
+                        30% Off on groceries
+                    </div>
+                    <h1 class="text-3xl md:text-5xl font-bold text-gray-900 leading-tight mb-4">
+                        <span class="typewriter-text">Shop smarter,<br>
+                        not harder.<br></span>
+                        <div class="animated-text-container text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold">
+                        <span class="text-brand-red">Get it ordered.</span>
+                        <span class="text-brand-blue">Get it shipped.</span>
+                        <span class="text-brand-green">Get it delivered.</span>
+                    </div>
+
+
+                    </h1>
+                    <p class="text-gray-600 text-lg mb-8 animate-fade-in">
+                        Save time, skip the lines. We've got you covered.
+                    </p>
+                    <button class="bg-brand-green text-white px-8 py-3 rounded-md text-lg hover:bg-green-600 transition-colors animate-button">
+                        ShopNow
+                    </button>
+                </div>
+                <div class="flex-1 relative">
+                    <!-- Green Background -->
+                    <div class="relative w-full max-w-md mx-auto">
+                        <img src="images/Blob.png" 
+                             alt="Green blob background" 
+                             class="absolute inset-0 w-full h-full object-contain z-0">
+                        <img src="images/hero-woman.png" 
+                             alt="Woman with shopping bags" 
+                             class="relative w-full h-auto object-cover mx-auto rounded-lg z-10"
+                             style="width: 654.94px; height: 491.26px;">
+                    </div>
+                    <!-- Testimonial Card-->
+                    <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-4 shadow-lg max-w-xs z-20">
+                        <div class="flex items-center space-x-3">
+                            <img src="images/ashley-avatar.png" 
+                                 alt="Ashley Daniels" 
+                                 class="w-10 h-10 rounded-full object-cover">
+                            <div>
+                                <p class="font-semibold text-sm text-gray-900">Ashley Daniels</p>
+                                <p class="text-gray-600 text-xs">Never had any fear of time - never going back to grocery shopping</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trending Products -->
+    <section class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900">Trending Products</h2>
+                <div class="ml-4 bg-brand-green w-8 h-8 rounded flex items-center justify-center">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                    </svg>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
+                <div class="text-center group">
+                    <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow mb-4 group-hover:scale-105 transform transition-transform overflow-hidden" style="width: 195px; height: 200px;">
+                        <img src="images/grocery.png" 
+                             alt="Grocery" 
+                             class="w-full h-full object-cover">
+                    </div>
+                    <p class="font-medium text-gray-900">Grocery</p>
+                </div>
+                <div class="text-center group">
+                    <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow mb-4 group-hover:scale-105 transform transition-transform overflow-hidden" style="width: 195px; height: 200px;">
+                        <img src="images/shoes.png" 
+                             alt="Shoes" 
+                             class="w-full h-full object-cover">
+                    </div>
+                    <p class="font-medium text-gray-900">Shoes</p>
+                </div>
+                <div class="text-center group">
+                    <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow mb-4 group-hover:scale-105 transform transition-transform overflow-hidden" style="width: 195px; height: 200px;">
+                        <img src="images/phones.png" 
+                             alt="Phones" 
+                             class="w-full h-full object-cover">
+                    </div>
+                    <p class="font-medium text-gray-900">Phones</p>
+                </div>
+                <div class="text-center group">
+                    <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow mb-4 group-hover:scale-105 transform transition-transform overflow-hidden" style="width: 195px; height: 200px;">
+                        <img src="images/google-home.png" 
+                             alt="Google Home" 
+                             class="w-full h-full object-cover">
+                    </div>
+                    <p class="font-medium text-gray-900">Google Home</p>
+                </div>
+                <div class="text-center group">
+                    <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow mb-4 group-hover:scale-105 transform transition-transform overflow-hidden" style="width: 195px; height: 200px;">
+                        <img src="images/alarm-clock.png" 
+                             alt="Alarm Clocks" 
+                             class="w-full h-full object-cover">
+                    </div>
+                    <p class="font-medium text-gray-900">Alarm Clocks</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Deal of the Week -->
+<section class="py-16 bg-white">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-10">
+    <h2 class="text-3xl font-bold text-gray-900 mb-6">Deal Of The Week</h2>
+    <div class="flex justify-center space-x-2 md:space-x-4 text-sm md:text-base">
+      <div class="bg-brand-green text-white px-3 py-1 md:px-4 md:py-2 rounded-md w-16 md:w-20">
+        <div class="font-bold text-lg md:text-xl">10</div>
+        <div class="text-xs md:text-sm">Days</div>
+      </div>
+      <div class="bg-brand-green text-white px-3 py-1 md:px-4 md:py-2 rounded-md w-16 md:w-20">
+        <div class="font-bold text-lg md:text-xl">19</div>
+        <div class="text-xs md:text-sm">Hours</div>
+      </div>
+      <div class="bg-brand-green text-white px-3 py-1 md:px-4 md:py-2 rounded-md w-16 md:w-20">
+        <div class="font-bold text-lg md:text-xl">59</div>
+        <div class="text-xs md:text-sm">Minutes</div>
+      </div>
+      <div class="bg-brand-green text-white px-3 py-1 md:px-4 md:py-2 rounded-md w-16 md:w-20">
+        <div class="font-bold text-lg md:text-xl">57</div>
+        <div class="text-xs md:text-sm">Seconds</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto grid md:grid-cols-2 gap-6 px-4 sm:px-6 lg:px-8">
+    <!-- Perfume Card -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col md:flex-row">
+      <div class="w-full md:w-1/2 relative">
+        <img src="images/perfume.png" alt="Elegant Perfume" class="object-cover h-full w-full">
+      </div>
+      <div class="p-6 md:w-1/2 flex flex-col justify-center">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Elegant Perfumes</h3>
+        <p class="text-base font-semibold text-gray-800 mb-2">$16.00</p>
+        <ul class="text-sm text-gray-700 space-y-1 mb-4">
+          <li class="green-tick">Long Lasting</li>
+          <li class="green-tick">Affordable price</li>
+          <li class="green-tick">Best Perfume</li>
+        </ul>
+        <button class="flex items-center justify-center space-x-2 bg-gray-100 border border-gray-300 hover:bg-gray-200 transition-colors px-4 py-2 rounded-md w-full md:w-auto animate-button">
+          <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5
+                 M7 13v6a1 1 0 001 1h7a1 1 0 001-1v-6M7 13H5a1 1 0 01-1-1V9
+                 a1 1 0 011-1h2m0 4h10"/>
+          </svg>
+          <span>Buy Now</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Shampoo Card -->
+    <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col md:flex-row">
+      <div class="w-full md:w-1/2">
+        <img src="images/shampoo.png" alt="Strawberry Shampoo" class="object-cover h-full w-full">
+      </div>
+      <div class="p-6 md:w-1/2 flex flex-col justify-center">
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Strawberry Shampoo</h3>
+        <p class="text-base font-semibold text-gray-800 mb-2">$18.88</p>
+        <ul class="text-sm text-gray-700 space-y-1 mb-4">
+          <li class="green-tick">Allergy free</li>
+          <li class="green-tick">Best Product</li>
+          <li class="green-tick">Affordable price</li>
+        </ul>
+        <button class="flex items-center justify-center space-x-2 bg-gray-100 border border-gray-300 hover:bg-gray-200 transition-colors px-4 py-2 rounded-md w-full md:w-auto animate-button">
+          <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.5 5
+                 M7 13v6a1 1 0 001 1h7a1 1 0 001-1v-6M7 13H5a1 1 0 01-1-1V9
+                 a1 1 0 011-1h2m0 4h10"/>
+          </svg>
+          <span>Buy Now</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+    <!-- Medical Products -->
+    <section class="py-16 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-bold text-gray-900 text-center mb-12">Medical Products</h2>
+            <div class="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                <!-- Breathable Face Mask -->
+                <div class="rounded-xl relative overflow-hidden bg-cover bg-center" style="width: 100%; height: 279px;">
+                    <img src="images/Mask.png" alt="Face Mask Background" class="absolute inset-0 w-full h-full object-cover">
+                    <div class="relative z-10 p-8 h-full flex flex-col justify-center">
+                        <div class="bg-orange-500 text-white px-3 py-1 rounded-full text-sm inline-block mb-4 w-fit">Best Buy</div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Breathable<br>Face Mask</h3>
+                        <button class="bg-gray-800 text-white px-6 py-2 rounded-md hover:bg-gray-900 transition-colors animate-button w-fit">
+                            Shop now →
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Medicine Pack -->
+                <div class="rounded-xl relative overflow-hidden bg-cover bg-center" style="width: 100%; height: 279px;">
+                    <img src="images/Medicalintruments.png" alt="Medical Instruments Background" class="absolute inset-0 w-full h-full object-cover">
+                    <div class="relative z-10 p-8 h-full flex flex-col justify-center">
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">Medicine pack<br>Get it now 45% Off</h3>
+                        <button class="bg-gray-800 text-white px-6 py-2 rounded-md hover:bg-gray-900 transition-colors animate-button w-fit">
+                            Shop now →
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Delivery Section with Green Triangle -->
+    <section class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col lg:flex-row items-center justify-between">
+                <div class="flex-1 mb-8 lg:mb-0 flex justify-center">
+                    <div class="relative">
+                        <!-- Green Triangle Background -->
+                        <img src="images/Triangle.png" 
+                             alt="Green triangle background" 
+                             class="w-80 h-80 object-contain">
+                        <!-- Delivery GIF-->
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <img src="images/Delivery.gif" 
+                                 alt="Delivery animation" 
+                                 class="w-60 h-60 object-contain animate-float"
+                                 style="animation-duration: 12s;">
+                        </div>
+                    </div>
+                </div>
+                <div class="flex-1 text-center lg:text-left">
+                    <h2 class="text-3xl lg:text-5xl font-bold text-gray-900 leading-tight mb-8">
+                        Big city savings,<br>
+                        delivered to<br>
+                        your <span class="text-brand-red">doorstep.</span>
+                    </h2>
+                </div>
+            </div>
+            
+            <div class="text-center mt-12">
+                <p class="text-xl text-gray-600 font-medium animate-fade-in">
+                    Our Actions speaks louder than WORDS
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Customer Testimonials -->
+    <section class="py-16 bg-green-100">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12">
+          <h2 class="text-3xl font-bold text-gray-900 mb-4">Unlock the secrets of satisfied customers.</h2>
+        </div>
+
+        <div class="flex justify-center items-center space-x-4 mb-8">
+          <button class="bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow">
+            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+            </svg>
+          </button>
+          <button class="bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow">
+            <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="grid gap-6 grid-cols-1 md:grid-cols-3 max-w-5xl mx-auto px-4">
+          <!-- Card 1 -->
+          <div class="bg-white rounded-lg p-6 shadow-sm flex flex-col justify-between h-full">
+            <div>
+              <p class="text-gray-700 mb-4">"Never going back to waiting in lines! Shop smarter, get it delivered with QuickPik. It's that simple."</p>
+            </div>
+            <div class="flex items-center gap-4 mt-8">
+              <img src="images/albus-avatar.png" alt="Albus Stella" class="w-10 h-10 rounded-full object-cover">
+              <div class="pt-1">
+                <p class="font-semibold text-sm text-gray-900 leading-tight">Albus Stella</p>
+                <p class="text-gray-500 text-xs">albus.stella@howarts.com</p>
+              </div>
+            </div>
+          </div>
+          <!-- Card 2 -->
+          <div class="bg-white rounded-lg p-6 shadow-sm flex flex-col justify-between h-full">
+            <div>
+              <p class="text-gray-700 mb-4">"Wide selection, even in my small town! Found everything I needed for my birthday party with just a few clicks. Thanks, QuickPik!"</p>
+            </div>
+            <div class="flex items-center gap-4 mt-8">
+              <img src="images/severus-avatar.png" alt="Severus Snape" class="w-10 h-10 rounded-full object-cover">
+              <div class="pt-1">
+                <p class="font-semibold text-sm text-gray-900 leading-tight">Severus Snape</p>
+                <p class="text-gray-500 text-xs">severus.snape@slytherin.org</p>
+              </div>
+            </div>
+          </div>
+          <!-- Card 3 -->
+          <div class="bg-white rounded-lg p-6 shadow-sm flex flex-col justify-between h-full">
+            <div>
+              <p class="text-gray-700 mb-4">"Lifesaver for busy families! Fresh groceries delivered in a flash - dinner's on the table, thanks QuickPik!"</p>
+            </div>
+            <div class="flex items-center gap-4 mt-8">
+              <img src="images/harry-avatar.png" alt="Harry Brige" class="w-10 h-10 rounded-full object-cover">
+              <div class="pt-1">
+                <p class="font-semibold text-sm text-gray-900 leading-tight">Harry Brige</p>
+                <p class="text-gray-500 text-xs">harry.brige@gryffindor.net</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!--Gap -->
+    <div class="bg-white py-2"></div>
+
+    <!-- Newsletter Signup with Gradient -->
+    <section class="py-0.1 gradient-bg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="flex-1 mb-8 md:mb-0">
+                    <img src="images/Man.png" 
+                         alt="Delivery man" 
+                         class="w-full max-w-md mx-auto object-cover rounded-lg">
+                </div>
+                <div class="flex-1 text-center md:text-left">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4">SignUp For Exclusive Offers And Discounts</h2>
+                    <button class="bg-brand-green text-white px-6 py-2 rounded-md text-lg hover:bg-green-600 transition-colors animate-button">
+                        Sign Up
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gap -->
+    <div class="bg-white py-2"></div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+                <div class="col-span-1">
+                    <div class="text-3xl font-bold mb-6">Quick<span class="text-brand-green">Pik</span></div>
+                    <p class="text-gray-400 mb-6 leading-relaxed">Shop smarter, not harder. Get it delivered.</p>
+                    <div class="flex space-x-4">
+                        <!-- Instagram -->
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors p-2 bg-gray-800 rounded-full">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                            </svg>
+                        </a>
+                        <!-- X (Twitter) -->
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors p-2 bg-gray-800 rounded-full">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                            </svg>
+                        </a>
+                        <!-- Facebook -->
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors p-2 bg-gray-800 rounded-full">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                            </svg>
+                        </a>
+                        <!-- YouTube -->
+                        <a href="#" class="text-gray-400 hover:text-white transition-colors p-2 bg-gray-800 rounded-full">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-span-1">
+                    <h3 class="text-xl font-bold mb-6 text-white">Quick Links</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-base">Home</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-base">About Us</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-base">Services</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-base">Products</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-base">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div class="col-span-1">
+                    <h3 class="text-xl font-bold mb-6 text-white">Locations</h3>
+                    <ul class="space-y-3">
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-base">Mumbai</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-base">Pune</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-base">Nagpur</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-base">Banglore</a></li>
+                        <li><a href="#" class="text-gray-400 hover:text-white transition-colors text-base">Goa</a></li>
+                    </ul>
+                </div>
+                <div class="col-span-1 flex justify-center md:justify-end">
+                    <img src="images/Footer.gif" 
+                         alt="Footer illustration" 
+                         class="w-48 h-auto rounded-lg">
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 text-center">
+                <p class="text-gray-400 text-base">© 2024 QuickPik. All Rights Reserved</p>
+            </div>
+        </div>
+    </footer>
+
+
+</body>
+</html>
