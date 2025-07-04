@@ -153,7 +153,7 @@ function startNewGame() {
     }
     
     // Reset game state
-    currentRow = 9; // Start from bottom (row 9)
+    currentRow = 9; 
     currentGuess = [null, null, null, null];
     gameWon = false;
     attempts = 0;
@@ -167,13 +167,13 @@ function createGameBoard() {
     const gameBoard = document.getElementById('game-board');
     gameBoard.innerHTML = '';
     
-    // Create 10 rows (0-9, displayed top to bottom but played bottom to top)
+    // Create 10 rows 
     for (let row = 0; row < 10; row++) {
         const rowElement = document.createElement('div');
         rowElement.className = 'flex items-center justify-between p-1';
         rowElement.id = `row-${row}`;
         
-        // User guess circles (left side) - 4 larger circles
+        // User guess circles 
         const guessSection = document.createElement('div');
         guessSection.className = 'flex gap-1';
         
@@ -392,8 +392,6 @@ function getStars(attempts) {
 }
 
 function getScore(attempts) {
-    // Correct scoring formula: 110 - (attempts × 10)
-    // 1 attempt = 100 points, 2 attempts = 90 points, etc.
-    // Minimum score is 10 points for 10 attempts
+   
     return Math.max(10, 110 - (attempts * 10));
 }
