@@ -164,7 +164,7 @@ function startNewGame() {
     }
     
     // Reset game state
-    currentRow = 9; // Start from bottom (row 9)
+    currentRow = 9;
     currentGuess = [null, null, null, null];
     gameWon = false;
     gameLost = false;
@@ -185,7 +185,7 @@ function createGameBoard() {
         rowElement.className = 'flex items-center justify-between p-1';
         rowElement.id = `row-${row}`;
         
-        // User guess circles (left side) - 4 larger circles
+        // User guess circles (left side)
         const guessSection = document.createElement('div');
         guessSection.className = 'flex gap-1';
         
@@ -207,7 +207,7 @@ function createGameBoard() {
             guessSection.appendChild(circle);
         }
         
-        // Feedback circles (right side) - 4 smaller circles in a row
+        // Feedback circles (right side)
         const feedbackSection = document.createElement('div');
         feedbackSection.className = 'flex gap-1';
         
@@ -244,7 +244,7 @@ function handleDrop(e, row, pos) {
     
     // Check if duplicates are allowed
     if (!allowDuplicates && currentGuess.includes(color)) {
-        return; // Don't allow duplicate colors
+        return;
     }
     
     currentGuess[pos] = color;
@@ -283,7 +283,7 @@ function submitGuess() {
     attempts++;
     const feedback = getFeedback(currentGuess, secretCode);
     
-    // Update feedback display immediately
+    // Update feedback display
     updateFeedbackDisplay(currentRow, feedback);
     
     // Check if won
@@ -293,7 +293,7 @@ function submitGuess() {
     } else if (attempts >= 10) {
         // Game over
         gameLost = true;
-        revealSecret(); // Show the secret with animation
+        revealSecret();
         setTimeout(() => showWinModal(false), 1500);
     } else {
         // Move to next row
@@ -306,20 +306,18 @@ function submitGuess() {
 }
 
 function revealSecret() {
-    // Get the secret display circles at the top
+    // Animate secret code reveal
     const secretCircles = document.querySelectorAll('.secret-circle');
     
     secretCircles.forEach((circle, index) => {
         setTimeout(() => {
-            // Add reveal animation class
             circle.classList.add('secret-reveal');
             
-            // Change to actual color after animation starts
             setTimeout(() => {
                 circle.className = `secret-circle w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-bold text-lg ${colorClasses[secretCode[index]]} border-2 border-white shadow-lg`;
                 circle.textContent = '';
             }, 200);
-        }, index * 200); // Stagger the animations
+        }, index * 200);
     });
 }
 
@@ -482,5 +480,6 @@ function getStars(attempts) {
 }
 
 function getScore(attempts) {
+    // Scoring formula: 110 - (attempts × 10)
     return Math.max(10, 110 - (attempts * 10));
 }
