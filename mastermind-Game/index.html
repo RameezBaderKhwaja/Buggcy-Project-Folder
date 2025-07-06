@@ -29,6 +29,8 @@
             0%, 100% { transform: translateY(0px) rotate(0deg); }
             50% { transform: translateY(-10px) rotate(8deg); }
         }
+        
+        /* Modal animations */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -38,19 +40,69 @@
             height: 100%;
             background: rgba(0, 0, 0, 0.5);
             z-index: 1000;
+            animation: fadeIn 0.3s ease-out;
         }
         .modal-overlay.show {
             display: flex;
             align-items: center;
             justify-content: center;
         }
-        .star {
-            color: #fbbf24;
-            font-size: 2rem;
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
-        .star.empty {
-            color: #d1d5db;
+        
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(50px) scale(0.9);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
+        
+        .modal-content {
+            animation: slideUp 0.4s ease-out;
+        }
+        
+        /* Star animations */
+        @keyframes starPop {
+            0% { transform: scale(0) rotate(0deg); opacity: 0; }
+            50% { transform: scale(1.3) rotate(180deg); opacity: 1; }
+            100% { transform: scale(1) rotate(360deg); opacity: 1; }
+        }
+        
+        .star-animate {
+            animation: starPop 0.6s ease-out forwards;
+        }
+        
+        .star-1 { animation-delay: 0.2s; }
+        .star-2 { animation-delay: 0.4s; }
+        .star-3 { animation-delay: 0.6s; }
+        
+        /* Secret reveal animation */
+        @keyframes secretReveal {
+            0% { 
+                transform: scale(1) rotateY(0deg);
+                opacity: 1;
+            }
+            50% { 
+                transform: scale(1.2) rotateY(90deg);
+                opacity: 0.7;
+            }
+            100% { 
+                transform: scale(1) rotateY(0deg);
+                opacity: 1;
+            }
+        }
+        
+        .secret-reveal {
+            animation: secretReveal 0.6s ease-in-out;
+        }
+        
         .dragging {
             opacity: 0.5;
             transform: scale(1.1);
@@ -63,36 +115,109 @@
             border-color: #ffffff80;
             background: rgba(255, 255, 255, 0.2);
         }
+        
+        /* Beautiful Toggle Switch */
         .toggle-switch {
             position: relative;
-            width: 60px;
-            height: 30px;
-            background: #ccc;
-            border-radius: 15px;
+            width: 64px;
+            height: 32px;
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+            border-radius: 16px;
             cursor: pointer;
-            transition: background 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 2px 4px rgba(255,255,255,0.8);
+            border: 2px solid rgba(255,255,255,0.3);
         }
         .toggle-switch.active {
-            background: #4ade80;
+            background: linear-gradient(135deg, #10b981, #059669);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2), 0 2px 8px rgba(16,185,129,0.3);
         }
         .toggle-slider {
             position: absolute;
-            top: 3px;
-            left: 3px;
+            top: 2px;
+            left: 2px;
             width: 24px;
             height: 24px;
-            background: white;
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
             border-radius: 50%;
-            transition: transform 0.3s;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2), 0 1px 2px rgba(0,0,0,0.1);
         }
         .toggle-switch.active .toggle-slider {
-            transform: translateX(30px);
+            transform: translateX(32px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 1px 3px rgba(0,0,0,0.2);
         }
         
-        /* Responsive breakpoints */
+        /* Beautiful Checkbox */
+        .custom-checkbox {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 6px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.1), 0 1px 2px rgba(255,255,255,0.3);
+        }
+        
+        .custom-checkbox:checked {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-color: #059669;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.2), 0 2px 8px rgba(16,185,129,0.3);
+        }
+        
+        .custom-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        /* Responsive breakpoints*/
+        body, html {
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .page-container {
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Game page scrolling */
+        #game-page {
+            overflow-y: auto;
+            height: 100vh;
+        }
+        
         @media (max-width: 640px) {
             .game-container {
                 max-width: 320px;
+                padding: 0.75rem;
+            }
+            .color-btn {
+                width: 2.25rem;
+                height: 2.25rem;
+            }
+            .guess-circle {
+                width: 1.5rem;
+                height: 1.5rem;
+            }
+            .feedback-circle {
+                width: 0.5rem;
+                height: 0.5rem;
+            }
+        }
+        
+        @media (min-width: 641px) and (max-width: 768px) {
+            .game-container {
+                max-width: 360px;
                 padding: 1rem;
             }
             .color-btn {
@@ -109,9 +234,9 @@
             }
         }
         
-        @media (min-width: 641px) and (max-width: 768px) {
+        @media (min-width: 769px) {
             .game-container {
-                max-width: 380px;
+                max-width: 400px;
                 padding: 1.25rem;
             }
             .color-btn {
@@ -119,38 +244,31 @@
                 height: 2.75rem;
             }
             .guess-circle {
-                width: 2rem;
-                height: 2rem;
+                width: 1.75rem;
+                height: 1.75rem;
             }
             .feedback-circle {
-                width: 0.75rem;
-                height: 0.75rem;
+                width: 0.625rem;
+                height: 0.625rem;
             }
         }
         
-        @media (min-width: 769px) {
-            .game-container {
-                max-width: 420px;
-                padding: 1.5rem;
-            }
-            .color-btn {
-                width: 3rem;
-                height: 3rem;
-            }
-            .guess-circle {
-                width: 2rem;
-                height: 2rem;
-            }
-            .feedback-circle {
-                width: 0.75rem;
-                height: 0.75rem;
-            }
+        /* Row highlight */
+        .row-highlight {
+            background: rgba(255, 255, 255, 0.05) !important;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .row-completed {
+            background: transparent !important;
         }
     </style>
 </head>
 <body>
     <!-- Intro Page -->
-    <div id="intro-page" class="min-h-screen relative overflow-hidden flex items-center justify-center">
+    <div id="intro-page" class="page-container relative overflow-hidden flex items-center justify-center">
         <div class="absolute inset-0 bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600">
             <div class="absolute inset-0 bg-gradient-to-tl from-white/20 via-green-300/30 to-emerald-400/40"></div>
             <div class="absolute inset-0">
@@ -165,7 +283,7 @@
                 Color Master
             </h1>
             <p class="text-lg sm:text-xl text-white/90 mb-12 drop-shadow-md">
-                Test your logic and guess the color order
+                Test your logic and crack the color code
             </p>
             
             <div class="space-y-4">
@@ -178,12 +296,19 @@
                 
                 <!-- Duplicate Toggle -->
                 <div class="w-full text-center bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl px-6 py-4 transition-all duration-300 hover:scale-105">
-                    <div class="flex flex-col items-center">
-                        <span class="text-white font-semibold text-base sm:text-lg mb-2">Allow Duplicates</span>
-                        <div id="duplicate-toggle" class="toggle-switch mx-auto">
+                    <div class="flex items-center justify-center gap-3">
+                        <span class="text-white font-semibold text-base sm:text-lg">Allow Duplicates</span>
+                        <div id="duplicate-toggle" class="toggle-switch">
                             <div class="toggle-slider"></div>
                         </div>
-                        <p class="text-white/70 text-sm mt-2">Enable to use same colors multiple times</p>
+                    </div>
+                </div>
+                
+                <!-- Hard Mode Checkbox -->
+                <div class="w-full text-center bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-2xl px-6 py-4 transition-all duration-300 hover:scale-105">
+                    <div class="flex items-center justify-center gap-3">
+                        <span class="text-white font-semibold text-base sm:text-lg">Hard Mode</span>
+                        <input type="checkbox" id="hard-mode-toggle" class="custom-checkbox">
                     </div>
                 </div>
             </div>
@@ -191,105 +316,98 @@
     </div>
 
     <!-- Rules Page -->
-    <div id="rules-page" class="min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 hidden">
-        <div class="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
-            <button id="back-to-intro" class="mb-6 sm:mb-8 flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-colors">
+    <div id="rules-page" class="page-container bg-gradient-to-br from-slate-100 to-slate-200 hidden overflow-auto">
+        <div class="container mx-auto px-6 py-4 max-w-6xl">
+            <button id="back-to-intro" class="mb-4 flex items-center gap-2 text-slate-600 hover:text-slate-800 transition-colors">
                 ← Back to Menu
             </button>
             
-            <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-12">
-                <div class="text-center mb-6 sm:mb-8">
-                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-800 mb-2">Game Rules</h1>
-                    <p class="text-base sm:text-lg text-slate-600">Master the art of color deduction</p>
+            <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-2xl p-6 sm:p-8">
+                <div class="text-center mb-6">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-slate-800 mb-2">Game Rules</h1>
+                    <p class="text-base text-slate-600">Master the art of color deduction</p>
                 </div>
                 
-                <div class="space-y-6 sm:space-y-8">
-                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-4 sm:p-6">
-                        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">Objective</h2>
-                        <p class="text-slate-700 text-base sm:text-lg">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-4">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">Objective</h2>
+                        <p class="text-slate-700 text-sm sm:text-base">
                             Guess the correct combination of 4 colors from 8 available colors. You have 10 attempts to crack the code!
                         </p>
                     </div>
                     
-                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-4 sm:p-6">
-                        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">How to Play</h2>
-                        <ol class="space-y-2 sm:space-y-3 text-slate-700 text-base sm:text-lg">
+                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-4">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">How to Play</h2>
+                        <ol class="space-y-1 text-slate-700 text-sm sm:text-base">
                             <li>1. Drag 4 colors from the bottom panel to the guess row</li>
                             <li>2. Fill all 4 positions in the current row</li>
                             <li>3. Click Check to submit your guess</li>
                             <li>4. Use the feedback to make better guesses</li>
-                            <li>5. Game starts from bottom row and moves up</li>
+                            <li>5. If you fail, watch the secret reveal animation!</li>
                         </ol>
                     </div>
                     
-                    <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4 sm:p-6">
-                        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">Feedback System</h2>
-                        <div class="space-y-3 sm:space-y-4">
-                            <div class="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-xl">
-                                <div class="w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full flex-shrink-0"></div>
+                    <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">Feedback System</h2>
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-3 p-2 bg-white rounded-xl">
+                                <div class="w-4 h-4 bg-green-500 rounded-full flex-shrink-0"></div>
                                 <div>
-                                    <h3 class="font-semibold text-sm sm:text-base">Green Circle</h3>
-                                    <p class="text-slate-600 text-sm">Correct color in correct position</p>
+                                    <h3 class="font-semibold text-sm">Green Circle</h3>
+                                    <p class="text-slate-600 text-xs">Correct color in correct position</p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-xl">
-                                <div class="w-6 h-6 sm:w-8 sm:h-8 bg-red-500 rounded-full flex-shrink-0"></div>
+                            <div class="flex items-center gap-3 p-2 bg-white rounded-xl">
+                                <div class="w-4 h-4 bg-red-500 rounded-full flex-shrink-0"></div>
                                 <div>
-                                    <h3 class="font-semibold text-sm sm:text-base">Red Circle</h3>
-                                    <p class="text-slate-600 text-sm">Correct color in wrong position</p>
+                                    <h3 class="font-semibold text-sm">Red Circle</h3>
+                                    <p class="text-slate-600 text-xs">Correct color in wrong position</p>
                                 </div>
                             </div>
-                            <div class="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white rounded-xl">
-                                <div class="w-6 h-6 sm:w-8 sm:h-8 bg-white border-2 border-gray-300 rounded-full flex-shrink-0"></div>
+                            <div class="flex items-center gap-3 p-2 bg-white rounded-xl">
+                                <div class="w-4 h-4 bg-white border-2 border-gray-300 rounded-full flex-shrink-0"></div>
                                 <div>
-                                    <h3 class="font-semibold text-sm sm:text-base">White Circle</h3>
-                                    <p class="text-slate-600 text-sm">This color is not in the solution</p>
+                                    <h3 class="font-semibold text-sm">White Circle</h3>
+                                    <p class="text-slate-600 text-xs">This color is not in the solution</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-4 sm:p-6">
-                        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">Scoring System</h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-center">
-                            <div class="bg-white rounded-xl p-3 sm:p-4">
-                                <div class="text-xl sm:text-2xl mb-2">⭐⭐⭐⭐⭐</div>
-                                <div class="font-semibold text-sm sm:text-base">1-2 Attempts</div>
-                                <div class="text-green-600 font-bold">100-90 Points</div>
+                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-4">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">⭐ Scoring System</h2>
+                        <div class="grid grid-cols-3 gap-2 text-center">
+                            <div class="bg-white rounded-xl p-2">
+                                <div class="text-lg mb-1">⭐⭐⭐</div>
+                                <div class="font-semibold text-xs">1-3 Attempts</div>
                             </div>
-                            <div class="bg-white rounded-xl p-3 sm:p-4">
-                                <div class="text-xl sm:text-2xl mb-2">⭐⭐⭐⭐</div>
-                                <div class="font-semibold text-sm sm:text-base">3-4 Attempts</div>
-                                <div class="text-green-600 font-bold">80-70 Points</div>
+                            <div class="bg-white rounded-xl p-2">
+                                <div class="text-lg mb-1">⭐⭐</div>
+                                <div class="font-semibold text-xs">4-6 Attempts</div>
                             </div>
-                            <div class="bg-white rounded-xl p-3 sm:p-4">
-                                <div class="text-xl sm:text-2xl mb-2">⭐⭐⭐</div>
-                                <div class="font-semibold text-sm sm:text-base">5-6 Attempts</div>
-                                <div class="text-green-600 font-bold">60-50 Points</div>
-                            </div>
-                            <div class="bg-white rounded-xl p-3 sm:p-4">
-                                <div class="text-xl sm:text-2xl mb-2">⭐⭐</div>
-                                <div class="font-semibold text-sm sm:text-base">7-8 Attempts</div>
-                                <div class="text-green-600 font-bold">40-30 Points</div>
-                            </div>
-                            <div class="bg-white rounded-xl p-3 sm:p-4 sm:col-span-2">
-                                <div class="text-xl sm:text-2xl mb-2">⭐</div>
-                                <div class="font-semibold text-sm sm:text-base">9-10 Attempts</div>
-                                <div class="text-green-600 font-bold">20-10 Points</div>
+                            <div class="bg-white rounded-xl p-2">
+                                <div class="text-lg mb-1">⭐</div>
+                                <div class="font-semibold text-xs">7-10 Attempts</div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl p-4 sm:p-6">
-                        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mb-3 sm:mb-4">Duplicate Colors</h2>
-                        <p class="text-slate-700 text-base sm:text-lg">
-                            Toggle the "Allow Duplicates" option on the main menu to enable or disable using the same color multiple times in your guess.
-                        </p>
+                    <div class="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl p-4 lg:col-span-2">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">Game Modes</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="bg-white rounded-xl p-3">
+                                <h3 class="font-semibold text-sm text-slate-800 mb-1">Allow Duplicates</h3>
+                                <p class="text-slate-600 text-xs">When enabled, the same color can appear multiple times in the secret code. This increases the number of possible combinations and makes the game more challenging.</p>
+                            </div>
+                            <div class="bg-white rounded-xl p-3">
+                                <h3 class="font-semibold text-sm text-slate-800 mb-1">Hard Mode</h3>
+                                <p class="text-slate-600 text-xs">In hard mode, the feedback circles are shuffled randomly. You still get the same feedback information, but you can't tell which specific position each feedback applies to.</p>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="mt-6 sm:mt-8 text-center">
-                    <button id="start-from-rules" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold px-6 sm:px-8 py-3 rounded-xl transition-all duration-200 hover:scale-105">
+
+                <div class="mt-6 text-center">
+                    <button id="start-from-rules" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold px-6 py-2 rounded-xl transition-all duration-200 hover:scale-105">
                         Let's Play
                     </button>
                 </div>
@@ -298,7 +416,7 @@
     </div>
 
     <!-- Game Page -->
-    <div id="game-page" class="min-h-screen bg-gradient-to-br from-slate-300 to-slate-400 p-4 hidden">
+    <div id="game-page" class="page-container bg-gradient-to-br from-slate-300 to-slate-400 p-4 hidden">
         <div class="max-w-sm mx-auto game-container">
             <!-- Remote Controller -->
             <div class="bg-slate-400 rounded-3xl p-4 sm:p-6 shadow-2xl border-4 border-slate-500">
@@ -312,13 +430,13 @@
                     </button>
                 </div>
                 
-                <!-- Question Mark Circles at Top -->
+                <!-- Question Mark Circles at Top (4x1 layout) -->
                 <div class="bg-slate-300 rounded-2xl p-3 sm:p-4 mb-4">
                     <div class="flex justify-center gap-2">
-                        <div class="w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-lg">?</div>
-                        <div class="w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-lg">?</div>
-                        <div class="w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-lg">?</div>
-                        <div class="w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-lg">?</div>
+                        <div class="secret-circle w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-lg">?</div>
+                        <div class="secret-circle w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-lg">?</div>
+                        <div class="secret-circle w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-lg">?</div>
+                        <div class="secret-circle w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-lg">?</div>
                     </div>
                 </div>
                 
@@ -354,12 +472,12 @@
         </div>
     </div>
 
-    <!-- Win Modal -->
+    <!-- Win/Game Over Modal -->
     <div id="win-modal" class="modal-overlay">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full mx-4">
-            <div class="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-t-3xl p-4 sm:p-6 text-center">
-                <h2 class="text-xl sm:text-2xl font-bold text-white mb-2">Congratulations!</h2>
-                <p class="text-white/90 text-sm sm:text-base">You guessed it right!</p>
+        <div class="modal-content bg-white rounded-3xl shadow-2xl max-w-sm w-full mx-4">
+            <div id="modal-header" class="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-t-3xl p-4 sm:p-6 text-center">
+                <h2 id="modal-title" class="text-xl sm:text-2xl font-bold text-white mb-2">Congratulations!</h2>
+                <p id="modal-subtitle" class="text-white/90 text-sm sm:text-base">You cracked the code!</p>
             </div>
             
             <div class="p-4 sm:p-6">
@@ -368,9 +486,9 @@
                         <!-- Stars will be generated by JavaScript -->
                     </div>
                     <p class="text-gray-600 text-sm sm:text-base mb-2">
-                        Solved in <span id="attempts-used">0</span> attempts
+                        <span id="attempts-text">Solved in</span> <span id="attempts-used">0</span> <span id="attempts-word">attempts</span>
                     </p>
-                    <div class="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-3">
+                    <div id="score-container" class="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-3">
                         <p class="text-lg font-bold text-green-800">
                             Score: <span id="score-display">0</span> points
                         </p>

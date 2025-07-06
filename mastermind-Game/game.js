@@ -4,8 +4,10 @@ let secretCode = [];
 let currentRow = 0;
 let currentGuess = [null, null, null, null];
 let gameWon = false;
+let gameLost = false;
 let attempts = 0;
 let allowDuplicates = false;
+let hardMode = false;
 let usedColors = [];
 
 // Color mappings
@@ -32,6 +34,7 @@ function setupEventListeners() {
     document.getElementById('start-game-btn').addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        hardMode = document.getElementById('hard-mode-toggle').checked;
         startNewGame();
         showPage('game');
     });
@@ -51,6 +54,7 @@ function setupEventListeners() {
     document.getElementById('start-from-rules').addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
+        hardMode = document.getElementById('hard-mode-toggle').checked;
         startNewGame();
         showPage('game');
     });
@@ -135,6 +139,13 @@ function showPage(page) {
 }
 
 function startNewGame() {
+    // Reset secret display to question marks
+    const secretCircles = document.querySelectorAll('.secret-circle');
+    secretCircles.forEach(circle => {
+        circle.className = 'secret-circle w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-lg';
+        circle.textContent = '?';
+    });
+    
     // Generate random secret code
     secretCode = [];
     usedColors = [];
@@ -153,9 +164,10 @@ function startNewGame() {
     }
     
     // Reset game state
-    currentRow = 9; 
+    currentRow = 9; // Start from bottom (row 9)
     currentGuess = [null, null, null, null];
     gameWon = false;
+    gameLost = false;
     attempts = 0;
     
     // Create game board
@@ -167,13 +179,13 @@ function createGameBoard() {
     const gameBoard = document.getElementById('game-board');
     gameBoard.innerHTML = '';
     
-    // Create 10 rows 
+    // Create 10 rows
     for (let row = 0; row < 10; row++) {
         const rowElement = document.createElement('div');
         rowElement.className = 'flex items-center justify-between p-1';
         rowElement.id = `row-${row}`;
         
-        // User guess circles 
+        // User guess circles (left side) - 4 larger circles
         const guessSection = document.createElement('div');
         guessSection.className = 'flex gap-1';
         
@@ -226,7 +238,7 @@ function handleDrop(e, row, pos) {
     e.stopPropagation();
     e.target.classList.remove('drop-zone', 'drag-over');
     
-    if (row !== currentRow || gameWon) return;
+    if (row !== currentRow || gameWon || gameLost) return;
     
     const color = e.dataTransfer.getData('text/plain');
     
@@ -241,7 +253,7 @@ function handleDrop(e, row, pos) {
 }
 
 function clearPosition(row, pos) {
-    if (row !== currentRow || gameWon) return;
+    if (row !== currentRow || gameWon || gameLost) return;
     
     currentGuess[pos] = null;
     updateCurrentRow();
@@ -262,19 +274,65 @@ function updateCurrentRow() {
 function updateCheckButton() {
     const checkBtn = document.getElementById('check-guess');
     const hasEmptyPosition = currentGuess.some(c => c === null);
-    checkBtn.disabled = hasEmptyPosition || gameWon;
+    checkBtn.disabled = hasEmptyPosition || gameWon || gameLost;
 }
 
 function submitGuess() {
-    if (gameWon || currentGuess.some(c => c === null)) return;
+    if (gameWon || gameLost || currentGuess.some(c => c === null)) return;
     
     attempts++;
     const feedback = getFeedback(currentGuess, secretCode);
     
-    // Update feedback display
+    // Update feedback display immediately
+    updateFeedbackDisplay(currentRow, feedback);
+    
+    // Check if won
+    if (feedback.every(f => f === 'correct')) {
+        gameWon = true;
+        setTimeout(() => showWinModal(true), 500);
+    } else if (attempts >= 10) {
+        // Game over
+        gameLost = true;
+        revealSecret(); // Show the secret with animation
+        setTimeout(() => showWinModal(false), 1500);
+    } else {
+        // Move to next row
+        currentRow--;
+        currentGuess = [null, null, null, null];
+        highlightCurrentRow();
+    }
+    
+    updateUI();
+}
+
+function revealSecret() {
+    // Get the secret display circles at the top
+    const secretCircles = document.querySelectorAll('.secret-circle');
+    
+    secretCircles.forEach((circle, index) => {
+        setTimeout(() => {
+            // Add reveal animation class
+            circle.classList.add('secret-reveal');
+            
+            // Change to actual color after animation starts
+            setTimeout(() => {
+                circle.className = `secret-circle w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-white font-bold text-lg ${colorClasses[secretCode[index]]} border-2 border-white shadow-lg`;
+                circle.textContent = '';
+            }, 200);
+        }, index * 200); // Stagger the animations
+    });
+}
+
+function updateFeedbackDisplay(row, feedback) {
+    // In hard mode, shuffle the feedback array
+    let displayFeedback = [...feedback];
+    if (hardMode) {
+        displayFeedback = shuffleArray(displayFeedback);
+    }
+    
     for (let pos = 0; pos < 4; pos++) {
-        const feedbackCircle = document.getElementById(`feedback-${currentRow}-${pos}`);
-        switch (feedback[pos]) {
+        const feedbackCircle = document.getElementById(`feedback-${row}-${pos}`);
+        switch (displayFeedback[pos]) {
             case 'correct':
                 feedbackCircle.className = 'feedback-circle bg-green-500 rounded-full';
                 break;
@@ -286,23 +344,15 @@ function submitGuess() {
                 break;
         }
     }
-    
-    // Check if won
-    if (feedback.every(f => f === 'correct')) {
-        gameWon = true;
-        showWinModal();
-    } else if (attempts >= 10) {
-        // Game over
-        alert('Game Over! The secret code was: ' + secretCode.join(', '));
-        startNewGame();
-    } else {
-        // Move to next row (going up)
-        currentRow--;
-        currentGuess = [null, null, null, null];
-        highlightCurrentRow();
+}
+
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
-    
-    updateUI();
+    return shuffled;
 }
 
 function getFeedback(guess, secret) {
@@ -340,7 +390,7 @@ function highlightCurrentRow() {
     for (let i = 0; i < 10; i++) {
         const row = document.getElementById(`row-${i}`);
         if (row) {
-            row.style.backgroundColor = '';
+            row.classList.remove('row-highlight');
         }
     }
     
@@ -348,7 +398,7 @@ function highlightCurrentRow() {
     if (currentRow >= 0) {
         const currentRowElement = document.getElementById(`row-${currentRow}`);
         if (currentRowElement) {
-            currentRowElement.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
+            currentRowElement.classList.add('row-highlight');
         }
         updateCurrentRow();
     }
@@ -359,24 +409,66 @@ function updateUI() {
     highlightCurrentRow();
 }
 
-function showWinModal() {
-    const stars = getStars(attempts);
-    const score = getScore(attempts);
+function showWinModal(won) {
+    const modal = document.getElementById('win-modal');
+    const modalHeader = document.getElementById('modal-header');
+    const modalTitle = document.getElementById('modal-title');
+    const modalSubtitle = document.getElementById('modal-subtitle');
+    const attemptsText = document.getElementById('attempts-text');
+    const attemptsUsed = document.getElementById('attempts-used');
+    const attemptsWord = document.getElementById('attempts-word');
+    const scoreContainer = document.getElementById('score-container');
     
-    // Update stars display
-    const starsDisplay = document.getElementById('stars-display');
-    starsDisplay.innerHTML = '';
-    
-    for (let i = 0; i < 5; i++) {
-        const star = document.createElement('span');
-        star.className = i < stars ? 'star' : 'star empty';
-        star.textContent = '★';
-        starsDisplay.appendChild(star);
+    if (won) {
+        const stars = getStars(attempts);
+        const score = getScore(attempts);
+        
+        modalHeader.className = 'bg-gradient-to-r from-yellow-400 to-orange-500 rounded-t-3xl p-4 sm:p-6 text-center';
+        modalTitle.textContent = 'Congratulations!';
+        modalSubtitle.textContent = 'You cracked the code!';
+        
+        attemptsText.textContent = 'Solved in';
+        attemptsUsed.textContent = attempts;
+        attemptsWord.textContent = attempts === 1 ? 'attempt' : 'attempts';
+        
+        scoreContainer.style.display = 'block';
+        document.getElementById('score-display').textContent = score;
+        
+        // Update stars display with animation
+        const starsDisplay = document.getElementById('stars-display');
+        starsDisplay.innerHTML = '';
+        
+        for (let i = 0; i < 3; i++) {
+            const star = document.createElement('span');
+            star.className = `text-3xl star-animate star-${i + 1}`;
+            star.style.opacity = '0';
+            star.textContent = i < stars ? '⭐' : '☆';
+            starsDisplay.appendChild(star);
+        }
+    } else {
+        modalHeader.className = 'bg-gradient-to-r from-red-400 to-red-500 rounded-t-3xl p-4 sm:p-6 text-center';
+        modalTitle.textContent = 'Game Over!';
+        modalSubtitle.textContent = 'Better luck next time!';
+        
+        attemptsText.textContent = 'Keep practicing!';
+        attemptsUsed.textContent = '';
+        attemptsWord.textContent = '';
+        
+        scoreContainer.style.display = 'none';
+        
+        // Show 0 stars
+        const starsDisplay = document.getElementById('stars-display');
+        starsDisplay.innerHTML = '';
+        
+        for (let i = 0; i < 3; i++) {
+            const star = document.createElement('span');
+            star.className = 'text-3xl text-gray-300';
+            star.textContent = '☆';
+            starsDisplay.appendChild(star);
+        }
     }
     
-    document.getElementById('attempts-used').textContent = attempts;
-    document.getElementById('score-display').textContent = score;
-    document.getElementById('win-modal').classList.add('show');
+    modal.classList.add('show');
 }
 
 function hideModal() {
@@ -384,14 +476,11 @@ function hideModal() {
 }
 
 function getStars(attempts) {
-    if (attempts <= 2) return 5;
-    if (attempts <= 4) return 4;
-    if (attempts <= 6) return 3;
-    if (attempts <= 8) return 2;
+    if (attempts <= 3) return 3;
+    if (attempts <= 6) return 2;
     return 1;
 }
 
 function getScore(attempts) {
-   
     return Math.max(10, 110 - (attempts * 10));
 }
