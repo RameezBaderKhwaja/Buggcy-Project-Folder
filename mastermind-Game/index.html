@@ -179,35 +179,113 @@
             font-weight: bold;
         }
         
-        
-        #game-page {
-   
-         overflow: hidden;
-         height: 100vh;
+        /* Page container styles */
+        body, html {
+            height: 100vh;
+            margin: 0;
+            padding: 0;
         }
-
-
-        .game-container {
-         max-height: 100%;
-         overflow-y: auto;
-        }
-
         
         .page-container {
             height: 100vh;
             overflow: hidden;
         }
         
-        /* Game page scrolling */
+        /* Game page specific styles */
         #game-page {
             overflow-y: auto;
-            height: 100vh;
+            padding: 0.5rem;
         }
         
+        /* Hide scrollbars but keep functionality */
+        #game-page::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        
+        #game-page::-webkit-scrollbar-thumb {
+            background: transparent;
+        }
+        
+        #game-page {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Color selection grid centering */
+        .color-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            justify-items: center;
+            align-items: center;
+            padding: 0 0.5rem;
+        }
+        
+        /* Responsive game container sizing */
         @media (max-width: 640px) {
             .game-container {
+                max-width: 280px;
+                width: 100%;
+                margin: 0 auto;
+            }
+            .color-btn {
+                width: 1.75rem;
+                height: 1.75rem;
+            }
+            .guess-circle {
+                width: 1.25rem;
+                height: 1.25rem;
+            }
+            .feedback-circle {
+                width: 0.375rem;
+                height: 0.375rem;
+            }
+            .secret-circle {
+                width: 1.5rem !important;
+                height: 1.5rem !important;
+                font-size: 0.75rem !important;
+            }
+            .color-selection-grid {
+                gap: 0.375rem;
+                padding: 0 0.25rem;
+            }
+        }
+        
+        @media (min-width: 641px) and (max-width: 768px) {
+            .game-container {
                 max-width: 320px;
-                padding: 0.75rem;
+                width: 100%;
+                margin: 0 auto;
+            }
+            .color-btn {
+                width: 2rem;
+                height: 2rem;
+            }
+            .guess-circle {
+                width: 1.5rem;
+                height: 1.5rem;
+            }
+            .feedback-circle {
+                width: 0.5rem;
+                height: 0.5rem;
+            }
+            .secret-circle {
+                width: 1.75rem !important;
+                height: 1.75rem !important;
+                font-size: 0.875rem !important;
+            }
+            .color-selection-grid {
+                gap: 0.5rem;
+                padding: 0 0.375rem;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .game-container {
+                max-width: 360px;
+                width: 100%;
+                margin: 0 auto;
             }
             .color-btn {
                 width: 2.25rem;
@@ -221,43 +299,14 @@
                 width: 0.5rem;
                 height: 0.5rem;
             }
-        }
-        
-        @media (min-width: 641px) and (max-width: 768px) {
-            .game-container {
-                max-width: 360px;
-                padding: 1rem;
+            .secret-circle {
+                width: 2rem !important;
+                height: 2rem !important;
+                font-size: 1rem !important;
             }
-            .color-btn {
-                width: 2.5rem;
-                height: 2.5rem;
-            }
-            .guess-circle {
-                width: 1.75rem;
-                height: 1.75rem;
-            }
-            .feedback-circle {
-                width: 0.625rem;
-                height: 0.625rem;
-            }
-        }
-        
-        @media (min-width: 769px) {
-            .game-container {
-                max-width: 400px;
-                padding: 1.25rem;
-            }
-            .color-btn {
-                width: 2.75rem;
-                height: 2.75rem;
-            }
-            .guess-circle {
-                width: 1.75rem;
-                height: 1.75rem;
-            }
-            .feedback-circle {
-                width: 0.625rem;
-                height: 0.625rem;
+            .color-selection-grid {
+                gap: 0.5rem;
+                padding: 0 0.5rem;
             }
         }
         
@@ -272,6 +321,8 @@
         .row-completed {
             background: transparent !important;
         }
+
+        
     </style>
 </head>
 <body>
@@ -338,14 +389,14 @@
                 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-4">
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2"> Objective</h2>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">Objective</h2>
                         <p class="text-slate-700 text-sm sm:text-base">
                             Guess the correct combination of 4 colors from 8 available colors. You have 10 attempts to crack the code!
                         </p>
                     </div>
                     
                     <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-4">
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2"> How to Play</h2>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">How to Play</h2>
                         <ol class="space-y-1 text-slate-700 text-sm sm:text-base">
                             <li>1. Drag 4 colors from the bottom panel to the guess row</li>
                             <li>2. Fill all 4 positions in the current row</li>
@@ -356,7 +407,7 @@
                     </div>
                     
                     <div class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-4">
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2"> Feedback System</h2>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">Feedback System</h2>
                         <div class="space-y-2">
                             <div class="flex items-center gap-3 p-2 bg-white rounded-xl">
                                 <div class="w-4 h-4 bg-green-500 rounded-full flex-shrink-0"></div>
@@ -383,7 +434,7 @@
                     </div>
                     
                     <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-4">
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2"> Scoring System</h2>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">Scoring System</h2>
                         <div class="grid grid-cols-3 gap-2 text-center">
                             <div class="bg-white rounded-xl p-2">
                                 <div class="text-lg mb-1">⭐⭐⭐</div>
@@ -401,7 +452,7 @@
                     </div>
                     
                     <div class="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-2xl p-4 lg:col-span-2">
-                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2"> Game Modes</h2>
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">Game Modes</h2>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div class="bg-white rounded-xl p-3">
                                 <h2 class="font-semibold text-lg text-slate-800 mb-1">Allow Duplicates</h2>
@@ -425,39 +476,39 @@
     </div>
 
     <!-- Game Page -->
-    <div id="game-page" class="page-container bg-gradient-to-br from-slate-300 to-slate-400 p-4 hidden">
-        <div class="max-w-sm mx-auto game-container">
+    <div id="game-page" class="page-container bg-gradient-to-br from-slate-300 to-slate-400 hidden">
+        <div class="game-container">
             <!-- Remote Controller -->
-            <div class="bg-slate-400 rounded-3xl p-4 sm:p-6 shadow-2xl border-4 border-slate-500">
+            <div class="bg-slate-400 rounded-3xl p-3 sm:p-4 shadow-2xl border-4 border-slate-500">
                 <!-- Header Buttons -->
-                <div class="flex justify-between mb-4">
-                    <button id="back-to-menu" class="bg-slate-500 hover:bg-slate-600 text-white px-3 py-2 rounded-lg text-xs sm:text-sm transition-colors">
+                <div class="flex justify-between mb-3">
+                    <button id="back-to-menu" class="bg-slate-500 hover:bg-slate-600 text-white px-3 py-2 rounded-lg text-sm transition-colors">
                         Menu
                     </button>
-                    <button id="reset-game" class="bg-slate-500 hover:bg-slate-600 text-white px-3 py-2 rounded-lg text-xs sm:text-sm transition-colors">
+                    <button id="reset-game" class="bg-slate-500 hover:bg-slate-600 text-white px-3 py-2 rounded-lg text-sm transition-colors">
                         Reset
                     </button>
                 </div>
                 
                 <!-- Question Mark Circles at Top -->
-                <div class="bg-slate-300 rounded-2xl p-3 sm:p-4 mb-4">
-                    <div class="flex justify-center gap-2">
-                        <div class="secret-circle w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-lg">?</div>
-                        <div class="secret-circle w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-lg">?</div>
-                        <div class="secret-circle w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-lg">?</div>
-                        <div class="secret-circle w-8 h-8 sm:w-10 sm:h-10 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-lg">?</div>
+                <div class="bg-slate-300 rounded-2xl p-2 sm:p-3 mb-3">
+                    <div class="flex justify-center gap-1">
+                        <div class="secret-circle w-6 h-6 sm:w-8 sm:h-8 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-sm">?</div>
+                        <div class="secret-circle w-6 h-6 sm:w-8 sm:h-8 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-sm">?</div>
+                        <div class="secret-circle w-6 h-6 sm:w-8 sm:h-8 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-sm">?</div>
+                        <div class="secret-circle w-6 h-6 sm:w-8 sm:h-8 bg-slate-500 rounded-full flex items-center justify-center text-white font-bold text-sm">?</div>
                     </div>
                 </div>
                 
                 <!-- Game Board -->
-                <div class="bg-slate-800 rounded-2xl p-3 sm:p-4 mb-4">
+                <div class="bg-slate-800 rounded-2xl p-2 sm:p-3 mb-3">
                     <div id="game-board" class="space-y-1">
                         <!-- Rows will be generated by JavaScript -->
                     </div>
                 </div>
                 
                 <!-- Color Selection -->
-                <div class="grid grid-cols-4 gap-2 mb-4">
+                <div class="color-selection-grid mb-3">
                     <div class="color-btn bg-red-500 rounded-full cursor-pointer hover:scale-110 transition-transform" draggable="true" data-color="red"></div>
                     <div class="color-btn bg-blue-500 rounded-full cursor-pointer hover:scale-110 transition-transform" draggable="true" data-color="blue"></div>
                     <div class="color-btn bg-green-500 rounded-full cursor-pointer hover:scale-110 transition-transform" draggable="true" data-color="green"></div>
@@ -469,11 +520,11 @@
                 </div>
                 
                 <!-- Control Buttons -->
-                <div class="space-y-2">
-                    <button id="check-guess" class="w-full bg-green-600 hover:bg-green-500 disabled:bg-slate-500 text-white font-semibold py-3 rounded-xl transition-all disabled:cursor-not-allowed text-sm sm:text-base" disabled>
+                <div class="space-y-1">
+                    <button id="check-guess" class="w-full bg-green-600 hover:bg-green-500 disabled:bg-slate-500 text-white font-semibold py-2.5 rounded-xl transition-all disabled:cursor-not-allowed text-md" disabled>
                         Check
                     </button>
-                    <button id="start-new-game" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-xl transition-all text-sm sm:text-base">
+                    <button id="start-new-game" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded-xl transition-all text-md">
                         Start New Game
                     </button>
                 </div>
