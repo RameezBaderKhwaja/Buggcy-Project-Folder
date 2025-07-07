@@ -40,10 +40,18 @@ function setupEventListeners() {
     });
     
     document.getElementById('rules-btn').addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        showPage('rules');
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Store hard mode state when switching to rules
+    const checkbox = document.getElementById('hard-mode-toggle');
+    if (checkbox) {
+        hardMode = checkbox.checked;
+    }
+
+    showPage('rules');
     });
+
     
     document.getElementById('back-to-intro').addEventListener('click', (e) => {
         e.preventDefault();
@@ -54,10 +62,10 @@ function setupEventListeners() {
     document.getElementById('start-from-rules').addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        hardMode = document.getElementById('hard-mode-toggle').checked;
         startNewGame();
         showPage('game');
     });
+
     
     document.getElementById('back-to-menu').addEventListener('click', (e) => {
         e.preventDefault();
