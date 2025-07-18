@@ -88,40 +88,28 @@ const HomePage = () => {
     [],
   )
 
-  // Improved logic for category-specific images
+  // Dynamically get image for current slide based on category
   const currentSlideData = useMemo(() => {
     const slide = heroSlides[currentSlide]
     let imageUrl = "/placeholder.svg?height=400&width=400" // Default placeholder
 
-    if (!allProducts || allProducts.length === 0) {
-      return { ...slide, image: imageUrl }
-    }
-
     if (slide.category === "all") {
-      // For "Discover Amazing Products", pick the first available product image
-      const firstProductWithImage = allProducts.find((p) => p.image && !p.image.includes("placeholder"))
-      if (firstProductWithImage) {
-        imageUrl = firstProductWithImage.image
+      // For "Discover Amazing Products", pick a general product image if available
+      if (allProducts && allProducts.length > 0) {
+        imageUrl = allProducts[0].image || imageUrl
       }
     } else {
-      // Find products matching the specific category
-      const categoryProducts = allProducts.filter((p) => p.category === slide.category)
-
-      if (categoryProducts.length > 0) {
-        // Try to find a product with a valid image
-        const productWithImage = categoryProducts.find((p) => p.image && !p.image.includes("placeholder"))
-
-        if (productWithImage) {
-          imageUrl = productWithImage.image
-        } else {
-          // If no product in this category has an image, use the first product's image as fallback
-          imageUrl = categoryProducts[0].image || imageUrl
-        }
+      // Find an image from products matching the category
+      const productWithImage = allProducts?.find(
+        (p) => p.category === slide.category && p.image && !p.image.includes("placeholder"),
+      )
+      if (productWithImage) {
+        imageUrl = productWithImage.image
       } else {
-        // If no products found for this category, use a general product image
-        const fallbackProduct = allProducts.find((p) => p.image && !p.image.includes("placeholder"))
-        if (fallbackProduct) {
-          imageUrl = fallbackProduct.image
+        // If no product found with valid image in this category, try to find any product from this category
+        const categoryProduct = allProducts?.find((p) => p.category === slide.category)
+        if (categoryProduct && categoryProduct.image) {
+          imageUrl = categoryProduct.image
         }
       }
     }
