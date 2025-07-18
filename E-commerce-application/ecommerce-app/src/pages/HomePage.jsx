@@ -16,6 +16,7 @@ const HomePage = () => {
   const { categories } = useCategories()
   const { toast } = useToast()
 
+  
   const [currentSlide, setCurrentSlide] = useState(0)
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [newProduct, setNewProduct] = useState({
@@ -39,10 +40,10 @@ const HomePage = () => {
         title: "Discover Amazing Products",
         subtitle: "Shop the latest trends and find exactly what you're looking for",
         buttonText: "Shop Now",
-        buttonLink: "/products", // All shop buttons link to products page
-        learnMoreLink: "/about", // Learn More button links to about page
-        category: "all", // Special category to pick a general image
-        background: "bg-purple-700", // Deep purple
+        buttonLink: "/products", 
+        learnMoreLink: "/about", 
+        category: "all",
+        background: "bg-purple-700", 
       },
       {
         id: 2,
@@ -52,7 +53,7 @@ const HomePage = () => {
         buttonLink: "/products",
         learnMoreLink: "/about",
         category: "men's clothing",
-        background: "bg-slate-800", // Dark grey
+        background: "bg-slate-800", 
       },
       {
         id: 3,
@@ -62,7 +63,7 @@ const HomePage = () => {
         buttonLink: "/products",
         learnMoreLink: "/about",
         category: "women's clothing",
-        background: "bg-pink-700", // Deep pink
+        background: "bg-pink-700", 
       },
       {
         id: 4,
@@ -72,7 +73,7 @@ const HomePage = () => {
         buttonLink: "/products",
         learnMoreLink: "/about",
         category: "jewelery",
-        background: "bg-yellow-700", // Dark gold
+        background: "bg-yellow-700", 
       },
       {
         id: 5,
@@ -82,7 +83,7 @@ const HomePage = () => {
         buttonLink: "/products",
         learnMoreLink: "/about",
         category: "electronics",
-        background: "bg-green-700", // Dark green
+        background: "bg-green-700", 
       },
     ],
     [],
@@ -101,36 +102,15 @@ const HomePage = () => {
     } else {
       // Find an image from products matching the category
       const productWithImage = allProducts?.find(
-        (p) => p.category === slide.category && p.image && !p.image.includes("placeholder"),
+        (p) => p.category === slide.category && p.image && p.image !== "/placeholder.svg",
       )
       if (productWithImage) {
         imageUrl = productWithImage.image
-      } else {
-        // If no product found with valid image in this category, try to find any product from this category
-        const categoryProduct = allProducts?.find((p) => p.category === slide.category)
-        if (categoryProduct && categoryProduct.image) {
-          imageUrl = categoryProduct.image
-        }
       }
     }
 
     return { ...slide, image: imageUrl }
   }, [currentSlide, heroSlides, allProducts])
-
-  // Debug log to check what's happening
-  useEffect(() => {
-    if (allProducts && allProducts.length > 0) {
-      console.log("Available categories:", [...new Set(allProducts.map((p) => p.category))])
-      console.log("Current slide category:", heroSlides[currentSlide]?.category)
-
-      const currentCategory = heroSlides[currentSlide]?.category
-      if (currentCategory && currentCategory !== "all") {
-        const categoryProducts = allProducts.filter((p) => p.category === currentCategory)
-        console.log(`Products in ${currentCategory}:`, categoryProducts.length)
-        console.log("Sample product:", categoryProducts[0])
-      }
-    }
-  }, [allProducts, currentSlide, heroSlides])
 
   // Memoized product handlers
   const handleAddProduct = useCallback(async () => {
@@ -187,74 +167,57 @@ const HomePage = () => {
     <div className="min-h-screen relative">
       {/* Hero Section with Dynamic Images and Colors */}
       <section className="relative overflow-hidden">
-        <div className={`relative h-[400px] sm:h-[450px] lg:h-[500px] ${currentSlideData.background}`}>
-          {/* Content Container: Always flex-row for side-by-side layout */}
-          <div className="absolute inset-0 flex flex-row items-center justify-center container mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Text Content */}
-            <div className="text-left w-1/2 z-10 text-white p-2 sm:p-4">
-              <h1
-                className={`text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-2 sm:mb-4 leading-tight drop-shadow-lg`}
-              >
-                {currentSlideData.title}
-              </h1>
-              <p className={`text-sm sm:text-base md:text-lg mb-4 sm:mb-6 opacity-90 leading-relaxed drop-shadow-md`}>
-                {currentSlideData.subtitle}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-start items-center">
-                <Link to={currentSlideData.buttonLink}>
-                  <Button
-                    size="sm"
-                    className="group w-full sm:w-auto bg-white text-black hover:bg-gray-100 shadow-lg px-4 py-2 sm:px-8 sm:py-3 font-semibold text-sm sm:text-lg"
-                  >
-                    {currentSlideData.buttonText}
-                    <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </Link>
-                <Link to={currentSlideData.learnMoreLink}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full sm:w-auto border-2 border-white text-white hover:bg-white hover:text-black px-4 py-2 sm:px-8 sm:py-3 font-semibold text-sm sm:text-lg bg-transparent"
-                  >
-                    Learn More
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Image Content */}
-            <div className="w-1/2 flex items-center justify-center z-10">
-              <div className="relative">
-                <img
-                  src={currentSlideData.image || "/placeholder.svg?height=400&width=400"}
-                  alt={currentSlideData.title}
-                  className="max-h-[300px] sm:max-h-[350px] object-contain rounded-lg shadow-xl"
-                  onError={(e) => {
-                    // Fallback if image fails to load
-                    e.target.src = "/placeholder.svg?height=400&width=400"
-                  }}
-                />
-                {/* Category badge for better identification */}
-                {currentSlideData.category !== "all" && (
-                  <div className="absolute top-2 left-2 bg-white/90 text-black px-2 py-1 rounded-md text-xs font-semibold capitalize">
-                    {currentSlideData.category}
-                  </div>
-                )}
-              </div>
-            </div>
+        <div className={`relative h-[300px] sm:h-[400px] lg:h-[500px] ${currentSlideData.background}`}>
+          {/* Background Image - Dynamic */}
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+            style={{
+              backgroundImage: `url(${currentSlideData.image})`,
+              backgroundSize: "contain",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "right center",
+            }}
+          >
+            {/* Overlay for text readability */}
+            <div className="absolute inset-0 bg-black/30"></div>
           </div>
 
-          {/* Slide indicators */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-            {heroSlides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === currentSlide ? "bg-white scale-110" : "bg-white/50 hover:bg-white/75"
-                }`}
-              />
-            ))}
+          {/* Content */}
+          <div className="relative z-10 h-full">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-start">
+              <div className="text-left max-w-xl mr-auto">
+                <h1
+                  className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight drop-shadow-lg`}
+                >
+                  {currentSlideData.title}
+                </h1>
+                <p
+                  className={`text-lg sm:text-xl md:text-2xl text-white mb-6 sm:mb-8 opacity-90 leading-relaxed drop-shadow-md`}
+                >
+                  {currentSlideData.subtitle}
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-start items-center">
+                  <Link to={currentSlideData.buttonLink}>
+                    <Button
+                      size="lg"
+                      className="group w-full sm:w-auto bg-white text-black hover:bg-gray-100 shadow-lg px-8 py-3 font-semibold text-lg"
+                    >
+                      {currentSlideData.buttonText}
+                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                  <Link to={currentSlideData.learnMoreLink}>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full sm:w-auto border-2 border-white text-white hover:bg-white hover:text-black px-8 py-3 font-semibold text-lg bg-transparent"
+                    >
+                      Learn More
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
