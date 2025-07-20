@@ -2,23 +2,31 @@
 
 import { useState } from "react"
 import { Link } from "react-router-dom"
-import {Store,Mail,Facebook,Twitter,Instagram,Youtube,Send,MapPin,Phone,Clock,} from "lucide-react"
+import { Store, Mail, Facebook, Twitter, Instagram, Youtube, Send, MapPin, Phone, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useToast } from "@/hooks/use-toast"
+import { useModal } from "@/hooks/useModal" // Changed from useToast to useModal
 
 const Footer = () => {
   const [email, setEmail] = useState("")
-  const { toast } = useToast()
+  const { showModal } = useModal() // Using useModal
 
   const handleNewsletterSubmit = (e) => {
     e.preventDefault()
     if (email.trim()) {
-      toast({
-        title: "Subscribed!",
-        description: "Thank you for subscribing to our newsletter.",
+      showModal({
+        // Showing modal instead of toast
+        title: "Subscribed! 🎉",
+        content: "Thank you for subscribing to our newsletter. You'll receive the latest updates and offers!",
+        type: "success",
       })
       setEmail("")
+    } else {
+      showModal({
+        title: "Subscription Failed",
+        content: "Please enter a valid email address to subscribe.",
+        type: "error",
+      })
     }
   }
 
@@ -177,9 +185,7 @@ const Footer = () => {
         {/* Bottom Footer */}
         <div className="border-t border-slate-800 py-4">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-3 md:space-y-0">
-            <p className="text-gray-400 text-xs text-center md:text-left">
-              © 2025 ShopHub. All rights reserved.
-            </p>
+            <p className="text-gray-400 text-xs text-center md:text-left">© 2025 ShopHub. All rights reserved.</p>
             <div className="flex items-center space-x-2 text-gray-400 text-xs">
               <span>Made by the ShopHub Team</span>
             </div>

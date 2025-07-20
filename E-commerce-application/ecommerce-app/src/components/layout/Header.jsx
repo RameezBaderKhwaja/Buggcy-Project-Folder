@@ -1,5 +1,7 @@
+"use client"
+
 import { Link, useLocation } from "react-router-dom"
-import { ShoppingCart, Store, User, Menu } from "lucide-react"
+import { ShoppingCart, Store, User, Menu, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -82,9 +84,15 @@ const Header = () => {
         </nav>
 
         {/* Right: Icons */}
-        
         <div className="absolute right-6 flex items-center space-x-2">
+          {/* Search Icon - now links to the new SearchPage */}
+          <Link to="/search">
+            <Button variant="ghost" size="sm" className="relative hover:bg-accent bg-transparent border border-border">
+              <Search className="h-5 w-5" />
+            </Button>
+          </Link>
 
+          {/* Cart Icon */}
           <Link to="/cart">
             <Button variant="ghost" size="sm" className="relative hover:bg-accent bg-transparent border border-border">
               <ShoppingCart className="h-5 w-5" />
@@ -103,8 +111,8 @@ const Header = () => {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                size="sm"
-                className="relative h-8 w-8 rounded-full hover:bg-accent bg-background border border-border"
+                // Removed size="sm" as h-8 w-8 overrides it, and it's not an icon button
+                className="relative h-8 w-8 rounded-full hover:bg-accent bg-transparent border border-border"
               >
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-primary/10">

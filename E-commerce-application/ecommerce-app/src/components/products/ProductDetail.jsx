@@ -1,30 +1,141 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
-import { Star, ShoppingCart, Heart, Share2, Minus, Plus } from "lucide-react"
+import { useState, useEffect, useMemo, useCallback } from "react"
+import { useParams, useNavigate } from "react-router-dom"
+import { Star, ShoppingCart, Heart, Share2, ArrowLeft, Minus, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useCart } from "@/hooks/useCart"
+import { useProduct } from "@/hooks/useProducts"
 import { useToast } from "@/hooks/use-toast"
+import { useModal } from "@/hooks/useModal"
+import { cn } from "@/lib/utils"
+import { useWishlistStore } from "@/hooks/useWishlist" // Import useWishlistStore directly
 
-const ProductDetail = ({ product }) => {
+const ProductDetailPage = () => {
+  const { id } = useParams()
+  const navigate = useNavigate()
   const { addToCart, isInCart, getItemQuantity } = useCart()
   const { toast } = useToast()
+  const { showModal } = useModal()
+
+  // FIXED: Select specific parts of the wishlist store for reactivity
+  const addToWishlist = useWishlistStore((s) => s.addToWishlist)
+  const removeFromWishlist = useWishlistStore((s) => s.removeFromWishlist)
+  const wishlistItems = useWishlistStore((s) => s.items) // Get the items array directly
+
+  // Use the SWR-based useProduct hook
+  const { product, isLoading, error } = useProduct(id)
   const [quantity, setQuantity] = useState(1)
+
+  // FIXED: Determine wishlist status based on the selected wishlistItems
+  const isWishlisted = useMemo(() => {
+    const status = product ? wishlistItems.some((item) => item.id === product.id) : false
+    console.log(`💖 ProductDetailPage: isWishlisted for ${product?.id}: ${status}`)
+    return status
+  }, [product, wishlistItems]) // Depend on product and wishlistItems for reactivity
+
+  // Reset quantity when product changes
+  useEffect(() => {
+    setQuantity(1)
+  }, [product])
+
+  // FIXED: Add more comprehensive debug effect
+  useEffect(() => {
+    console.log("🔍 PRODUCT DETAIL PAGE RENDER:", {
+      productId: product?.id,
+      productTitle: product?.title?.slice(0, 30),
+      isWishlisted: isWishlisted, // Use the memoized value
+      wishlistItemsCount: wishlistItems?.length || 0,
+      currentQuantityState: quantity,
+      timestamp: new Date().toLocaleTimeString(),
+    })
+    if (product?.rating) {
+      console.log("🔍 PRODUCT RATING DATA (from product object):", product.rating)
+    } else {
+      console.log("⚠️ PRODUCT RATING DATA: Not available or null on product object.")
+    }
+  }, [product, isWishlisted, wishlistItems, quantity])
 
   // Memoized product information
   const productInfo = useMemo(
     () => ({
-      isInCart: isInCart(product.id),
-      currentQuantity: getItemQuantity(product.id),
-      totalPrice: product.price * quantity,
+      isInCart: product ? isInCart(product.id) : false,
+      currentQuantity: product ? getItemQuantity(product.id) : 0,
+      totalPrice: product ? product.price * quantity : 0,
     }),
-    [product.id, quantity, isInCart, getItemQuantity, product.price],
+    [product, quantity, isInCart, getItemQuantity],
+  )
+
+  // FIXED: Star rendering function - ensure it handles potential null/undefined rating gracefully
+  const renderStars = useCallback((rating) => {
+    const stars = []
+    const ratingValue = rating || 0 // Default to 0 if rating is null/undefined
+    const fullStars = Math.floor(ratingValue)
+    const hasHalfStar = ratingValue % 1 !== 0
+
+    console.log("⭐ RENDERING STARS (inside function):", { rating, ratingValue, fullStars, hasHalfStar })
+
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(<Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(
+          <div key={i} className="relative">
+            <Star className="h-4 w-4 text-gray-300" />
+            <div className="absolute inset-0 overflow-hidden w-1/2">
+              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            </div>
+          </div>,
+        )
+      } else {
+        stars.push(<Star key={i} className="h-4 w-4 text-gray-300" />)
+      }
+    }
+    return stars
+  }, [])
+
+  // FIXED: Wishlist toggle function with more detailed logging
+  const handleWishlistToggle = useCallback(
+    (e) => {
+      e?.preventDefault() // Use optional chaining for event
+      if (!product) {
+        console.log("❌ ProductDetailPage: No product available for wishlist toggle.")
+        return
+      }
+
+      console.log("💖 ProductDetailPage: Toggling wishlist for product ID:", product.id)
+      console.log("💖 ProductDetailPage: Current isWishlisted status BEFORE toggle:", isWishlisted)
+
+      if (isWishlisted) {
+        console.log("🗑️ ProductDetailPage: Removing from wishlist...")
+        removeFromWishlist(product.id)
+        showModal({
+          title: "Removed from Wishlist",
+          content: `${product.title} has been removed from your wishlist.`,
+          type: "info",
+        })
+      } else {
+        console.log("➕ ProductDetailPage: Adding to wishlist...")
+        addToWishlist(product)
+        showModal({
+          title: "Added to Wishlist",
+          content: `${product.title} has been added to your wishlist.`,
+          type: "success",
+        })
+      }
+      console.log("💖 ProductDetailPage: Wishlist toggle action dispatched.")
+    },
+    [product, isWishlisted, addToWishlist, removeFromWishlist, showModal],
   )
 
   // Memoized handlers
   const handleAddToCart = useCallback(() => {
+    if (!product) return
+
     for (let i = 0; i < quantity; i++) {
       addToCart(product)
     }
@@ -40,7 +151,7 @@ const ProductDetail = ({ product }) => {
   }, [])
 
   const handleShare = useCallback(() => {
-    if (navigator.share) {
+    if (navigator.share && product) {
       navigator.share({
         title: product.title,
         text: product.description,
@@ -55,109 +166,164 @@ const ProductDetail = ({ product }) => {
     }
   }, [product, toast])
 
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      {/* Product Image */}
-      <div className="space-y-4">
-        <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden">
-          <img
-            src={product.image || "/placeholder.svg"}
-            alt={product.title}
-            className="w-full h-full object-contain p-8"
-          />
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <Skeleton className="aspect-square w-full" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-6 w-1/4" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
         </div>
       </div>
+    )
+  }
 
-      {/* Product Info */}
-      <div className="space-y-6">
-        <div>
-          <Badge variant="secondary" className="mb-2">
-            {product.category}
-          </Badge>
-          <h1 className="text-3xl font-bold mb-4">{product.title}</h1>
+  if (error || !product) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
+        </Button>
 
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="flex items-center space-x-1">
-              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-              <span className="font-semibold">{product.rating.rate}</span>
-              <span className="text-muted-foreground">({product.rating.count} reviews)</span>
-            </div>
-            {productInfo.isInCart && <Badge variant="outline">{productInfo.currentQuantity} in cart</Badge>}
-          </div>
+        <Card className="text-center py-12">
+          <CardContent>
+            <h3 className="text-lg font-semibold mb-2">Product not found</h3>
+            <p className="text-muted-foreground">The product you're looking for doesn't exist or has been removed.</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
-          <div className="text-3xl font-bold text-primary mb-6">${product.price.toFixed(2)}</div>
-        </div>
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <Button variant="ghost" onClick={() => navigate(-1)} className="mb-6">
+        <ArrowLeft className="h-4 w-4 mr-2" />
+        Back
+      </Button>
 
-        <Separator />
-
-        <div>
-          <h3 className="font-semibold mb-2">Description</h3>
-          <p className="text-muted-foreground leading-relaxed">{product.description}</p>
-        </div>
-
-        <Separator />
-
-        {/* Quantity and Add to Cart */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Product Image */}
         <div className="space-y-4">
-          <div className="flex items-center space-x-4">
-            <span className="font-semibold">Quantity:</span>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuantityChange(-1)}
-                disabled={quantity <= 1}
-                className="bg-transparent border border-border hover:bg-accent"
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              <span className="w-12 text-center font-semibold">{quantity}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuantityChange(1)}
-                className="bg-transparent border border-border hover:bg-accent"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-            <span className="text-muted-foreground">Total: ${productInfo.totalPrice.toFixed(2)}</span>
-          </div>
-
-          <div className="flex space-x-4">
-            <Button onClick={handleAddToCart} className="flex-1" size="lg">
-              <ShoppingCart className="h-5 w-5 mr-2" />
-              Add to Cart
-            </Button>
-            <Button variant="outline" size="lg" className="bg-transparent border border-border hover:bg-accent">
-              <Heart className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={handleShare}
-              className="bg-transparent border border-border hover:bg-accent"
-            >
-              <Share2 className="h-5 w-5" />
-            </Button>
+          <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden">
+            <img
+              src={product.image || "/placeholder.svg"}
+              alt={product.title}
+              className="w-full h-full object-contain p-8"
+            />
           </div>
         </div>
 
-        <Separator />
+        {/* Product Info */}
+        <div className="space-y-6">
+          <div>
+            <Badge variant="secondary" className="mb-2 capitalize">
+              {product.category}
+            </Badge>
+            <h1 className="text-3xl font-bold mb-4">{product.title}</h1>
 
-        {/* Additional Info */}
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">SKU:</span>
-            <span>#{product.id.toString().padStart(6, "0")}</span>
+            <div className="flex items-center space-x-4 mb-4">
+              <div className="flex items-center space-x-1">
+                {/* FIXED: Call renderStars with the correct rating value */}
+                {renderStars(product.rating?.rate)}
+                <span className="font-semibold ml-2">{product.rating?.rate || 0}</span>
+                <span className="text-muted-foreground">({product.rating?.count || 0} reviews)</span>
+              </div>
+              {productInfo.isInCart && <Badge variant="outline">{productInfo.currentQuantity} in cart</Badge>}
+            </div>
+
+            <div className="text-3xl font-bold text-primary mb-6">${product.price.toFixed(2)}</div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Category:</span>
-            <span className="capitalize">{product.category}</span>
+
+          <Separator />
+
+          <div>
+            <h3 className="font-semibold mb-2">Description</h3>
+            <p className="text-muted-foreground leading-relaxed">{product.description}</p>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Availability:</span>
-            <span className="text-green-600">In Stock</span>
+
+          <Separator />
+
+          {/* Quantity and Add to Cart */}
+          <div className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <span className="font-semibold">Quantity:</span>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuantityChange(-1)}
+                  disabled={quantity <= 1}
+                  className="bg-transparent border border-border hover:bg-accent"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="w-12 text-center font-semibold">{quantity}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleQuantityChange(1)}
+                  className="bg-transparent border border-border hover:bg-accent"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <span className="text-muted-foreground">Total: ${productInfo.totalPrice.toFixed(2)}</span>
+            </div>
+
+            <div className="flex space-x-4">
+              <Button onClick={handleAddToCart} className="flex-1" size="lg">
+                <ShoppingCart className="h-5 w-5 mr-2" />
+                Add to Cart
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleWishlistToggle}
+                className="bg-transparent border border-border hover:bg-accent"
+              >
+                <Heart className={cn("h-5 w-5", isWishlisted ? "fill-red-500 text-red-500" : "text-gray-400")} />
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleShare}
+                className="bg-transparent border border-border hover:bg-accent"
+              >
+                <Share2 className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Additional Info */}
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">SKU:</span>
+              <span>#{product.id.toString().padStart(6, "0")}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Category:</span>
+              <span className="capitalize">{product.category}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Availability:</span>
+              <span className="text-green-600">In Stock</span>
+            </div>
           </div>
         </div>
       </div>
@@ -165,4 +331,4 @@ const ProductDetail = ({ product }) => {
   )
 }
 
-export default ProductDetail
+export default ProductDetailPage

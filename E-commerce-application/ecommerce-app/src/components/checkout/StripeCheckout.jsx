@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useCallback } from "react"
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, CreditCard } from "lucide-react"
-import { getStripe, stripeService } from "@/services/stripeService"
+import { getStripe, stripeService } from "@/services/stripeService" // Import the real stripeService
 import { useToast } from "@/hooks/use-toast"
 
 const CheckoutForm = ({ amount, onSuccess, onError }) => {
@@ -14,67 +14,9 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
   const elements = useElements()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
-  const [clientSecret, setClientSecret] = useState("")
   const [error, setError] = useState("")
 
-  useEffect(() => {
-    // Creates payment intent when component mounts
-    const createPaymentIntent = async () => {
-      try {
-        const { clientSecret } = await stripeService.createPaymentIntent(amount)
-        setClientSecret(clientSecret)
-      } catch (err) {
-        setError("Failed to initialize payment")
-        onError?.(err)
-      }
-    }
-
-    if (amount > 0) {
-      createPaymentIntent()
-    }
-  }, [amount, onError])
-
-  const handleSubmit = async (event) => {
-    event.preventDefault()
-
-    if (!stripe || !elements || !clientSecret) {
-      return
-    }
-
-    setLoading(true)
-    setError("")
-
-    try {
-      const cardElement = elements.getElement(CardElement)
-
-      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-        },
-      })
-
-      if (error) {
-        setError(error.message)
-        toast({
-          title: "Payment failed",
-          description: error.message,
-          variant: "destructive",
-        })
-      } else if (paymentIntent.status === "succeeded") {
-        toast({
-          title: "Payment successful!",
-          description: "Your order has been processed.",
-        })
-        onSuccess?.(paymentIntent)
-      }
-    } catch (err) {
-      setError("An unexpected error occurred")
-      onError?.(err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  // CardElement styling options
   const cardElementOptions = {
     style: {
       base: {
@@ -84,8 +26,85 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
           color: "#aab7c4",
         },
       },
+      invalid: {
+        color: "#fa755a",
+        iconColor: "#fa755a",
+      },
     },
   }
+
+  const handleSubmit = useCallback(
+    async (event) => {
+      event.preventDefault()
+
+      if (!stripe || !elements) {
+        // Stripe.js has not yet loaded.
+        // Disable form submission until Stripe.js has loaded.
+        console.log("Stripe.js not loaded yet.")
+        return
+      }
+
+      setLoading(true)
+      setError("")
+
+      const cardElement = elements.getElement(CardElement)
+
+      if (!cardElement) {
+        setError("Card input not found. Please refresh the page.")
+        setLoading(false)
+        return
+      }
+
+      // Use stripeService to create a payment method (client-side validation)
+      const { paymentMethod, error: createPaymentMethodError } = await stripeService.processPaymentMethod(
+        stripe,
+        elements,
+        cardElement,
+      )
+
+      if (createPaymentMethodError) {
+        setError(createPaymentMethodError.message || "Failed to validate card details.")
+        toast({
+          title: "Payment Failed",
+          description: createPaymentMethodError.message || "Please check your card details.",
+          variant: "destructive",
+        })
+        onError?.(createPaymentMethodError)
+        setLoading(false)
+        return
+      }
+
+      // If payment method creation is successful, simulate order submission
+      // In a real app, you would send paymentMethod.id to your backend to confirm the PaymentIntent.
+      try {
+        // Simulate a successful payment intent for the demo
+        const mockPaymentIntent = {
+          id: paymentMethod.id, // Use the payment method ID as a mock payment intent ID
+          status: "succeeded",
+          amount: Math.round(amount * 100),
+          currency: "usd",
+        }
+
+        toast({
+          title: "Payment Successful!",
+          description: "Your payment has been processed.",
+        })
+        onSuccess?.(mockPaymentIntent)
+      } catch (submitError) {
+        console.error("Error during order submission after payment method creation:", submitError)
+        setError(submitError.message || "An unexpected error occurred during order finalization.")
+        toast({
+          title: "Order Finalization Failed",
+          description: submitError.message || "Please contact support.",
+          variant: "destructive",
+        })
+        onError?.(submitError)
+      } finally {
+        setLoading(false)
+      }
+    },
+    [stripe, elements, amount, toast, onSuccess, onError],
+  )
 
   return (
     <Card>
@@ -96,7 +115,7 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div className="p-4 border rounded-md">
             <CardElement options={cardElementOptions} />
           </div>
@@ -107,26 +126,38 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
             </Alert>
           )}
 
-          <Button type="submit" disabled={!stripe || loading || !clientSecret} className="w-full" size="lg">
+          <Button
+            type="button" // Important: type="button" to prevent default form submission
+            onClick={handleSubmit}
+            disabled={!stripe || !elements || loading || amount <= 0}
+            className="w-full"
+            size="lg"
+          >
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Processing...
+                Processing Payment...
               </>
             ) : (
-              `Pay $${amount.toFixed(2)}`
+              `Pay with Stripe - $${amount.toFixed(2)}`
             )}
           </Button>
-        </form>
+          {amount <= 0 && (
+            <p className="text-sm text-muted-foreground text-center">Add items to cart to proceed with payment.</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   )
 }
 
 const StripeCheckout = ({ amount, onSuccess, onError }) => {
+  // Ensure amount is a number and greater than 0 for Stripe initialization
+  const validAmount = typeof amount === "number" && amount > 0 ? amount : 0.01 // Stripe requires minimum amount
+
   return (
     <Elements stripe={getStripe()}>
-      <CheckoutForm amount={amount} onSuccess={onSuccess} onError={onError} />
+      <CheckoutForm amount={validAmount} onSuccess={onSuccess} onError={onError} />
     </Elements>
   )
 }

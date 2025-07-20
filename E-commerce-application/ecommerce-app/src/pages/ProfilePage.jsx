@@ -10,6 +10,9 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
+import { useWishlist } from "@/hooks/useWishlist"
+import { useOrders } from "@/hooks/useOrders" // Import useOrders hook
+import { Link } from "react-router-dom"
 
 const ProfilePage = () => {
   const { toast } = useToast()
@@ -54,53 +57,10 @@ const ProfilePage = () => {
     }))
   }
 
-  const recentOrders = [
-    {
-      id: "ORD-001",
-      date: "2024-01-20",
-      status: "Delivered",
-      total: 89.99,
-      items: 3,
-    },
-    {
-      id: "ORD-002",
-      date: "2024-01-15",
-      status: "Shipped",
-      total: 156.5,
-      items: 2,
-    },
-    {
-      id: "ORD-003",
-      date: "2024-01-10",
-      status: "Processing",
-      total: 45.0,
-      items: 1,
-    },
-  ]
+  // FIXED: Use orders from useOrders hook instead of mock data
+  const { orders: recentOrders } = useOrders()
 
-  const wishlistItems = [
-    {
-      id: 1,
-      name: "Wireless Headphones",
-      price: 199.99,
-      image:
-        "https://images.pexels.com/photos/3394650/pexels-photo-3394650.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=1",
-    },
-    {
-      id: 2,
-      name: "Smart Watch",
-      price: 299.99,
-      image:
-        "https://images.pexels.com/photos/437037/pexels-photo-437037.jpeg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=1",
-    },
-    {
-      id: 3,
-      name: "Laptop Stand",
-      price: 79.99,
-      image:
-        "https://images.pexels.com/photos/4158/apple-iphone-smartphone-desk.jpg?auto=compress&cs=tinysrgb&w=200&h=200&dpr=1",
-    },
-  ]
+  const { items: wishlistItems, removeFromWishlist } = useWishlist()
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -293,36 +253,47 @@ const ProfilePage = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <Package className="h-5 w-5" />
-                    <span>Recent Orders</span>
+                    <span>Recent Orders ({recentOrders.length})</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {recentOrders.map((order) => (
-                      <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <div className="font-semibold">{order.id}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {new Date(order.date).toLocaleDateString()} • {order.items} items
+                  {recentOrders.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-lg font-semibold mb-2">No orders found</h3>
+                      <p className="text-muted-foreground mb-4">You haven't placed any orders yet.</p>
+                      <Link to="/products">
+                        <Button>Start Shopping</Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {recentOrders.map((order) => (
+                        <div key={order.orderId} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <div className="font-semibold">{order.orderId}</div>
+                            <div className="text-sm text-muted-foreground">
+                              {new Date(order.orderDate).toLocaleDateString()} • {order.items.length} items
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold">${order.total.toFixed(2)}</div>
+                            <Badge
+                              variant={
+                                order.status === "Delivered"
+                                  ? "default"
+                                  : order.status === "Shipped"
+                                    ? "secondary"
+                                    : "outline"
+                              }
+                            >
+                              {order.status}
+                            </Badge>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <div className="font-semibold">${order.total}</div>
-                          <Badge
-                            variant={
-                              order.status === "Delivered"
-                                ? "default"
-                                : order.status === "Shipped"
-                                  ? "secondary"
-                                  : "outline"
-                            }
-                          >
-                            {order.status}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -333,26 +304,54 @@ const ProfilePage = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <Heart className="h-5 w-5" />
-                    <span>My Wishlist</span>
+                    <span>My Wishlist ({wishlistItems.length})</span>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {wishlistItems.map((item) => (
-                      <div key={item.id} className="border rounded-lg p-4">
-                        <img
-                          src={item.image || "/placeholder.svg"}
-                          alt={item.name}
-                          className="w-full h-32 object-cover rounded-md mb-3"
-                        />
-                        <h3 className="font-semibold mb-2">{item.name}</h3>
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-primary">${item.price}</span>
-                          <Button size="sm">Add to Cart</Button>
+                  {wishlistItems.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Heart className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                      <h3 className="text-lg font-semibold mb-2">Your wishlist is empty</h3>
+                      <p className="text-muted-foreground mb-4">Add some products to your wishlist to see them here.</p>
+                      <Link to="/products">
+                        <Button>Browse Products</Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {wishlistItems.map((item) => (
+                        <div key={item.id} className="border rounded-lg p-4">
+                          <img
+                            src={item.image || "/placeholder.svg"}
+                            alt={item.title}
+                            className="w-full h-32 object-contain rounded-md mb-3"
+                          />
+                          <h3 className="font-semibold mb-2 line-clamp-2">{item.title}</h3>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="font-bold text-primary">${item.price.toFixed(2)}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeFromWishlist(item.id)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Heart className="h-4 w-4 fill-current" />
+                            </Button>
+                          </div>
+                          <div className="flex gap-2">
+                            <Link to={`/product/${item.id}`} className="flex-1">
+                              <Button variant="outline" size="sm" className="w-full bg-transparent">
+                                View
+                              </Button>
+                            </Link>
+                            <Button size="sm" className="flex-1">
+                              Add to Cart
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

@@ -2,45 +2,29 @@
 
 import { useState } from "react"
 import { useSearchParams } from "react-router-dom"
-import { Search, Filter, Grid3X3, List } from "lucide-react"
+import { Search, Filter, Grid3X3, List, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import ProductList from "@/components/products/ProductList"
-import { useCategories } from "@/hooks/useProducts"
-import { useToast } from "@/hooks/use-toast"
+import AddProductModal from "@/components/products/AddProductModal"
+import { useCategories, useProducts } from "@/hooks/useProducts"
 
 const ProductsPage = () => {
   const [searchParams] = useSearchParams()
-  const { toast } = useToast()
-  const [error, setError] = useState(null)
+  const { createProduct } = useProducts()
 
   const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "")
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get("category") || "all")
   const [sortBy, setSortBy] = useState("default")
   const [viewMode, setViewMode] = useState("grid")
+  const [showAddModal, setShowAddModal] = useState(false)
 
   const { categories } = useCategories()
 
-  if (error) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Card className="text-center py-12">
-          <CardContent>
-            <h3 className="text-lg font-semibold mb-2 text-destructive">Error Loading Products</h3>
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <Button
-              variant="outline"
-              onClick={() => window.location.reload()}
-              className="bg-transparent border border-border hover:bg-accent"
-            >
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
+  const handleAddProduct = async (productData) => {
+    await createProduct(productData)
   }
 
   return (
@@ -53,6 +37,10 @@ const ProductsPage = () => {
               Discover our complete collection of quality products
             </p>
           </div>
+          <Button onClick={() => setShowAddModal(true)} className="bg-primary hover:bg-primary/90">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Product
+          </Button>
         </div>
       </div>
 
@@ -137,6 +125,9 @@ const ProductsPage = () => {
         showCrudButtons={true}
         viewMode={viewMode}
       />
+
+      {/* Add Product Modal */}
+      <AddProductModal open={showAddModal} onOpenChange={setShowAddModal} onSave={handleAddProduct} />
     </div>
   )
 }

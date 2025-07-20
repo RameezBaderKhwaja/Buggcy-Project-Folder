@@ -25,18 +25,18 @@ const ProductList = ({
 
   // Memoized sorted products
   const sortedProducts = useMemo(() => {
-    if (!products) return []
+    if (!products || !Array.isArray(products)) return []
 
     const sorted = [...products]
     switch (sortBy) {
       case "price-low":
-        return sorted.sort((a, b) => a.price - b.price)
+        return sorted.sort((a, b) => (a.price || 0) - (b.price || 0))
       case "price-high":
-        return sorted.sort((a, b) => b.price - a.price)
+        return sorted.sort((a, b) => (b.price || 0) - (a.price || 0))
       case "rating":
-        return sorted.sort((a, b) => b.rating.rate - a.rating.rate)
+        return sorted.sort((a, b) => (b.rating?.rate || 0) - (a.rating?.rate || 0))
       case "name":
-        return sorted.sort((a, b) => a.title.localeCompare(b.title))
+        return sorted.sort((a, b) => (a.title || "").localeCompare(b.title || ""))
       default:
         return sorted
     }
@@ -53,9 +53,13 @@ const ProductList = ({
   const handleEdit = useCallback(
     async (product, updatedData) => {
       try {
-        await updateProduct(product.id, updatedData)
+        console.log("🔄 ProductList: Handling edit for product", product.id, "with data:", updatedData)
+        const result = await updateProduct(product.id, updatedData)
+        console.log("✅ ProductList: Edit completed successfully:", result)
+        return result
       } catch (error) {
-        console.error("Failed to update product:", error)
+        console.error("❌ ProductList: Failed to update product:", error)
+        throw error
       }
     },
     [updateProduct],
@@ -70,17 +74,6 @@ const ProductList = ({
       }
     },
     [deleteProduct],
-  )
-
-  const handleCreate = useCallback(
-    async (productData) => {
-      try {
-        await createProduct(productData)
-      } catch (error) {
-        console.error("Failed to create product:", error)
-      }
-    },
-    [createProduct],
   )
 
   if (error) {
@@ -106,7 +99,7 @@ const ProductList = ({
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {Array.from({ length: 8 }).map((_, index) => (
-          <div key={index} className="space-y-4">
+          <div key={`skeleton-${index}`} className="space-y-4">
             <Skeleton className="aspect-square w-full" />
             <div className="space-y-2">
               <Skeleton className="h-4 w-full" />
@@ -135,17 +128,23 @@ const ProductList = ({
         viewMode === "list" && "grid-cols-1",
       )}
     >
-      {sortedProducts.map((product) => (
-        <ProductCard
-          key={product.id}
-          product={product}
-          onAddToCart={handleAddToCart}
-          showCrudButtons={showCrudButtons}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          viewMode={viewMode} 
-        />
-      ))}
+      {sortedProducts.map((product) => {
+        if (!product || !product.id) {
+          return null
+        }
+
+        return (
+          <ProductCard
+            key={`product-${product.id}-${product.price}`} // Added price to key to force re-render
+            product={product}
+            onAddToCart={handleAddToCart}
+            showCrudButtons={showCrudButtons}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            viewMode={viewMode}
+          />
+        )
+      })}
     </div>
   )
 }

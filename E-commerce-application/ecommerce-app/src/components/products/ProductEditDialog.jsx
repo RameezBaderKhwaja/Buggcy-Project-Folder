@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -41,7 +41,7 @@ const ProductEditDialog = ({ product, open, onOpenChange, onSave }) => {
   }
 
   const handleSave = async () => {
-    if (!formData.title || !formData.price || !formData.description || !formData.category) {
+    if (!formData.title?.trim() || !formData.price || !formData.description?.trim() || !formData.category) {
       toast({
         title: "Error",
         description: "Please fill in all required fields.",
@@ -50,11 +50,27 @@ const ProductEditDialog = ({ product, open, onOpenChange, onSave }) => {
       return
     }
 
+    const priceValue = Number.parseFloat(formData.price)
+    if (isNaN(priceValue) || priceValue < 0) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid price.",
+        variant: "destructive",
+      })
+      return
+    }
+
     try {
+      // Only send the changed fields
       const updatedData = {
-        ...formData,
-        price: Number.parseFloat(formData.price),
+        title: formData.title.trim(),
+        price: priceValue,
+        description: formData.description.trim(),
+        category: formData.category,
+        image: formData.image.trim() || product.image, // Keep original image if empty
       }
+
+      console.log("Saving product with data:", updatedData)
 
       await onSave(product, updatedData)
       onOpenChange(false)
@@ -64,6 +80,7 @@ const ProductEditDialog = ({ product, open, onOpenChange, onSave }) => {
         description: "Product has been updated successfully.",
       })
     } catch (error) {
+      console.error("Edit dialog error:", error)
       toast({
         title: "Error",
         description: "Failed to update product. Please try again.",
@@ -90,6 +107,9 @@ const ProductEditDialog = ({ product, open, onOpenChange, onSave }) => {
       <DialogContent className="max-w-md mx-4 sm:mx-auto">
         <DialogHeader>
           <DialogTitle>Edit Product</DialogTitle>
+          <DialogDescription>
+            Update the product information below. The rating will be preserved automatically.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 overflow-y-auto scrollbar-hide max-h-96">
           <div>
@@ -147,6 +167,21 @@ const ProductEditDialog = ({ product, open, onOpenChange, onSave }) => {
               className="scrollbar-hide"
             />
           </div>
+
+          {/* Display current rating (read-only) with enhanced info */}
+          {product?.rating && (
+            <div className="bg-muted/50 p-3 rounded-lg border-l-4 border-l-primary">
+              <Label className="text-sm font-medium text-muted-foreground">Current Rating (Preserved)</Label>
+              <div className="flex items-center space-x-2 mt-1">
+                <span className="text-sm font-semibold">{product.rating.rate}/5</span>
+                <span className="text-xs text-muted-foreground">({product.rating.count} reviews)</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                ✅ Rating preserved • Changes saved locally (FakeStoreAPI limitation)
+              </p>
+            </div>
+          )}
+
           <div className="flex space-x-2">
             <Button onClick={handleSave} className="flex-1">
               Save Changes

@@ -1,38 +1,29 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Link } from "react-router-dom"
-import { ArrowRight, Star, ShoppingBag, Shield, Truck } from "lucide-react"
+import { ArrowRight, Star, ShoppingBag, Shield, Truck, Send } from "lucide-react" // Added Send icon
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import ProductList from "@/components/products/ProductList"
 import { useProducts } from "@/hooks/useProducts"
-import { useCategories } from "@/hooks/useProducts"
-import { useToast } from "@/hooks/use-toast"
+import { useModal } from "@/hooks/useModal" // Import useModal
 
 const HomePage = () => {
-  const { products: allProducts, isLoading, createProduct } = useProducts()
-  const { categories } = useCategories()
-  const { toast } = useToast()
-
-  
+  const { products: allProducts, isLoading, error, createProduct } = useProducts()
+  const { showModal } = useModal() // Use the useModal hook
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const [newProduct, setNewProduct] = useState({
-    title: "",
-    price: "",
-    description: "",
-    category: "",
-    image: "",
-  })
+  const [newsletterEmail, setNewsletterEmail] = useState("") // State for newsletter email
 
-  // Memoized featured products (first 8)
+  // Fixed: Add proper null/undefined checks and default to empty array
   const displayedProducts = useMemo(() => {
-    return allProducts?.slice(0, 8) || []
+    if (!allProducts || !Array.isArray(allProducts)) {
+      return []
+    }
+    return allProducts.slice(0, 8)
   }, [allProducts])
 
-  // Hero slides with category-specific images and colors
   const heroSlides = useMemo(
     () => [
       {
@@ -40,10 +31,10 @@ const HomePage = () => {
         title: "Discover Amazing Products",
         subtitle: "Shop the latest trends and find exactly what you're looking for",
         buttonText: "Shop Now",
-        buttonLink: "/products", 
-        learnMoreLink: "/about", 
+        buttonLink: "/products",
+        learnMoreLink: "/about",
         category: "all",
-        background: "bg-purple-700", 
+        heroImage: "/placeholder.svg?height=500&width=500",
       },
       {
         id: 2,
@@ -53,7 +44,7 @@ const HomePage = () => {
         buttonLink: "/products",
         learnMoreLink: "/about",
         category: "men's clothing",
-        background: "bg-slate-800", 
+        heroImage: "/placeholder.svg?height=500&width=500",
       },
       {
         id: 3,
@@ -63,7 +54,7 @@ const HomePage = () => {
         buttonLink: "/products",
         learnMoreLink: "/about",
         category: "women's clothing",
-        background: "bg-pink-700", 
+        heroImage: "/placeholder.svg?height=500&width=500",
       },
       {
         id: 4,
@@ -73,7 +64,7 @@ const HomePage = () => {
         buttonLink: "/products",
         learnMoreLink: "/about",
         category: "jewelery",
-        background: "bg-yellow-700", 
+        heroImage: "/placeholder.svg?height=500&width=500",
       },
       {
         id: 5,
@@ -83,77 +74,41 @@ const HomePage = () => {
         buttonLink: "/products",
         learnMoreLink: "/about",
         category: "electronics",
-        background: "bg-green-700", 
+        heroImage: "/placeholder.svg?height=500&width=500",
       },
     ],
     [],
   )
 
-  // Dynamically get image for current slide based on category
   const currentSlideData = useMemo(() => {
     const slide = heroSlides[currentSlide]
-    let imageUrl = "/placeholder.svg?height=400&width=400" // Default placeholder
+    let imageUrl = slide.heroImage
 
-    if (slide.category === "all") {
-      // For "Discover Amazing Products", pick a general product image if available
-      if (allProducts && allProducts.length > 0) {
-        imageUrl = allProducts[0].image || imageUrl
+    // Fixed: Add proper null/undefined checks
+    if (allProducts && Array.isArray(allProducts) && allProducts.length > 0) {
+      let productToUse = null
+
+      if (slide.category === "all") {
+        productToUse = allProducts.find((p) => p.image && !p.image.includes("placeholder")) || allProducts[0]
+      } else {
+        const matchingCategoryProducts = allProducts.filter(
+          (p) => p.category === slide.category && p.image && !p.image.includes("placeholder"),
+        )
+
+        if (slide.category.toLowerCase() === "men's clothing") {
+          productToUse = matchingCategoryProducts[1] || matchingCategoryProducts[0]
+        } else {
+          productToUse = matchingCategoryProducts[0]
+        }
       }
-    } else {
-      // Find an image from products matching the category
-      const productWithImage = allProducts?.find(
-        (p) => p.category === slide.category && p.image && p.image !== "/placeholder.svg",
-      )
-      if (productWithImage) {
-        imageUrl = productWithImage.image
+
+      if (productToUse?.image && !productToUse.image.includes("placeholder")) {
+        imageUrl = productToUse.image
       }
     }
 
     return { ...slide, image: imageUrl }
   }, [currentSlide, heroSlides, allProducts])
-
-  // Memoized product handlers
-  const handleAddProduct = useCallback(async () => {
-    if (!newProduct.title || !newProduct.price || !newProduct.description || !newProduct.category) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    try {
-      const productData = {
-        title: newProduct.title,
-        price: Number.parseFloat(newProduct.price),
-        description: newProduct.description,
-        category: newProduct.category,
-        image: newProduct.image || "/placeholder.svg?height=400&width=400",
-      }
-
-      await createProduct(productData)
-
-      setNewProduct({ title: "", price: "", description: "", category: "", image: "" })
-      setShowAddDialog(false)
-
-      toast({
-        title: "Product added",
-        description: "New product has been added successfully.",
-      })
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to add product. Please try again.",
-        variant: "destructive",
-      })
-    }
-  }, [newProduct, createProduct, toast])
-
-  const handleDialogClose = useCallback(() => {
-    setShowAddDialog(false)
-    setNewProduct({ title: "", price: "", description: "", category: "", image: "" })
-  }, [])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -163,44 +118,81 @@ const HomePage = () => {
     return () => clearInterval(interval)
   }, [heroSlides.length])
 
+  // Handle newsletter submission
+  const handleNewsletterSubmit = (e) => {
+    e.preventDefault()
+    if (newsletterEmail.trim()) {
+      showModal({
+        title: "Subscribed! 🎉",
+        content: "Thank you for subscribing to our newsletter. You'll receive exclusive offers and updates!",
+        type: "success",
+      })
+      setNewsletterEmail("")
+    } else {
+      showModal({
+        title: "Subscription Failed",
+        content: "Please enter a valid email address to subscribe.",
+        type: "error",
+      })
+    }
+  }
+
+  // Handle loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading products...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Something went wrong</h2>
+          <p className="text-muted-foreground mb-4">Failed to load products. Please try again later.</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen relative">
-      {/* Hero Section with Dynamic Images and Colors */}
+      {/* Hero Section with Light Colors */}
       <section className="relative overflow-hidden">
-        <div className={`relative h-[300px] sm:h-[400px] lg:h-[500px] ${currentSlideData.background}`}>
-          {/* Background Image - Dynamic */}
+        <div className={`relative h-[300px] sm:h-[400px] lg:h-[500px] bg-blue-50`}>
+          {/* Background Image */}
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 will-change-transform will-change-opacity"
             style={{
               backgroundImage: `url(${currentSlideData.image})`,
               backgroundSize: "contain",
               backgroundRepeat: "no-repeat",
               backgroundPosition: "right center",
             }}
-          >
-            {/* Overlay for text readability */}
-            <div className="absolute inset-0 bg-black/30"></div>
-          </div>
-
+            aria-label={currentSlideData.title}
+          ></div>
           {/* Content */}
           <div className="relative z-10 h-full">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-start">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-center sm:justify-start">
               <div className="text-left max-w-xl mr-auto">
-                <h1
-                  className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-white leading-tight drop-shadow-lg`}
-                >
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-gray-800 leading-tight">
                   {currentSlideData.title}
                 </h1>
-                <p
-                  className={`text-lg sm:text-xl md:text-2xl text-white mb-6 sm:mb-8 opacity-90 leading-relaxed drop-shadow-md`}
-                >
+                <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-6 sm:mb-8 leading-relaxed">
                   {currentSlideData.subtitle}
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-start items-center">
+                <div className="flex flex-col sm:flex-row gap-4 justify-start items-start">
                   <Link to={currentSlideData.buttonLink}>
                     <Button
                       size="lg"
-                      className="group w-full sm:w-auto bg-white text-black hover:bg-gray-100 shadow-lg px-8 py-3 font-semibold text-lg"
+                      className="group w-full sm:w-auto bg-primary text-black hover:bg-primary/90 shadow-lg px-8 py-3 font-semibold text-lg"
                     >
                       {currentSlideData.buttonText}
                       <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -210,7 +202,7 @@ const HomePage = () => {
                     <Button
                       variant="outline"
                       size="lg"
-                      className="w-full sm:w-auto border-2 border-white text-white hover:bg-white hover:text-black px-8 py-3 font-semibold text-lg bg-transparent"
+                      className="w-full sm:w-auto border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3 font-semibold text-lg bg-transparent"
                     >
                       Learn More
                     </Button>
@@ -234,7 +226,8 @@ const HomePage = () => {
             </div>
           </div>
 
-          <ProductList products={displayedProducts} showCrudButtons={true} />
+          {/* Fixed: Pass displayedProducts directly, not as a prop */}
+          <ProductList category={null} searchTerm="" sortBy="default" showCrudButtons={true} viewMode="grid" />
 
           <div className="text-center mt-8 sm:mt-12">
             <Link to="/products">
@@ -303,15 +296,27 @@ const HomePage = () => {
             <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-6 lg:mb-8 leading-relaxed">
               Subscribe to our newsletter and be the first to know about new products and exclusive offers.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 max-w-md mx-auto">
-              <Input type="email" placeholder="Enter your email" className="flex-1 h-12 text-base bg-background" />
+            <form
+              onSubmit={handleNewsletterSubmit}
+              className="flex flex-col sm:flex-row gap-3 lg:gap-4 max-w-md mx-auto"
+            >
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                className="flex-1 h-12 text-base bg-background w-full"
+                value={newsletterEmail}
+                onChange={(e) => setNewsletterEmail(e.target.value)}
+                required
+              />
               <Button
+                type="submit" // Changed to type="submit"
                 variant="outline"
-                className="h-12 px-6 lg:px-8 text-base font-semibold bg-background border border-border hover:bg-accent whitespace-nowrap"
+                className="h-12 w-full sm:w-auto px-6 lg:px-8 text-base font-semibold bg-background border border-border hover:bg-accent whitespace-nowrap"
               >
+                <Send className="h-4 w-4 mr-2" /> {/* Added Send icon */}
                 Subscribe
               </Button>
-            </div>
+            </form>
           </div>
         </div>
       </section>

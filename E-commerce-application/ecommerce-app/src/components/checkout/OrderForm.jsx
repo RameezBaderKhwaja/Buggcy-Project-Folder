@@ -1,24 +1,25 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { CreditCard, MapPin, User, Mail, Phone, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import StripeCheckout from "./StripeCheckout"
 import { useCart } from "@/hooks/useCart"
-import { useToast } from "@/hooks/use-toast"
+import { useModal } from "@/hooks/useModal"
 import { apiService } from "@/services/apiService"
+import { useOrders } from "@/hooks/useOrders"
+import { cn } from "@/lib/utils"
 
-const OrderForm = ({ onOrderComplete }) => {
+const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTotal }) => {
   const { items, grandTotal, clearCart } = useCart()
-  const { toast } = useToast()
+  const { showModal } = useModal()
+  const { addOrder } = useOrders()
   const [loading, setLoading] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState("stripe")
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -28,31 +29,199 @@ const OrderForm = ({ onOrderComplete }) => {
     city: "",
     province: "",
     zipCode: "",
-    country: "PK", 
+    country: "PK",
     cardNumber: "",
     expiryDate: "",
     cvv: "",
     cardName: "",
-    saveInfo: false,
-    subscribe: false,
+    saveInfo: false, // Keep as boolean for logic
+    subscribe: false, // Keep as boolean for logic
   })
+  const [validationErrors, setValidationErrors] = useState({})
+  const [touchedFields, setTouchedFields] = useState({})
 
-  // Memoized form validation
+  const validateField = useCallback(
+    (name, value) => {
+      let error = ""
+      switch (name) {
+        case "firstName":
+        case "lastName":
+        case "cardName":
+          if (!value.trim()) {
+            error = "This field is required."
+          } else if (!/^[a-zA-Z\s]+$/.test(value)) {
+            error = "Only letters and spaces are allowed."
+          } else if (value.trim().length < 2) {
+            error = "Must be at least 2 characters."
+          }
+          break
+        case "email":
+          if (!value.trim()) {
+            error = "Email is required."
+          } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+            error = "Invalid email format."
+          }
+          break
+        case "phone":
+          if (!value.trim()) {
+            error = "Phone number is required."
+          } else if (!/^\+?[0-9\s-]{7,15}$/.test(value)) {
+            error = "Invalid phone number format."
+          }
+          break
+        case "address":
+          if (!value.trim()) {
+            error = "Address is required."
+          } else if (value.trim().length < 5) {
+            error = "Address must be at least 5 characters."
+          }
+          break
+        case "city":
+          if (!value.trim()) {
+            error = "City is required."
+          } else if (!/^[a-zA-Z\s]+$/.test(value)) {
+            error = "Only letters and spaces are allowed."
+          }
+          break
+        case "province":
+          if (!value || value === "") {
+            error = "Province is required."
+          }
+          break
+        case "zipCode":
+          if (!value.trim()) {
+            error = "ZIP Code is required."
+          } else if (!/^[0-9]{5,10}$/.test(value)) {
+            error = "Invalid ZIP Code format (5-10 digits)."
+          }
+          break
+        case "country":
+          if (!value || value === "") {
+            error = "Country is required."
+          }
+          break
+        case "cardNumber":
+          if (paymentMethod === "card") {
+            if (!value.trim()) {
+              error = "Card number is required."
+            } else if (!/^[0-9]{16}$/.test(value.replace(/\s/g, ""))) {
+              error = "Invalid card number (16 digits)."
+            }
+          }
+          break
+        case "expiryDate":
+          if (paymentMethod === "card") {
+            if (!value.trim()) {
+              error = "Expiry date is required."
+            } else if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(value)) {
+              error = "Invalid format (MM/YY)."
+            } else {
+              const [month, year] = value.split("/").map(Number)
+              const currentYear = new Date().getFullYear() % 100
+              const currentMonth = new Date().getMonth() + 1
+
+              if (year < currentYear || (year === currentYear && month < currentMonth)) {
+                error = "Card has expired."
+              }
+            }
+          }
+          break
+        case "cvv":
+          if (paymentMethod === "card") {
+            if (!value.trim()) {
+              error = "CVV is required."
+            } else if (!/^[0-9]{3,4}$/.test(value)) {
+              error = "Invalid CVV (3 or 4 digits)."
+            }
+          }
+          break
+        default:
+          break
+      }
+      return error
+    },
+    [paymentMethod],
+  )
+
+  const validateForm = useCallback(() => {
+    const newErrors = {}
+    let formIsValid = true
+    Object.keys(formData).forEach((name) => {
+      if (paymentMethod === "stripe" && ["cardNumber", "expiryDate", "cvv", "cardName"].includes(name)) {
+        return // Skip card fields if Stripe is selected
+      }
+      const error = validateField(name, formData[name])
+      if (error) {
+        newErrors[name] = error
+        formIsValid = false
+      }
+    })
+    setValidationErrors(newErrors)
+    return formIsValid
+  }, [formData, validateField, paymentMethod])
+
   const isFormValid = useMemo(() => {
-    // Changed 'state' to 'province' in required fields
+    if (Object.keys(validationErrors).some((key) => validationErrors[key] !== "")) {
+      return false
+    }
     const requiredFields = ["firstName", "lastName", "email", "phone", "address", "city", "province", "zipCode"]
-
     const basicFieldsValid = requiredFields.every((field) => formData[field].trim() !== "")
 
     if (paymentMethod === "card") {
       const cardFields = ["cardNumber", "expiryDate", "cvv", "cardName"]
       return basicFieldsValid && cardFields.every((field) => formData[field].trim() !== "")
     }
-
     return basicFieldsValid
-  }, [formData, paymentMethod])
+  }, [formData, paymentMethod, validationErrors])
 
-  // Memoized order summary
+  const handleInputChange = useCallback(
+    (field, value) => {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }))
+      if (touchedFields[field]) {
+        setValidationErrors((prevErrors) => ({
+          ...prevErrors,
+          [field]: validateField(field, value),
+        }))
+      }
+    },
+    [validateField, touchedFields],
+  )
+
+  const handleBlur = useCallback(
+    (field) => {
+      setTouchedFields((prev) => ({ ...prev, [field]: true }))
+      setValidationErrors((prevErrors) => ({
+        ...prevErrors,
+        [field]: validateField(field, formData[field]),
+      }))
+    },
+    [validateField, formData],
+  )
+
+  useEffect(() => {
+    if (paymentMethod === "card") {
+      const cardFields = ["cardNumber", "expiryDate", "cvv", "cardName"]
+      const newErrors = {}
+      cardFields.forEach((field) => {
+        newErrors[field] = validateField(field, formData[field])
+      })
+      setValidationErrors((prevErrors) => ({ ...prevErrors, ...newErrors }))
+    } else {
+      // Clear card-specific errors if payment method changes to Stripe
+      setValidationErrors((prevErrors) => {
+        const updatedErrors = { ...prevErrors }
+        delete updatedErrors.cardNumber
+        delete updatedErrors.expiryDate
+        delete updatedErrors.cvv
+        delete updatedErrors.cardName
+        return updatedErrors
+      })
+    }
+  }, [paymentMethod, formData, validateField])
+
   const orderSummary = useMemo(
     () => ({
       items: items.map((item) => ({
@@ -61,6 +230,7 @@ const OrderForm = ({ onOrderComplete }) => {
         price: item.price,
         quantity: item.quantity,
         total: item.price * item.quantity,
+        image: item.image,
       })),
       total: grandTotal,
       itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
@@ -68,13 +238,49 @@ const OrderForm = ({ onOrderComplete }) => {
     [items, grandTotal],
   )
 
-  // Memoized handlers
-  const handleInputChange = useCallback((field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
+  // FIXED: Always return 2.0 for stripeFee in OrderForm
+  const stripeFee = useMemo(() => {
+    return 2.0
   }, [])
+
+  const showSuccessModal = useCallback(
+    (orderId) => {
+      showModal({
+        title: "Order Confirmed! 🎉",
+        content: (
+          <div className="space-y-4">
+            <p className="text-green-600 font-semibold">Your order is on its way!</p>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h4 className="font-semibold mb-2">Order Details:</h4>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Order ID:</span>
+                  <span>{orderId}</span>
+                </div>
+                {orderSummary.items.map((item, index) => (
+                  <div key={index} className="flex justify-between">
+                    <span>
+                      {item.title} (x{item.quantity})
+                    </span>
+                    <span>${item.total.toFixed(2)}</span>
+                  </div>
+                ))}
+                <div className="border-t pt-2 font-semibold">
+                  <div className="flex justify-between">
+                    <span>Total:</span>
+                    <span>${finalTotal.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">Estimated delivery: 3-5 business days</p>
+          </div>
+        ),
+        type: "success",
+      })
+    },
+    [orderSummary, finalTotal, showModal],
+  )
 
   const handleStripeSuccess = useCallback(
     async (paymentIntent) => {
@@ -82,100 +288,116 @@ const OrderForm = ({ onOrderComplete }) => {
         const orderData = {
           customer: formData,
           items: orderSummary.items,
-          total: orderSummary.total,
+          total: finalTotal,
           paymentMethod: "stripe",
           paymentIntentId: paymentIntent.id,
           orderDate: new Date().toISOString(),
+          status: "Processing",
         }
 
         const response = await apiService.submitOrder(orderData)
 
         if (response.success) {
+          addOrder(response.data)
           clearCart()
-          toast({
-            title: "Order placed successfully!",
-            description: `Your order #${response.orderId} has been confirmed.`,
-          })
+          showSuccessModal(response.orderId)
+          if (onOrderComplete) {
+            onOrderComplete(response)
+          }
+        }
+      } catch (error) {
+        console.error("Order submission failed after Stripe success:", error)
+        showModal({
+          title: "Order Failed",
+          content: "There was an error processing your order. Please try again.",
+          type: "error",
+        })
+      }
+    },
+    [formData, orderSummary, finalTotal, clearCart, showSuccessModal, onOrderComplete, showModal, addOrder],
+  )
 
+  const handleStripeError = useCallback(
+    (error) => {
+      console.error("Stripe payment failed:", error)
+      showModal({
+        title: "Payment Failed",
+        content: error.message || "There was an error processing your payment. Please try again.",
+        type: "error",
+      })
+    },
+    [showModal],
+  )
+
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault() // Prevent default form submission
+
+      const formIsValid = validateForm()
+      if (!formIsValid) {
+        showModal({
+          title: "Form Incomplete",
+          content: "Please correct the errors in the form.",
+          type: "error",
+        })
+        return
+      }
+
+      if (paymentMethod === "stripe") {
+        // Stripe payment is handled by the StripeCheckout component's internal button.
+        // This form's submit button is hidden when Stripe is selected, so this branch
+        // should ideally not be reached for Stripe payments.
+        console.log("Stripe payment selected, deferring to StripeCheckout component.")
+        return
+      }
+
+      // Handle direct card payment submission
+      setLoading(true)
+
+      try {
+        const orderData = {
+          customer: formData,
+          items: orderSummary.items,
+          total: finalTotal,
+          paymentMethod: "card",
+          orderDate: new Date().toISOString(),
+          status: "Processing",
+          orderId: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+        }
+
+        const response = await apiService.submitOrder(orderData)
+
+        if (response.success) {
+          addOrder(orderData) // Add the order to the Zustand store
+          clearCart()
+          showSuccessModal(orderData.orderId)
           if (onOrderComplete) {
             onOrderComplete(response)
           }
         }
       } catch (error) {
         console.error("Order submission failed:", error)
-        toast({
-          title: "Order failed",
-          description: "There was an error processing your order. Please try again.",
-          variant: "destructive",
+        showModal({
+          title: "Order Failed",
+          content: "There was an error processing your order. Please try again.",
+          type: "error",
         })
+      } finally {
+        setLoading(false)
       }
     },
-    [formData, orderSummary, clearCart, toast, onOrderComplete],
-  )
-
-  const handleStripeError = useCallback(
-    (error) => {
-      console.error("Stripe payment failed:", error)
-      toast({
-        title: "Payment failed",
-        description: "There was an error processing your payment. Please try again.",
-        variant: "destructive",
-      })
-    },
-    [toast],
-  )
-
-  const handleSubmit = useCallback(
-    async (e) => {
-      e.preventDefault()
-
-      if (!isFormValid) {
-        toast({
-          title: "Form incomplete",
-          description: "Please fill in all required fields.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      if (paymentMethod === "card") {
-        setLoading(true)
-
-        try {
-          const orderData = {
-            customer: formData,
-            items: orderSummary.items,
-            total: orderSummary.total,
-            paymentMethod: "card",
-            orderDate: new Date().toISOString(),
-          }
-
-          const response = await apiService.submitOrder(orderData)
-
-          if (response.success) {
-            clearCart()
-            toast({
-              title: "Order placed successfully!",
-              description: `Your order #${response.orderId} has been confirmed.`,
-            })
-
-            if (onOrderComplete) {
-              onOrderComplete(response)
-            }
-          }
-        } catch (error) {
-          console.error("Order submission failed:", error)
-          toast({
-            title: "Order failed",
-            description: "There was an error processing your order. Please try again.",
-            variant: "destructive",
-          })
-        } finally {
-          setLoading(false)
-        }
-      }
-    },
-    [formData, isFormValid, orderSummary, paymentMethod, clearCart, toast, onOrderComplete],
+    [
+      formData,
+      paymentMethod,
+      orderSummary,
+      finalTotal,
+      clearCart,
+      showSuccessModal,
+      onOrderComplete,
+      showModal,
+      validateForm,
+      addOrder,
+    ],
   )
 
   return (
@@ -196,8 +418,13 @@ const OrderForm = ({ onOrderComplete }) => {
                 id="firstName"
                 value={formData.firstName}
                 onChange={(e) => handleInputChange("firstName", e.target.value)}
+                onBlur={() => handleBlur("firstName")}
+                className={cn(validationErrors.firstName && "border-destructive")}
                 required
               />
+              {validationErrors.firstName && (
+                <p className="text-destructive text-xs mt-1 text-red-500">{validationErrors.firstName}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="lastName">Last Name *</Label>
@@ -205,8 +432,13 @@ const OrderForm = ({ onOrderComplete }) => {
                 id="lastName"
                 value={formData.lastName}
                 onChange={(e) => handleInputChange("lastName", e.target.value)}
+                onBlur={() => handleBlur("lastName")}
+                className={cn(validationErrors.lastName && "border-destructive")}
                 required
               />
+              {validationErrors.lastName && (
+                <p className="text-destructive text-xs mt-1 text-red-500">{validationErrors.lastName}</p>
+              )}
             </div>
           </div>
 
@@ -219,10 +451,14 @@ const OrderForm = ({ onOrderComplete }) => {
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
-                className="pl-10"
+                onBlur={() => handleBlur("email")}
+                className={cn("pl-10", validationErrors.email && "border-destructive")}
                 required
               />
             </div>
+            {validationErrors.email && (
+              <p className="text-destructive text-xs mt-1 text-red-500">{validationErrors.email}</p>
+            )}
           </div>
 
           <div>
@@ -234,10 +470,14 @@ const OrderForm = ({ onOrderComplete }) => {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange("phone", e.target.value)}
-                className="pl-10"
+                onBlur={() => handleBlur("phone")}
+                className={cn("pl-10", validationErrors.phone && "border-destructive")}
                 required
               />
             </div>
+            {validationErrors.phone && (
+              <p className="text-destructive text-xs mt-1 text-red-500">{validationErrors.phone}</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -257,8 +497,13 @@ const OrderForm = ({ onOrderComplete }) => {
               id="address"
               value={formData.address}
               onChange={(e) => handleInputChange("address", e.target.value)}
+              onBlur={() => handleBlur("address")}
+              className={cn(validationErrors.address && "border-destructive")}
               required
             />
+            {validationErrors.address && (
+              <p className="text-destructive text-xs mt-1 text-red-500">{validationErrors.address}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -268,13 +513,24 @@ const OrderForm = ({ onOrderComplete }) => {
                 id="city"
                 value={formData.city}
                 onChange={(e) => handleInputChange("city", e.target.value)}
+                onBlur={() => handleBlur("city")}
+                className={cn(validationErrors.city && "border-destructive")}
                 required
               />
+              {validationErrors.city && (
+                <p className="text-destructive text-xs mt-1 text-red-500">{validationErrors.city}</p>
+              )}
             </div>
             <div>
-              <Label htmlFor="province">Province *</Label> {/* Changed label to Province */}
-              <Select value={formData.province} onValueChange={(value) => handleInputChange("province", value)}>
-                <SelectTrigger>
+              <Label htmlFor="province">Province *</Label>
+              <Select
+                value={formData.province}
+                onValueChange={(value) => {
+                  handleInputChange("province", value)
+                  handleBlur("province")
+                }}
+              >
+                <SelectTrigger className={cn(validationErrors.province && "border-destructive")}>
                   <SelectValue placeholder="Select province" />
                 </SelectTrigger>
                 <SelectContent>
@@ -284,6 +540,9 @@ const OrderForm = ({ onOrderComplete }) => {
                   <SelectItem value="Balochistan">Balochistan</SelectItem>
                 </SelectContent>
               </Select>
+              {validationErrors.province && (
+                <p className="text-destructive text-xs mt-1 text-red-500">{validationErrors.province}</p>
+              )}
             </div>
           </div>
 
@@ -294,106 +553,158 @@ const OrderForm = ({ onOrderComplete }) => {
                 id="zipCode"
                 value={formData.zipCode}
                 onChange={(e) => handleInputChange("zipCode", e.target.value)}
+                onBlur={() => handleBlur("zipCode")}
+                className={cn(validationErrors.zipCode && "border-destructive")}
                 required
               />
+              {validationErrors.zipCode && (
+                <p className="text-destructive text-xs mt-1 text-red-500">{validationErrors.zipCode}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="country">Country *</Label>
-              <Select value={formData.country} onValueChange={(value) => handleInputChange("country", value)}>
-                <SelectTrigger>
+              <Select
+                value={formData.country}
+                onValueChange={(value) => {
+                  handleInputChange("country", value)
+                  handleBlur("country")
+                }}
+              >
+                <SelectTrigger className={cn(validationErrors.country && "border-destructive")}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PK">Pakistan</SelectItem> 
+                  <SelectItem value="PK">Pakistan</SelectItem>
                 </SelectContent>
               </Select>
+              {validationErrors.country && (
+                <p className="text-destructive text-xs mt-1 text-red-500">{validationErrors.country}</p>
+              )}
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Payment Information */}
+      {/* Payment Method Selection */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <CreditCard className="h-5 w-5" />
-            <span>Payment Information</span>
+            <span>Payment Method</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="stripe">Stripe Payment</TabsTrigger>
-              <TabsTrigger value="card">Credit Card</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="stripe">
-              {isFormValid && (
-                <StripeCheckout amount={grandTotal} onSuccess={handleStripeSuccess} onError={handleStripeError} />
-              )}
-              {!isFormValid && (
-                <div className="text-center py-8 text-muted-foreground">
-                  Please fill in all required fields above to proceed with payment.
+          <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
+            <div className="flex items-center space-x-2 p-4 border rounded-lg">
+              <RadioGroupItem value="stripe" id="stripe" />
+              <Label htmlFor="stripe" className="flex-1">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="font-medium">Stripe Payment</div>
+                    <div className="text-sm text-muted-foreground">Secure payment with Stripe</div>
+                  </div>
+                  {/* FIXED: Always show the stripe fee here */}
+                  <div className="text-sm text-red-600">+${stripeFee.toFixed(2)} processing fee</div>
                 </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="card" className="space-y-4">
-              <div>
-                <Label htmlFor="cardNumber">Card Number *</Label>
-                <Input
-                  id="cardNumber"
-                  placeholder="1234 5678 9012 3456"
-                  value={formData.cardNumber}
-                  onChange={(e) => handleInputChange("cardNumber", e.target.value)}
-                  required={paymentMethod === "card"}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2 p-4 border rounded-lg">
+              <RadioGroupItem value="card" id="card" />
+              <Label htmlFor="card" className="flex-1">
                 <div>
-                  <Label htmlFor="expiryDate">Expiry Date *</Label>
+                  <div className="font-medium">Credit Card</div>
+                  <div className="text-sm text-muted-foreground">Direct credit card payment</div>
+                </div>
+              </Label>
+            </div>
+          </RadioGroup>
+
+          <div className="mt-6">
+            {paymentMethod === "stripe" && (
+              <StripeCheckout amount={finalTotal} onSuccess={handleStripeSuccess} onError={handleStripeError} />
+            )}
+
+            {paymentMethod === "card" && (
+              <div className="space-y-4 mt-4">
+                <div>
+                  <Label htmlFor="cardNumber">Card Number *</Label>
                   <Input
-                    id="expiryDate"
-                    placeholder="MM/YY"
-                    value={formData.expiryDate}
-                    onChange={(e) => handleInputChange("expiryDate", e.target.value)}
-                    required={paymentMethod === "card"}
+                    id="cardNumber"
+                    placeholder="1234 5678 9012 3456"
+                    value={formData.cardNumber}
+                    onChange={(e) => handleInputChange("cardNumber", e.target.value)}
+                    onBlur={() => handleBlur("cardNumber")}
+                    className={cn(validationErrors.cardNumber && "border-destructive")}
+                    required
                   />
+                  {validationErrors.cardNumber && (
+                    <p className="text-destructive text-xs mt-1 text-red-500">{validationErrors.cardNumber}</p>
+                  )}
                 </div>
-                <div>
-                  <Label htmlFor="cvv">CVV *</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="expiryDate">Expiry Date *</Label>
                     <Input
-                      id="cvv"
-                      placeholder="123"
-                      value={formData.cvv}
-                      onChange={(e) => handleInputChange("cvv", e.target.value)}
-                      className="pl-10"
-                      required={paymentMethod === "card"}
+                      id="expiryDate"
+                      placeholder="MM/YY"
+                      value={formData.expiryDate}
+                      onChange={(e) => handleInputChange("expiryDate", e.target.value)}
+                      onBlur={() => handleBlur("expiryDate")}
+                      className={cn(validationErrors.expiryDate && "border-destructive")}
+                      required
                     />
+                    {validationErrors.expiryDate && (
+                      <p className="text-destructive text-xs mt-1 text-red-500">{validationErrors.expiryDate}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Label htmlFor="cvv">CVV *</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="cvv"
+                        placeholder="123"
+                        value={formData.cvv}
+                        onChange={(e) => handleInputChange("cvv", e.target.value)}
+                        onBlur={() => handleBlur("cvv")}
+                        className={cn("pl-10", validationErrors.cvv && "border-destructive")}
+                        required
+                      />
+                    </div>
+                    {validationErrors.cvv && (
+                      <p className="text-destructive text-xs mt-1 text-red-500">{validationErrors.cvv}</p>
+                    )}
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor="cardName">Name on Card *</Label>
-                <Input
-                  id="cardName"
-                  value={formData.cardName}
-                  onChange={(e) => handleInputChange("cardName", e.target.value)}
-                  required={paymentMethod === "card"}
-                />
-              </div>
+                <div>
+                  <Label htmlFor="cardName">Name on Card *</Label>
+                  <Input
+                    id="cardName"
+                    value={formData.cardName}
+                    onChange={(e) => handleInputChange("cardName", e.target.value)}
+                    onBlur={() => handleBlur("cardName")}
+                    className={cn(validationErrors.cardName && "border-destructive")}
+                    required
+                  />
+                  {validationErrors.cardName && (
+                    <p className="text-destructive text-xs mt-1 text-red-500">{validationErrors.cardName}</p>
+                  )}
+                </div>
 
-              {paymentMethod === "card" && (
                 <Button type="submit" className="w-full" size="lg" disabled={loading || !isFormValid}>
-                  {loading ? "Processing..." : `Place Order - $${grandTotal.toFixed(2)}`}
+                  {loading ? "Processing..." : `Place Order - $${finalTotal.toFixed(2)}`}
                 </Button>
-              )}
-            </TabsContent>
-          </Tabs>
+              </div>
+            )}
+
+            {!isFormValid && !loading && (
+              <div className="text-center py-8 text-muted-foreground">
+                Please fill in all required fields and correct any errors to proceed with payment.
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -401,22 +712,42 @@ const OrderForm = ({ onOrderComplete }) => {
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="saveInfo"
-                checked={formData.saveInfo}
-                onCheckedChange={(checked) => handleInputChange("saveInfo", checked)}
-              />
-              <Label htmlFor="saveInfo">Save my information for future orders</Label>
+            {/* Save Info as Radio Group */}
+            <div className="space-y-2">
+              <Label>Save my information for future orders</Label>
+              <RadioGroup
+                value={formData.saveInfo ? "yes" : "no"}
+                onValueChange={(value) => handleInputChange("saveInfo", value === "yes")}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="yes" id="saveInfoYes" />
+                  <Label htmlFor="saveInfoYes">Yes</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="no" id="saveInfoNo" />
+                  <Label htmlFor="saveInfoNo">No</Label>
+                </div>
+              </RadioGroup>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="subscribe"
-                checked={formData.subscribe}
-                onCheckedChange={(checked) => handleInputChange("subscribe", checked)}
-              />
-              <Label htmlFor="subscribe">Subscribe to our newsletter for updates and offers</Label>
+            {/* Subscribe as Radio Group */}
+            <div className="space-y-2">
+              <Label>Subscribe to our newsletter for updates and offers</Label>
+              <RadioGroup
+                value={formData.subscribe ? "yes" : "no"}
+                onValueChange={(value) => handleInputChange("subscribe", value === "yes")}
+                className="flex space-x-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="yes" id="subscribeYes" />
+                  <Label htmlFor="subscribeYes">Yes</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="no" id="subscribeNo" />
+                  <Label htmlFor="subscribeNo">No</Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
         </CardContent>

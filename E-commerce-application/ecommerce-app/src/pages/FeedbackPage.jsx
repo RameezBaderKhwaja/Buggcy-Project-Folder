@@ -8,10 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
+import { useModal } from "@/hooks/useModal" // Import useModal
 
 const FeedbackPage = () => {
-  const { toast } = useToast()
+  const { showModal } = useModal() // Use the useModal hook
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -33,11 +33,24 @@ const FeedbackPage = () => {
     e.preventDefault()
     setLoading(true)
 
+    // Basic validation
+    if (!formData.name || !formData.email || !formData.subject || !formData.category || !formData.message) {
+      showModal({
+        title: "Error",
+        content: "Please fill in all required fields.",
+        type: "error",
+      })
+      setLoading(false)
+      return
+    }
+
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    toast({
-      title: "Feedback submitted!",
-      description: "Thank you for your feedback. We'll get back to you soon.",
+    // Show modal instead of toast
+    showModal({
+      title: "Feedback Submitted! 🎉",
+      content: "Thank you for your feedback. We'll get back to you soon.",
+      type: "success",
     })
 
     setFormData({
