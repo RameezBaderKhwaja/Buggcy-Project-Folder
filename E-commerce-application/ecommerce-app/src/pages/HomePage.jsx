@@ -159,20 +159,39 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen relative">
-      <section className="relative overflow-hidden bg-blue-50 py-12 md:py-20 lg:py-24 min-h-[60vh] md:min-h-[70vh] lg:min-h-[80vh] flex items-center">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-8">
+      <section className="relative overflow-hidden bg-white py-12 md:py-20 lg:py-24 min-h-[60vh] md:min-h-[70vh] lg:min-h-[80vh] flex items-center border border-gray-200">
+        {/* Dynamic Background Overlay */}
+        <div
+          className="absolute inset-0 z-0 opacity-5 animate-subtlePulse"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%239C92AC' fillOpacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zm0-30V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            backgroundSize: "60px 60px",
+          }}
+        ></div>
+
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-8 relative z-10">
           <div className="text-center lg:text-left max-w-xl lg:max-w-2xl flex-shrink-0">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-gray-800 leading-tight">
+            {/* Content Animations */}
+            <h1
+              key={currentSlideData.id + "-title"}
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-gray-800 leading-tight animate-fadeInUp"
+            >
               {currentSlideData.title}
             </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-6 sm:mb-8 leading-relaxed">
+            <p
+              key={currentSlideData.id + "-subtitle"}
+              className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-6 sm:mb-8 leading-relaxed animate-fadeInUp delay-100"
+            >
               {currentSlideData.subtitle}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center sm:justify-start items-center sm:items-start">
+            <div
+              key={currentSlideData.id + "-buttons"}
+              className="flex flex-col sm:flex-row gap-4 justify-center sm:justify-start items-center sm:items-start animate-fadeInUp delay-200"
+            >
               <Link to={currentSlideData.buttonLink}>
                 <Button
                   size="lg"
-                  className="group w-full sm:w-auto bg-gray-800/80 text-white hover:bg-gray-800 shadow-md px-8 py-3 font-medium text-lg backdrop-blur-sm border border-gray-700/50"
+                  className="group w-full sm:w-auto bg-gray-800 text-white hover:bg-gray-900 shadow-md px-8 py-3 font-medium text-lg border border-gray-700"
                 >
                   {currentSlideData.buttonText}
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -182,7 +201,7 @@ const HomePage = () => {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="w-full sm:w-auto border border-gray-400/60 text-gray-700 hover:bg-white/50 px-8 py-3 font-medium text-lg bg-white/30 backdrop-blur-sm"
+                  className="w-full sm:w-auto border border-gray-300 text-gray-700 hover:bg-gray-100 px-8 py-3 font-medium text-lg bg-white"
                 >
                   Learn More
                 </Button>
@@ -190,14 +209,13 @@ const HomePage = () => {
             </div>
           </div>
 
-          <div className="relative w-full lg:w-1/2 flex-shrink-0 flex items-center justify-center lg:justify-end">
-            <div className="w-full aspect-square max-w-md lg:max-w-[400px] lg:h-[400px] mx-auto lg:mx-0 bg-white/20 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/30">
-              <img
-                src={currentSlideData.image || "/placeholder.svg?transparent=true"}
-                alt={currentSlideData.title}
-                className="object-contain w-full h-full drop-shadow-lg mix-blend-darken"
-              />
-            </div>
+          <div className="relative w-full lg:w-1/2 flex-shrink-0 flex items-center justify-center aspect-square max-w-md lg:max-w-[400px] lg:h-[400px] mx-auto lg:mx-0">
+            <img
+              key={currentSlideData.id + "-image"}
+              src={currentSlideData.image || "/placeholder.svg?transparent=true"}
+              alt={currentSlideData.title}
+              className="object-contain w-full h-full transition-opacity duration-700 ease-in-out animate-fadeIn"
+            />
           </div>
         </div>
       </section>
