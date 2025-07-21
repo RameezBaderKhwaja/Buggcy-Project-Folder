@@ -68,11 +68,10 @@ const AboutPage = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
       <section className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-background py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-8 text-xl animate-pulse">About ShopHub</Badge> {/* Updated here */}
+            <Badge className="mb-8 text-xl animate-pulse">About ShopHub</Badge>
             <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
               Redefining Online Shopping
             </h1>
@@ -84,7 +83,6 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Stats Section */}
       <section className="py-16 bg-muted/50">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -103,7 +101,6 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Story Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -137,7 +134,6 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Values Section */}
       <section className="py-16 bg-muted/50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -163,7 +159,6 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Team Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -194,7 +189,6 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Mission Section */}
       <section className="py-16 bg-primary/5">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">

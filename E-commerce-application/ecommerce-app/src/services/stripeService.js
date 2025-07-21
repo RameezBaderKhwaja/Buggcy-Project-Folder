@@ -1,7 +1,5 @@
 import { loadStripe } from "@stripe/stripe-js"
 
-// For a real app, replace with your publishable key from Stripe Dashboard
-// This is a test key, but it's a real Stripe.js instance, not a mock object.
 const stripePromise = loadStripe("pk_test_51RlaqXK8T6PLQTlTkkRGMQRfbTTzcWz5o7WnyPdbPUXRD8NI8d2juQWLXcnt5zyrmVTbicA5IvPzH7czQS1mQmeJ000dUCCTxX")
 
 export const getStripe = () => stripePromise

@@ -11,23 +11,32 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useCart } from "@/hooks/useCart"
 import { useProduct } from "@/hooks/useProducts"
 import { useToast } from "@/hooks/use-toast"
+import { useModal } from "@/hooks/useModal"
+import { cn } from "@/lib/utils"
+import { useWishlistStore } from "@/hooks/useWishlist"
 
 const ProductDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { addToCart, isInCart, getItemQuantity } = useCart()
   const { toast } = useToast()
+  const { showModal } = useModal()
 
-  // Use the SWR-based useProduct hook
+  const addToWishlist = useWishlistStore((s) => s.addToWishlist)
+  const removeFromWishlist = useWishlistStore((s) => s.removeFromWishlist)
+  const wishlistItems = useWishlistStore((s) => s.items)
+
   const { product, isLoading, error } = useProduct(id)
   const [quantity, setQuantity] = useState(1)
 
-  // Reset quantity when product changes
+  const isWishlisted = useMemo(() => {
+    return product ? wishlistItems.some((item) => item.id === product.id) : false
+  }, [product, wishlistItems])
+
   useEffect(() => {
     setQuantity(1)
   }, [product])
 
-  // Memoized product information
   const productInfo = useMemo(
     () => ({
       isInCart: product ? isInCart(product.id) : false,
@@ -37,7 +46,57 @@ const ProductDetailPage = () => {
     [product, quantity, isInCart, getItemQuantity],
   )
 
-  // Memoized handlers
+  const renderStars = useCallback((rating) => {
+    const stars = []
+    const ratingValue = rating || 0
+    const fullStars = Math.floor(ratingValue)
+    const hasHalfStar = ratingValue % 1 !== 0
+
+    for (let i = 0; i < 5; i++) {
+      if (i < fullStars) {
+        stars.push(<Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)
+      } else if (i === fullStars && hasHalfStar) {
+        stars.push(
+          <div key={i} className="relative">
+            <Star className="h-4 w-4 text-gray-300" />
+            <div className="absolute inset-0 overflow-hidden w-1/2">
+              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            </div>
+          </div>,
+        )
+      } else {
+        stars.push(<Star key={i} className="h-4 w-4 text-gray-300" />)
+      }
+    }
+    return stars
+  }, [])
+
+  const handleWishlistToggle = useCallback(
+    (e) => {
+      e?.preventDefault()
+      if (!product) {
+        return
+      }
+
+      if (isWishlisted) {
+        removeFromWishlist(product.id)
+        showModal({
+          title: "Removed from Wishlist",
+          content: `${product.title} has been removed from your wishlist.`,
+          type: "info",
+        })
+      } else {
+        addToWishlist(product)
+        showModal({
+          title: "Added to Wishlist",
+          content: `${product.title} has been added to your wishlist.`,
+          type: "success",
+        })
+      }
+    },
+    [product, isWishlisted, addToWishlist, removeFromWishlist, showModal],
+  )
+
   const handleAddToCart = useCallback(() => {
     if (!product) return
 
@@ -121,7 +180,6 @@ const ProductDetailPage = () => {
       </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Product Image */}
         <div className="space-y-4">
           <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden">
             <img
@@ -132,7 +190,6 @@ const ProductDetailPage = () => {
           </div>
         </div>
 
-        {/* Product Info */}
         <div className="space-y-6">
           <div>
             <Badge variant="secondary" className="mb-2 capitalize">
@@ -142,9 +199,9 @@ const ProductDetailPage = () => {
 
             <div className="flex items-center space-x-4 mb-4">
               <div className="flex items-center space-x-1">
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span className="font-semibold">{product.rating.rate}</span>
-                <span className="text-muted-foreground">({product.rating.count} reviews)</span>
+                {renderStars(product.rating?.rate)}
+                <span className="font-semibold ml-2">{product.rating?.rate || 0}</span>
+                <span className="text-muted-foreground">({product.rating?.count || 0} reviews)</span>
               </div>
               {productInfo.isInCart && <Badge variant="outline">{productInfo.currentQuantity} in cart</Badge>}
             </div>
@@ -161,7 +218,6 @@ const ProductDetailPage = () => {
 
           <Separator />
 
-          {/* Quantity and Add to Cart */}
           <div className="space-y-4">
             <div className="flex items-center space-x-4">
               <span className="font-semibold">Quantity:</span>
@@ -193,8 +249,13 @@ const ProductDetailPage = () => {
                 <ShoppingCart className="h-5 w-5 mr-2" />
                 Add to Cart
               </Button>
-              <Button variant="outline" size="lg" className="bg-transparent border border-border hover:bg-accent">
-                <Heart className="h-5 w-5" />
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleWishlistToggle}
+                className="bg-transparent border border-border hover:bg-accent"
+              >
+                <Heart className={cn("h-5 w-5", isWishlisted ? "fill-red-500 text-red-500" : "text-gray-400")} />
               </Button>
               <Button
                 variant="outline"
@@ -209,7 +270,6 @@ const ProductDetailPage = () => {
 
           <Separator />
 
-          {/* Additional Info */}
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">SKU:</span>

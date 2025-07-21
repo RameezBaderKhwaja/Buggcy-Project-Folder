@@ -2,21 +2,20 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { Link } from "react-router-dom"
-import { ArrowRight, Star, ShoppingBag, Shield, Truck, Send } from "lucide-react" // Added Send icon
+import { ArrowRight, Star, ShoppingBag, Shield, Truck, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import ProductList from "@/components/products/ProductList"
 import { useProducts } from "@/hooks/useProducts"
-import { useModal } from "@/hooks/useModal" // Import useModal
+import { useModal } from "@/hooks/useModal"
 
 const HomePage = () => {
   const { products: allProducts, isLoading, error, createProduct } = useProducts()
-  const { showModal } = useModal() // Use the useModal hook
+  const { showModal } = useModal()
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [newsletterEmail, setNewsletterEmail] = useState("") // State for newsletter email
+  const [newsletterEmail, setNewsletterEmail] = useState("")
 
-  // Fixed: Add proper null/undefined checks and default to empty array
   const displayedProducts = useMemo(() => {
     if (!allProducts || !Array.isArray(allProducts)) {
       return []
@@ -34,7 +33,7 @@ const HomePage = () => {
         buttonLink: "/products",
         learnMoreLink: "/about",
         category: "all",
-        heroImage: "/placeholder.svg?height=500&width=500",
+        heroImage: "/placeholder.svg?height=500&width=500&transparent=true",
       },
       {
         id: 2,
@@ -44,7 +43,7 @@ const HomePage = () => {
         buttonLink: "/products",
         learnMoreLink: "/about",
         category: "men's clothing",
-        heroImage: "/placeholder.svg?height=500&width=500",
+        heroImage: "/placeholder.svg?height=500&width=500&transparent=true",
       },
       {
         id: 3,
@@ -54,7 +53,7 @@ const HomePage = () => {
         buttonLink: "/products",
         learnMoreLink: "/about",
         category: "women's clothing",
-        heroImage: "/placeholder.svg?height=500&width=500",
+        heroImage: "/placeholder.svg?height=500&width=500&transparent=true",
       },
       {
         id: 4,
@@ -64,7 +63,7 @@ const HomePage = () => {
         buttonLink: "/products",
         learnMoreLink: "/about",
         category: "jewelery",
-        heroImage: "/placeholder.svg?height=500&width=500",
+        heroImage: "/placeholder.svg?height=500&width=500&transparent=true",
       },
       {
         id: 5,
@@ -74,7 +73,7 @@ const HomePage = () => {
         buttonLink: "/products",
         learnMoreLink: "/about",
         category: "electronics",
-        heroImage: "/placeholder.svg?height=500&width=500",
+        heroImage: "/placeholder.svg?height=500&width=500&transparent=true",
       },
     ],
     [],
@@ -84,7 +83,6 @@ const HomePage = () => {
     const slide = heroSlides[currentSlide]
     let imageUrl = slide.heroImage
 
-    // Fixed: Add proper null/undefined checks
     if (allProducts && Array.isArray(allProducts) && allProducts.length > 0) {
       let productToUse = null
 
@@ -118,12 +116,11 @@ const HomePage = () => {
     return () => clearInterval(interval)
   }, [heroSlides.length])
 
-  // Handle newsletter submission
   const handleNewsletterSubmit = (e) => {
     e.preventDefault()
     if (newsletterEmail.trim()) {
       showModal({
-        title: "Subscribed! 🎉",
+        title: "Subscribed!",
         content: "Thank you for subscribing to our newsletter. You'll receive exclusive offers and updates!",
         type: "success",
       })
@@ -137,7 +134,6 @@ const HomePage = () => {
     }
   }
 
-  // Handle loading state
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -149,7 +145,6 @@ const HomePage = () => {
     )
   }
 
-  // Handle error state
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -164,57 +159,49 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen relative">
-      {/* Hero Section with Light Colors */}
-      <section className="relative overflow-hidden">
-        <div className={`relative h-[300px] sm:h-[400px] lg:h-[500px] bg-blue-50`}>
-          {/* Background Image */}
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 will-change-transform will-change-opacity"
-            style={{
-              backgroundImage: `url(${currentSlideData.image})`,
-              backgroundSize: "contain",
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "right center",
-            }}
-            aria-label={currentSlideData.title}
-          ></div>
-          {/* Content */}
-          <div className="relative z-10 h-full">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-center sm:justify-start">
-              <div className="text-left max-w-xl mr-auto">
-                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-gray-800 leading-tight">
-                  {currentSlideData.title}
-                </h1>
-                <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-6 sm:mb-8 leading-relaxed">
-                  {currentSlideData.subtitle}
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-start items-start">
-                  <Link to={currentSlideData.buttonLink}>
-                    <Button
-                      size="lg"
-                      className="group w-full sm:w-auto bg-primary text-black hover:bg-primary/90 shadow-lg px-8 py-3 font-semibold text-lg"
-                    >
-                      {currentSlideData.buttonText}
-                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </Link>
-                  <Link to={currentSlideData.learnMoreLink}>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="w-full sm:w-auto border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3 font-semibold text-lg bg-transparent"
-                    >
-                      Learn More
-                    </Button>
-                  </Link>
-                </div>
-              </div>
+      <section className="relative overflow-hidden bg-blue-50 py-12 md:py-20 lg:py-24 min-h-[60vh] md:min-h-[70vh] lg:min-h-[80vh] flex items-center">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-center lg:justify-between gap-8">
+          <div className="text-center lg:text-left max-w-xl lg:max-w-2xl flex-shrink-0">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 text-gray-800 leading-tight">
+              {currentSlideData.title}
+            </h1>
+            <p className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-6 sm:mb-8 leading-relaxed">
+              {currentSlideData.subtitle}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center sm:justify-start items-center sm:items-start">
+              <Link to={currentSlideData.buttonLink}>
+                <Button
+                  size="lg"
+                  className="group w-full sm:w-auto bg-primary text-black hover:bg-primary/90 shadow-lg px-8 py-3 font-semibold text-lg"
+                >
+                  {currentSlideData.buttonText}
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+              <Link to={currentSlideData.learnMoreLink}>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="w-full sm:w-auto border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3 font-semibold text-lg bg-transparent"
+                >
+                  Learn More
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          <div className="relative w-full lg:w-1/2 flex-shrink-0 flex items-center justify-center lg:justify-end">
+            <div className="w-full aspect-square max-w-md lg:max-w-[400px] lg:h-[400px] mx-auto lg:mx-0">
+              <img
+                src={currentSlideData.image || "/placeholder.svg?transparent=true"}
+                alt={currentSlideData.title}
+                className="object-contain w-full h-full drop-shadow-xl"
+              />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Products Section */}
       <section className="py-12 sm:py-16 lg:py-20 bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 sm:mb-12 gap-4">
@@ -226,7 +213,6 @@ const HomePage = () => {
             </div>
           </div>
 
-          {/* Fixed: Pass displayedProducts directly, not as a prop */}
           <ProductList category={null} searchTerm="" sortBy="default" showCrudButtons={true} viewMode="grid" />
 
           <div className="text-center mt-8 sm:mt-12">
@@ -244,7 +230,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Features Section */}
       <section className="py-12 sm:py-16 lg:py-20 bg-muted/50">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
@@ -287,7 +272,6 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Newsletter Section */}
       <section className="py-12 sm:py-16 lg:py-20 bg-primary/5">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mx-auto text-center">
@@ -309,11 +293,11 @@ const HomePage = () => {
                 required
               />
               <Button
-                type="submit" // Changed to type="submit"
+                type="submit"
                 variant="outline"
                 className="h-12 w-full sm:w-auto px-6 lg:px-8 text-base font-semibold bg-background border border-border hover:bg-accent whitespace-nowrap"
               >
-                <Send className="h-4 w-4 mr-2" /> {/* Added Send icon */}
+                <Send className="h-4 w-4 mr-2" />
                 Subscribe
               </Button>
             </form>

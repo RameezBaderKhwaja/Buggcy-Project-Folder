@@ -4,11 +4,11 @@ import { create } from "zustand"
 
 export const useSearchDialogStore = create((set) => ({
   searchQuery: "",
-  selectedCategory: "all", // To persist category selection within the dialog
+  selectedCategory: "all",
 
   setSearchQuery: (query) => set({ searchQuery: query }),
   setSelectedCategory: (category) => set({ selectedCategory: category }),
-  resetSearchState: () => set({ searchQuery: "", selectedCategory: "all" }), // Reset on page exit or initial load
+  resetSearchState: () => set({ searchQuery: "", selectedCategory: "all" }),
 }))
 
 export const useSearchDialog = () => {

@@ -5,18 +5,17 @@ import { Link } from "react-router-dom"
 import { Store, Mail, Facebook, Twitter, Instagram, Youtube, Send, MapPin, Phone, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useModal } from "@/hooks/useModal" // Changed from useToast to useModal
+import { useModal } from "@/hooks/useModal"
 
 const Footer = () => {
   const [email, setEmail] = useState("")
-  const { showModal } = useModal() // Using useModal
+  const { showModal } = useModal()
 
   const handleNewsletterSubmit = (e) => {
     e.preventDefault()
     if (email.trim()) {
       showModal({
-        // Showing modal instead of toast
-        title: "Subscribed! 🎉",
+        title: "Subscribed!",
         content: "Thank you for subscribing to our newsletter. You'll receive the latest updates and offers!",
         type: "success",
       })

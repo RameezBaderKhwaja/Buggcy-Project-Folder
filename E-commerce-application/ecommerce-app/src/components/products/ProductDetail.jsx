@@ -13,7 +13,7 @@ import { useProduct } from "@/hooks/useProducts"
 import { useToast } from "@/hooks/use-toast"
 import { useModal } from "@/hooks/useModal"
 import { cn } from "@/lib/utils"
-import { useWishlistStore } from "@/hooks/useWishlist" // Import useWishlistStore directly
+import { useWishlistStore } from "@/hooks/useWishlist"
 
 const ProductDetailPage = () => {
   const { id } = useParams()
@@ -22,7 +22,6 @@ const ProductDetailPage = () => {
   const { toast } = useToast()
   const { showModal } = useModal()
 
-  // FIXED: Select specific parts of the wishlist store for reactivity
   const addToWishlist = useWishlistStore((s) => s.addToWishlist)
   const removeFromWishlist = useWishlistStore((s) => s.removeFromWishlist)
   const wishlistItems = useWishlistStore((s) => s.items) // Get the items array directly
@@ -31,19 +30,16 @@ const ProductDetailPage = () => {
   const { product, isLoading, error } = useProduct(id)
   const [quantity, setQuantity] = useState(1)
 
-  // FIXED: Determine wishlist status based on the selected wishlistItems
   const isWishlisted = useMemo(() => {
     const status = product ? wishlistItems.some((item) => item.id === product.id) : false
     console.log(`💖 ProductDetailPage: isWishlisted for ${product?.id}: ${status}`)
     return status
-  }, [product, wishlistItems]) // Depend on product and wishlistItems for reactivity
+  }, [product, wishlistItems])
 
-  // Reset quantity when product changes
   useEffect(() => {
     setQuantity(1)
   }, [product])
 
-  // FIXED: Add more comprehensive debug effect
   useEffect(() => {
     console.log("🔍 PRODUCT DETAIL PAGE RENDER:", {
       productId: product?.id,
@@ -70,10 +66,9 @@ const ProductDetailPage = () => {
     [product, quantity, isInCart, getItemQuantity],
   )
 
-  // FIXED: Star rendering function - ensure it handles potential null/undefined rating gracefully
   const renderStars = useCallback((rating) => {
     const stars = []
-    const ratingValue = rating || 0 // Default to 0 if rating is null/undefined
+    const ratingValue = rating || 0
     const fullStars = Math.floor(ratingValue)
     const hasHalfStar = ratingValue % 1 !== 0
 
@@ -98,10 +93,9 @@ const ProductDetailPage = () => {
     return stars
   }, [])
 
-  // FIXED: Wishlist toggle function with more detailed logging
   const handleWishlistToggle = useCallback(
     (e) => {
-      e?.preventDefault() // Use optional chaining for event
+      e?.preventDefault()
       if (!product) {
         console.log("❌ ProductDetailPage: No product available for wishlist toggle.")
         return

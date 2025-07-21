@@ -8,10 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useModal } from "@/hooks/useModal" // Import useModal
+import { useModal } from "@/hooks/useModal"
 
 const FeedbackPage = () => {
-  const { showModal } = useModal() // Use the useModal hook
+  const { showModal } = useModal()
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -33,7 +33,6 @@ const FeedbackPage = () => {
     e.preventDefault()
     setLoading(true)
 
-    // Basic validation
     if (!formData.name || !formData.email || !formData.subject || !formData.category || !formData.message) {
       showModal({
         title: "Error",
@@ -46,9 +45,8 @@ const FeedbackPage = () => {
 
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    // Show modal instead of toast
     showModal({
-      title: "Feedback Submitted! 🎉",
+      title: "Feedback Submitted!",
       content: "Thank you for your feedback. We'll get back to you soon.",
       type: "success",
     })
@@ -88,7 +86,6 @@ const FeedbackPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
           We'd Love to Hear From You
@@ -100,7 +97,6 @@ const FeedbackPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Contact Information */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -125,7 +121,6 @@ const FeedbackPage = () => {
             </CardContent>
           </Card>
 
-          {/* FAQ Section */}
           <Card>
             <CardHeader>
               <CardTitle>Frequently Asked Questions</CardTitle>
@@ -153,7 +148,6 @@ const FeedbackPage = () => {
           </Card>
         </div>
 
-        {/* Feedback Form */}
         <div className="lg:col-span-2">
           <Card>
             <CardHeader>

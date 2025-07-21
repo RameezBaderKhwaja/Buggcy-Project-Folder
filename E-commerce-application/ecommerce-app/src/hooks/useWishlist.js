@@ -45,7 +45,6 @@ export const useWishlistStore = create(
         return true
       },
 
-      // FIXED: Add debug log to isInWishlist
       isInWishlist: (productId) => {
         const { items } = get()
         const exists = items.some((item) => item.id === productId)
@@ -83,7 +82,6 @@ export const useWishlistStore = create(
   ),
 )
 
-// Export useWishlist for convenience, but encourage direct store selection for reactivity
 export const useWishlist = () => {
   const { items, addToWishlist, removeFromWishlist, isInWishlist, clearWishlist, getWishlistCount } = useWishlistStore()
 

@@ -21,7 +21,7 @@ const RadioGroupItem = React.forwardRef(({ className, ...props }, ref) => {
       {...props}
     >
       <RadioGroupPrimitive.Indicator className="flex items-center justify-center">
-        <CheckIcon className="h-1.5 w-1.5 fill-current" /> {/* Adjusted icon size for smaller radio button */}
+        <CheckIcon className="h-1.5 w-1.5 fill-current" />
       </RadioGroupPrimitive.Indicator>
     </RadioGroupPrimitive.Item>
   )

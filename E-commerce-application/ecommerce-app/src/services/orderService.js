@@ -29,7 +29,6 @@ export const useOrderStore = create(
         return true
       },
 
-      // You can add other order-related actions here if needed, e.g., updateOrderStatus
       updateOrderStatus: (orderId, newStatus) => {
         const { orders } = get()
         const updatedOrders = orders.map((order) =>
@@ -50,7 +49,7 @@ export const useOrderStore = create(
       },
     }),
     {
-      name: "shophub-orders", // Unique name for localStorage
+      name: "shophub-orders",
       getStorage: () => localStorage,
       onRehydrateStorage: () => {
         console.log("🔄 ORDERS: Starting rehydration...")

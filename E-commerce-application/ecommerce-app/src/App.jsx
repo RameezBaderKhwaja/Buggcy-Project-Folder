@@ -40,7 +40,6 @@ function AppContent() {
     }
   }, [])
 
-  // Determine if the current path should hide header/footer
   const hideHeaderFooter = location.pathname === "/search"
 
   return (

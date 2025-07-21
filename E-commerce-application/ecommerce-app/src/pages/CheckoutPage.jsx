@@ -14,7 +14,6 @@ const CheckoutPage = () => {
   const [paymentMethod, setPaymentMethod] = useState("stripe") // Lift payment method state
 
   const stripeFee = useMemo(() => {
-    // The fee is always $2, but it's only applied to the total if Stripe is selected.
     return 2.0
   }, [])
 
@@ -102,7 +101,6 @@ const CheckoutPage = () => {
                   <span>Tax:</span>
                   <span>${tax.toFixed(2)}</span>
                 </div>
-                {/* Stripe fee is now only shown in summary if Stripe is selected */}
                 {paymentMethod === "stripe" && (
                   <div className="flex justify-between text-red-600">
                     <span>Stripe Fee:</span>

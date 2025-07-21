@@ -34,8 +34,8 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
     expiryDate: "",
     cvv: "",
     cardName: "",
-    saveInfo: false, // Keep as boolean for logic
-    subscribe: false, // Keep as boolean for logic
+    saveInfo: false,
+    subscribe: false,
   })
   const [validationErrors, setValidationErrors] = useState({})
   const [touchedFields, setTouchedFields] = useState({})
@@ -148,7 +148,7 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
     let formIsValid = true
     Object.keys(formData).forEach((name) => {
       if (paymentMethod === "stripe" && ["cardNumber", "expiryDate", "cvv", "cardName"].includes(name)) {
-        return // Skip card fields if Stripe is selected
+        return
       }
       const error = validateField(name, formData[name])
       if (error) {
@@ -210,7 +210,7 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
       })
       setValidationErrors((prevErrors) => ({ ...prevErrors, ...newErrors }))
     } else {
-      // Clear card-specific errors if payment method changes to Stripe
+      
       setValidationErrors((prevErrors) => {
         const updatedErrors = { ...prevErrors }
         delete updatedErrors.cardNumber
@@ -238,7 +238,6 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
     [items, grandTotal],
   )
 
-  // FIXED: Always return 2.0 for stripeFee in OrderForm
   const stripeFee = useMemo(() => {
     return 2.0
   }, [])
@@ -344,9 +343,6 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
       }
 
       if (paymentMethod === "stripe") {
-        // Stripe payment is handled by the StripeCheckout component's internal button.
-        // This form's submit button is hidden when Stripe is selected, so this branch
-        // should ideally not be reached for Stripe payments.
         console.log("Stripe payment selected, deferring to StripeCheckout component.")
         return
       }

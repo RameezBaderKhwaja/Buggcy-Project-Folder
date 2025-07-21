@@ -67,7 +67,7 @@ const ProductEditDialog = ({ product, open, onOpenChange, onSave }) => {
         price: priceValue,
         description: formData.description.trim(),
         category: formData.category,
-        image: formData.image.trim() || product.image, // Keep original image if empty
+        image: formData.image.trim() || product.image,
       }
 
       console.log("Saving product with data:", updatedData)
@@ -171,13 +171,13 @@ const ProductEditDialog = ({ product, open, onOpenChange, onSave }) => {
           {/* Display current rating (read-only) with enhanced info */}
           {product?.rating && (
             <div className="bg-muted/50 p-3 rounded-lg border-l-4 border-l-primary">
-              <Label className="text-sm font-medium text-muted-foreground">Current Rating (Preserved)</Label>
+              <Label className="text-sm font-medium text-muted-foreground">Current Rating</Label>
               <div className="flex items-center space-x-2 mt-1">
                 <span className="text-sm font-semibold">{product.rating.rate}/5</span>
                 <span className="text-xs text-muted-foreground">({product.rating.count} reviews)</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                ✅ Rating preserved • Changes saved locally (FakeStoreAPI limitation)
+                 Rating preserved •
               </p>
             </div>
           )}

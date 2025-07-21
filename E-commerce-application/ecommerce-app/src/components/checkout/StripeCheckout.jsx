@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, CreditCard } from "lucide-react"
-import { getStripe, stripeService } from "@/services/stripeService" // Import the real stripeService
+import { getStripe, stripeService } from "@/services/stripeService"
 import { useToast } from "@/hooks/use-toast"
 
 const CheckoutForm = ({ amount, onSuccess, onError }) => {
@@ -16,7 +16,7 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  // CardElement styling options
+  // CardElement styling
   const cardElementOptions = {
     style: {
       base: {
@@ -38,7 +38,6 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
       event.preventDefault()
 
       if (!stripe || !elements) {
-        // Stripe.js has not yet loaded.
         // Disable form submission until Stripe.js has loaded.
         console.log("Stripe.js not loaded yet.")
         return
@@ -74,8 +73,6 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
         return
       }
 
-      // If payment method creation is successful, simulate order submission
-      // In a real app, you would send paymentMethod.id to your backend to confirm the PaymentIntent.
       try {
         // Simulate a successful payment intent for the demo
         const mockPaymentIntent = {
@@ -127,7 +124,7 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
           )}
 
           <Button
-            type="button" // Important: type="button" to prevent default form submission
+            type="button"
             onClick={handleSubmit}
             disabled={!stripe || !elements || loading || amount <= 0}
             className="w-full"
@@ -152,7 +149,6 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
 }
 
 const StripeCheckout = ({ amount, onSuccess, onError }) => {
-  // Ensure amount is a number and greater than 0 for Stripe initialization
   const validAmount = typeof amount === "number" && amount > 0 ? amount : 0.01 // Stripe requires minimum amount
 
   return (

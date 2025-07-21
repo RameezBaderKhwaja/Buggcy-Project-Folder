@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect, useMemo } from "react"
+import { useState, useCallback } from "react"
 import { Link } from "react-router-dom"
 import { Star, ShoppingCart, Edit, Trash2, MoreVertical, Heart } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -30,19 +30,6 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
 
   const isWishlisted = isInWishlist(product.id)
 
-  // Memoize product data to force re-renders when it changes
-  const productData = useMemo(
-    () => ({
-      id: product.id,
-      title: product.title || "Untitled Product",
-      price: product.price || 0,
-      category: product.category || "uncategorized",
-      image: product.image || "/placeholder.svg",
-      rating: product.rating || { rate: 0, count: 0 },
-    }),
-    [product.id, product.title, product.price, product.category, product.image, product.rating],
-  )
-
   const handleAddToCart = useCallback(
     (e) => {
       e.preventDefault()
@@ -50,12 +37,12 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
         onAddToCart(product)
         showModal({
           title: "Added to Cart",
-          content: `${productData.title} has been added to your cart.`,
+          content: `${product.title} has been added to your cart.`,
           type: "success",
         })
       }
     },
-    [product, onAddToCart, showModal, productData.title],
+    [product, onAddToCart, showModal],
   )
 
   const handleWishlistToggle = useCallback(
@@ -65,19 +52,19 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
         removeFromWishlist(product.id)
         showModal({
           title: "Removed from Wishlist",
-          content: `${productData.title} has been removed from your wishlist.`,
+          content: `${product.title} has been removed from your wishlist.`,
           type: "info",
         })
       } else {
         addToWishlist(product)
         showModal({
           title: "Added to Wishlist",
-          content: `${productData.title} has been added to your wishlist.`,
+          content: `${product.title} has been added to your wishlist.`,
           type: "success",
         })
       }
     },
-    [product, isWishlisted, addToWishlist, removeFromWishlist, showModal, productData.title],
+    [product, isWishlisted, addToWishlist, removeFromWishlist, showModal],
   )
 
   const handleEditClick = useCallback((e) => {
@@ -104,12 +91,12 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
       onDelete(product.id)
       showModal({
         title: "Product Deleted",
-        content: `${productData.title} has been deleted permanently.`,
+        content: `${product.title} has been deleted permanently.`,
         type: "success",
       })
     }
     setShowDeleteDialog(false)
-  }, [product, onDelete, showModal, productData.title])
+  }, [product, onDelete, showModal])
 
   const truncateTitle = (title, maxLength = 50) => {
     if (!title || typeof title !== "string") {
@@ -143,16 +130,6 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
     return stars
   }
 
-  // Debug effect to track product changes
-  useEffect(() => {
-    console.log(`🔄 ProductCard ${productData.id} re-rendered:`, {
-      title: productData.title,
-      price: productData.price,
-      timestamp: new Date().toLocaleTimeString(),
-    })
-  }, [productData.id, productData.title, productData.price])
-
-  // Early return if product is not provided or invalid
   if (!product || !product.id) {
     return null
   }
@@ -160,16 +137,13 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
   return (
     <>
       <Card
-        key={`card-${productData.id}-${productData.price}-${productData.title.slice(0, 10)}`}
         className={cn(
           "group h-full flex overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 relative bg-white",
           "hover:shadow-primary/20",
           viewMode === "grid" ? "flex-col" : "flex-row items-center p-4",
         )}
       >
-        {/* Action Buttons - Right side */}
         <div className="absolute top-2 right-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-          {/* Wishlist Button */}
           <Button
             variant="ghost"
             size="sm"
@@ -179,7 +153,6 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
             <Heart className={cn("h-4 w-4", isWishlisted ? "fill-red-500 text-red-500" : "text-gray-400")} />
           </Button>
 
-          {/* CRUD Buttons */}
           {showCrudButtons && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -207,12 +180,14 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
 
         {viewMode === "grid" && (
           <CardHeader className="p-4 pb-0">
-            <Badge className="w-fit capitalize">{productData.category}</Badge>
+            <Badge className="w-fit capitalize bg-gray-100 text-black hover:bg-gray-200 border-gray-300">
+              {product.category}
+            </Badge>
           </CardHeader>
         )}
 
         <Link
-          to={`/product/${productData.id}`}
+          to={`/product/${product.id}`}
           className={cn("flex-1 flex", viewMode === "grid" ? "flex-col" : "flex-row items-center gap-4 w-full")}
         >
           <div
@@ -222,31 +197,32 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
             )}
           >
             <img
-              src={productData.image || "/placeholder.svg"}
-              alt={productData.title}
+              src={product.image || "/placeholder.svg"}
+              alt={product.title}
               className="object-contain w-full h-full group-hover:scale-105 transition-transform duration-300"
             />
           </div>
 
           <CardContent className={cn("flex-1 flex flex-col", viewMode === "grid" ? "p-4" : "p-0")}>
-            {viewMode === "list" && <Badge className="w-fit capitalize mb-2">{productData.category}</Badge>}
+            {viewMode === "list" && (
+              <Badge className="w-fit capitalize mb-2 bg-gray-100 text-black hover:bg-gray-200 border-gray-300">
+                {product.category}
+              </Badge>
+            )}
 
-            {/* Title with fixed height */}
             <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors text-black min-h-[3.5rem] flex items-start">
-              {truncateTitle(productData.title)}
+              {truncateTitle(product.title)}
             </h3>
 
-            {/* Rating - fixed position */}
             <div className="flex items-center space-x-2 mb-3 h-5">
               <div className="flex items-center space-x-1">
-                {renderStars(productData.rating.rate)}
-                <span className="text-sm text-gray-600 ml-1">({productData.rating.count})</span>
+                {renderStars(product.rating?.rate)}
+                <span className="text-sm text-gray-600 ml-1">({product.rating?.count})</span>
               </div>
             </div>
 
-            {/* Price - with forced re-render key */}
-            <div className="mt-auto" key={`price-display-${productData.id}-${productData.price}`}>
-              <span className="text-2xl font-bold text-primary">${productData.price.toFixed(2)}</span>
+            <div className="mt-auto">
+              <span className="text-2xl font-bold text-primary">${product.price?.toFixed(2)}</span>
             </div>
           </CardContent>
         </Link>
@@ -276,7 +252,7 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Product</AlertDialogTitle>
             <AlertDialogDescription className="overflow-y-auto scrollbar-hide max-h-32">
-              Are you sure you want to delete "{productData.title}"? This will be permanently deleted from your local
+              Are you sure you want to delete "{product.title}"? This will be permanently deleted from your local
               storage.
             </AlertDialogDescription>
           </AlertDialogHeader>

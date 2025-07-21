@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { useWishlist } from "@/hooks/useWishlist"
-import { useOrders } from "@/hooks/useOrders" // Import useOrders hook
+import { useOrders } from "@/hooks/useOrders"
 import { Link } from "react-router-dom"
 
 const ProfilePage = () => {
@@ -57,7 +57,6 @@ const ProfilePage = () => {
     }))
   }
 
-  // FIXED: Use orders from useOrders hook instead of mock data
   const { orders: recentOrders } = useOrders()
 
   const { items: wishlistItems, removeFromWishlist } = useWishlist()

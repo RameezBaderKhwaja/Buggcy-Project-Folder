@@ -135,7 +135,7 @@ const ProductList = ({
 
         return (
           <ProductCard
-            key={`product-${product.id}-${product.price}`} // Added price to key to force re-render
+            key={`product-${product.id}-${product.price}`}
             product={product}
             onAddToCart={handleAddToCart}
             showCrudButtons={showCrudButtons}
