@@ -98,13 +98,6 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
     setShowDeleteDialog(false)
   }, [product, onDelete, showModal])
 
-  const truncateTitle = (title, maxLength = 50) => {
-    if (!title || typeof title !== "string") {
-      return "Untitled Product"
-    }
-    return title.length > maxLength ? title.substring(0, maxLength) + "..." : title
-  }
-
   const renderStars = (rating) => {
     const stars = []
     const ratingValue = rating || 0
@@ -210,18 +203,24 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
               </Badge>
             )}
 
-            <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors text-black min-h-[3.5rem] flex items-start">
-              {truncateTitle(product.title)}
+            {/* Product Title - now shows full name */}
+            <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors text-black flex items-start">
+              {product.title}
             </h3>
 
-            <div className="flex items-center space-x-2 mb-3 h-5">
+            {/* Spacer to push stars and price to bottom */}
+            <div className="flex-grow" />
+
+            {/* Stars - fixed position relative to bottom */}
+            <div className="flex items-center space-x-2 mb-1 h-5">
               <div className="flex items-center space-x-1">
                 {renderStars(product.rating?.rate)}
                 <span className="text-sm text-gray-600 ml-1">({product.rating?.count})</span>
               </div>
             </div>
 
-            <div className="mt-auto">
+            {/* Price - fixed position relative to bottom */}
+            <div>
               <span className="text-2xl font-bold text-primary">${product.price?.toFixed(2)}</span>
             </div>
           </CardContent>
@@ -231,7 +230,7 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
           <Button
             onClick={handleAddToCart}
             variant="outline"
-            className="w-full hover:bg-primary hover:text-primary-foreground transition-colors bg-transparent border border-border text-foreground"
+            className="w-full hover:bg-primary hover:text-primary-foreground transition-colors bg-transparent border border-border text-foreground shadow-sm" // Added shadow-sm
             size="sm"
           >
             <ShoppingCart className="h-4 w-4 mr-2" />

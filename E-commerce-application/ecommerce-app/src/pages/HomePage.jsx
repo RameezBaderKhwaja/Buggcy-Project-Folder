@@ -172,7 +172,7 @@ const HomePage = () => {
               <Link to={currentSlideData.buttonLink}>
                 <Button
                   size="lg"
-                  className="group w-full sm:w-auto bg-primary text-black hover:bg-primary/90 shadow-lg px-8 py-3 font-semibold text-lg"
+                  className="group w-full sm:w-auto bg-gray-800/80 text-white hover:bg-gray-800 shadow-md px-8 py-3 font-medium text-lg backdrop-blur-sm border border-gray-700/50"
                 >
                   {currentSlideData.buttonText}
                   <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -182,7 +182,7 @@ const HomePage = () => {
                 <Button
                   variant="outline"
                   size="lg"
-                  className="w-full sm:w-auto border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3 font-semibold text-lg bg-transparent"
+                  className="w-full sm:w-auto border border-gray-400/60 text-gray-700 hover:bg-white/50 px-8 py-3 font-medium text-lg bg-white/30 backdrop-blur-sm"
                 >
                   Learn More
                 </Button>
@@ -191,11 +191,11 @@ const HomePage = () => {
           </div>
 
           <div className="relative w-full lg:w-1/2 flex-shrink-0 flex items-center justify-center lg:justify-end">
-            <div className="w-full aspect-square max-w-md lg:max-w-[400px] lg:h-[400px] mx-auto lg:mx-0">
+            <div className="w-full aspect-square max-w-md lg:max-w-[400px] lg:h-[400px] mx-auto lg:mx-0 bg-white/20 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-white/30">
               <img
                 src={currentSlideData.image || "/placeholder.svg?transparent=true"}
                 alt={currentSlideData.title}
-                className="object-contain w-full h-full drop-shadow-xl"
+                className="object-contain w-full h-full drop-shadow-lg mix-blend-darken"
               />
             </div>
           </div>
