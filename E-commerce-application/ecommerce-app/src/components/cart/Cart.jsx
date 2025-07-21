@@ -12,7 +12,6 @@ const Cart = () => {
   const { items, total, itemCount, isEmpty, subtotal, tax, grandTotal, removeFromCart, updateQuantity, clearCart } =
     useCart()
 
-  // Memoized cart items with calculations
   const cartItems = useMemo(() => {
     return items.map((item) => ({
       ...item,
@@ -20,7 +19,6 @@ const Cart = () => {
     }))
   }, [items])
 
-  // Memoized handlers
   const handleQuantityChange = useCallback(
     (productId, newQuantity) => {
       if (newQuantity <= 0) {
@@ -60,7 +58,6 @@ const Cart = () => {
 
   return (
     <div className="space-y-6">
-      {/* Cart Header */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Shopping Cart ({itemCount} items)</CardTitle>
@@ -75,13 +72,11 @@ const Cart = () => {
         </CardHeader>
       </Card>
 
-      {/* Cart Items */}
       <div className="space-y-4">
         {cartItems.map((item) => (
           <Card key={item.id}>
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                {/* Product Image */}
                 <div className="w-20 h-20 bg-gray-50 rounded-lg overflow-hidden flex-shrink-0">
                   <img
                     src={item.image || "/placeholder.svg"}
@@ -90,7 +85,6 @@ const Cart = () => {
                   />
                 </div>
 
-                {/* Product Info */}
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-lg mb-1 truncate">{item.title}</h3>
                   <p className="text-muted-foreground text-sm mb-2 capitalize">{item.category}</p>
@@ -102,7 +96,6 @@ const Cart = () => {
                   </div>
                 </div>
 
-                {/* Quantity Controls */}
                 <div className="flex items-center space-x-2">
                   <Button
                     variant="outline"
@@ -123,7 +116,6 @@ const Cart = () => {
                   </Button>
                 </div>
 
-                {/* Remove Button */}
                 <Button
                   variant="outline"
                   size="sm"
@@ -138,7 +130,6 @@ const Cart = () => {
         ))}
       </div>
 
-      {/* Cart Summary */}
       <Card>
         <CardHeader>
           <CardTitle>Order Summary</CardTitle>

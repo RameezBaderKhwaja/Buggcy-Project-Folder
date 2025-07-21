@@ -61,10 +61,8 @@ const Footer = () => {
   return (
     <footer className="bg-slate-900 text-white">
       <div className="w-full px-2 sm:px-3 lg:px-4 py-1">
-        {/* Main Footer Content */}
         <div className="py-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Brand Section */}
             <div className="lg:col-span-1">
               <div className="flex items-center space-x-2 mb-3">
                 <Store className="h-6 w-6 text-blue-400" />
@@ -90,7 +88,6 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* Quick Links */}
             <div>
               <h4 className="font-semibold text-sm mb-3 text-white">Quick Links</h4>
               <div className="space-y-1.5">
@@ -120,7 +117,6 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* Support & Legal */}
             <div>
               <h4 className="font-semibold text-sm mb-3 text-white">Support & Legal</h4>
               <div className="space-y-1.5">
@@ -137,11 +133,9 @@ const Footer = () => {
               </div>
             </div>
 
-            {/* Contact & Newsletter */}
             <div>
               <h4 className="font-semibold text-sm mb-3 text-white">Get in Touch</h4>
 
-              {/* Contact Info */}
               <div className="space-y-2 mb-3">
                 {contactInfo.map((info, index) => (
                   <div key={index} className="flex items-center space-x-2 text-gray-300">
@@ -151,7 +145,6 @@ const Footer = () => {
                 ))}
               </div>
 
-              {/* Newsletter */}
               <div>
                 <h5 className="font-medium mb-2 text-white text-xs">Stay Updated</h5>
                 <p className="text-gray-300 text-xs mb-2">Subscribe for the latest updates and exclusive offers.</p>
@@ -181,7 +174,6 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom Footer */}
         <div className="border-t border-slate-800 py-4">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-3 md:space-y-0">
             <p className="text-gray-400 text-xs text-center md:text-left">© 2025 ShopHub. All rights reserved.</p>

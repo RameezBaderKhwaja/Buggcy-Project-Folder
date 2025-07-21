@@ -210,7 +210,6 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
       })
       setValidationErrors((prevErrors) => ({ ...prevErrors, ...newErrors }))
     } else {
-      
       setValidationErrors((prevErrors) => {
         const updatedErrors = { ...prevErrors }
         delete updatedErrors.cardNumber
@@ -330,7 +329,7 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
 
   const handleSubmit = useCallback(
     async (e) => {
-      e.preventDefault() // Prevent default form submission
+      e.preventDefault()
 
       const formIsValid = validateForm()
       if (!formIsValid) {
@@ -343,11 +342,9 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
       }
 
       if (paymentMethod === "stripe") {
-        console.log("Stripe payment selected, deferring to StripeCheckout component.")
         return
       }
 
-      // Handle direct card payment submission
       setLoading(true)
 
       try {
@@ -364,7 +361,7 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
         const response = await apiService.submitOrder(orderData)
 
         if (response.success) {
-          addOrder(orderData) // Add the order to the Zustand store
+          addOrder(orderData)
           clearCart()
           showSuccessModal(orderData.orderId)
           if (onOrderComplete) {
@@ -398,7 +395,6 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Personal Information */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -478,7 +474,6 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
         </CardContent>
       </Card>
 
-      {/* Shipping Address */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -581,7 +576,6 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
         </CardContent>
       </Card>
 
-      {/* Payment Method Selection */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
@@ -599,7 +593,6 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
                     <div className="font-medium">Stripe Payment</div>
                     <div className="text-sm text-muted-foreground">Secure payment with Stripe</div>
                   </div>
-                  {/* FIXED: Always show the stripe fee here */}
                   <div className="text-sm text-red-600">+${stripeFee.toFixed(2)} processing fee</div>
                 </div>
               </Label>
@@ -704,11 +697,9 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
         </CardContent>
       </Card>
 
-      {/* Preferences */}
       <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
-            {/* Save Info as Radio Group */}
             <div className="space-y-2">
               <Label>Save my information for future orders</Label>
               <RadioGroup
@@ -727,7 +718,6 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
               </RadioGroup>
             </div>
 
-            {/* Subscribe as Radio Group */}
             <div className="space-y-2">
               <Label>Subscribe to our newsletter for updates and offers</Label>
               <RadioGroup
@@ -753,3 +743,4 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
 }
 
 export default OrderForm
+  

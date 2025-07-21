@@ -16,7 +16,6 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  // CardElement styling
   const cardElementOptions = {
     style: {
       base: {
@@ -38,8 +37,6 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
       event.preventDefault()
 
       if (!stripe || !elements) {
-        // Disable form submission until Stripe.js has loaded.
-        console.log("Stripe.js not loaded yet.")
         return
       }
 
@@ -54,7 +51,6 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
         return
       }
 
-      // Use stripeService to create a payment method (client-side validation)
       const { paymentMethod, error: createPaymentMethodError } = await stripeService.processPaymentMethod(
         stripe,
         elements,
@@ -74,9 +70,8 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
       }
 
       try {
-        // Simulate a successful payment intent for the demo
         const mockPaymentIntent = {
-          id: paymentMethod.id, // Use the payment method ID as a mock payment intent ID
+          id: paymentMethod.id,
           status: "succeeded",
           amount: Math.round(amount * 100),
           currency: "usd",
@@ -149,7 +144,7 @@ const CheckoutForm = ({ amount, onSuccess, onError }) => {
 }
 
 const StripeCheckout = ({ amount, onSuccess, onError }) => {
-  const validAmount = typeof amount === "number" && amount > 0 ? amount : 0.01 // Stripe requires minimum amount
+  const validAmount = typeof amount === "number" && amount > 0 ? amount : 0.01
 
   return (
     <Elements stripe={getStripe()}>

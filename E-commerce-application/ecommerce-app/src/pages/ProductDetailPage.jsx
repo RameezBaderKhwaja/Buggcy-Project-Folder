@@ -74,9 +74,7 @@ const ProductDetailPage = () => {
   const handleWishlistToggle = useCallback(
     (e) => {
       e?.preventDefault()
-      if (!product) {
-        return
-      }
+      if (!product) return
 
       if (isWishlisted) {
         removeFromWishlist(product.id)
@@ -181,7 +179,7 @@ const ProductDetailPage = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-4">
-          <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden">
+          <div className="aspect-square bg-white rounded-lg overflow-hidden">
             <img
               src={product.image || "/placeholder.svg"}
               alt={product.title}
@@ -192,7 +190,7 @@ const ProductDetailPage = () => {
 
         <div className="space-y-6">
           <div>
-            <Badge variant="secondary" className="mb-2 capitalize">
+            <Badge className="mb-2 capitalize bg-gray-100 text-black hover:bg-gray-200 border-gray-300">
               {product.category}
             </Badge>
             <h1 className="text-3xl font-bold mb-4">{product.title}</h1>

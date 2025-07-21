@@ -19,6 +19,7 @@ const setLocalProducts = (products) => {
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(products))
   } catch (error) {
+    console.error("Failed to save to localStorage:", error)
   }
 }
 
@@ -147,6 +148,7 @@ export const useProducts = (category = null, searchTerm = "") => {
           try {
             await apiService.updateProduct(id, updatedProduct)
           } catch (apiError) {
+            console.warn("API update failed, but local update succeeded")
           }
 
           return updatedProduct
@@ -169,6 +171,7 @@ export const useProducts = (category = null, searchTerm = "") => {
           try {
             await apiService.deleteProduct(id)
           } catch (apiError) {
+            console.warn("API delete failed, but local delete succeeded")
           }
 
           return true
@@ -260,6 +263,7 @@ export const useProduct = (id) => {
         try {
           await apiService.updateProduct(product.id, mergedData)
         } catch (apiError) {
+          console.warn("API update failed, but local update succeeded")
         }
 
         return mergedData

@@ -17,13 +17,12 @@ const ProductList = ({
   showCrudButtons = false,
   viewMode = "grid",
 }) => {
-  const { products, error, isLoading, refreshProducts, createProduct, updateProduct, deleteProduct } = useProducts(
+  const { products, error, isLoading, refreshProducts, updateProduct, deleteProduct } = useProducts(
     category,
     searchTerm,
   )
   const { addToCart } = useCart()
 
-  // Memoized sorted products
   const sortedProducts = useMemo(() => {
     if (!products || !Array.isArray(products)) return []
 
@@ -42,7 +41,6 @@ const ProductList = ({
     }
   }, [products, sortBy])
 
-  // Memoized handlers
   const handleAddToCart = useCallback(
     (product) => {
       addToCart(product)
@@ -53,12 +51,10 @@ const ProductList = ({
   const handleEdit = useCallback(
     async (product, updatedData) => {
       try {
-        console.log("🔄 ProductList: Handling edit for product", product.id, "with data:", updatedData)
         const result = await updateProduct(product.id, updatedData)
-        console.log("✅ ProductList: Edit completed successfully:", result)
         return result
       } catch (error) {
-        console.error("❌ ProductList: Failed to update product:", error)
+        console.error("Failed to update product:", error)
         throw error
       }
     },

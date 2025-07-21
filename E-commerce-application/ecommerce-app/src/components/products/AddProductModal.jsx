@@ -93,7 +93,6 @@ const AddProductModal = ({ open, onOpenChange, onSave }) => {
         description: formData.description,
         category: formData.category,
         image: formData.image || "/placeholder.svg?height=400&width=400",
-        // Set initial rating for new products
         rating: { rate: 0, count: 0 },
       }
 

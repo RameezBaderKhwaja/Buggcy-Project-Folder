@@ -203,15 +203,12 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
               </Badge>
             )}
 
-            {/* Product Title - now shows full name */}
             <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors text-black flex items-start">
               {product.title}
             </h3>
 
-            {/* Spacer to push stars and price to bottom */}
             <div className="flex-grow" />
 
-            {/* Stars - fixed position relative to bottom */}
             <div className="flex items-center space-x-2 mb-1 h-5">
               <div className="flex items-center space-x-1">
                 {renderStars(product.rating?.rate)}
@@ -219,7 +216,6 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
               </div>
             </div>
 
-            {/* Price - fixed position relative to bottom */}
             <div>
               <span className="text-2xl font-bold text-primary">${product.price?.toFixed(2)}</span>
             </div>
@@ -230,7 +226,7 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
           <Button
             onClick={handleAddToCart}
             variant="outline"
-            className="w-full hover:bg-primary hover:text-primary-foreground transition-colors bg-transparent border border-border text-foreground shadow-sm" // Added shadow-sm
+            className="w-full hover:bg-primary hover:text-primary-foreground transition-colors bg-transparent border border-border text-foreground shadow-sm"
             size="sm"
           >
             <ShoppingCart className="h-4 w-4 mr-2" />

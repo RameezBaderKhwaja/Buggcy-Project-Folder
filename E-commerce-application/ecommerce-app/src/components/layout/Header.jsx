@@ -32,7 +32,6 @@ const Header = () => {
   return (
     <header className="w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
       <div className="relative h-16 px-4 sm:px-6 lg:px-8 flex items-center">
-        {/* Mobile Menu */}
         <div className="lg:hidden">
           <Sheet>
             <SheetTrigger asChild>
@@ -62,13 +61,11 @@ const Header = () => {
           </Sheet>
         </div>
 
-        {/*Logo */}
         <Link to="/" className="flex items-center space-x-2">
           <Store className="h-6 w-6 text-primary" />
           <span className="text-lg sm:text-xl font-bold text-foreground">ShopHub</span>
         </Link>
 
-        {/* Desktop Center Nav - Position absolute for center alignment */}
         <nav className="hidden lg:flex absolute left-1/2 transform -translate-x-1/2 space-x-6">
           {navigationLinks.map((link) => (
             <Link
@@ -83,7 +80,6 @@ const Header = () => {
           ))}
         </nav>
 
-        {/* Right: Icons */}
         <div className="absolute right-6 flex items-center space-x-2">
           <Link to="/search">
             <Button variant="ghost" size="sm" className="relative hover:bg-accent bg-transparent border border-border">
@@ -91,7 +87,6 @@ const Header = () => {
             </Button>
           </Link>
 
-          {/* Cart Icon */}
           <Link to="/cart">
             <Button variant="ghost" size="sm" className="relative hover:bg-accent bg-transparent border border-border">
               <ShoppingCart className="h-5 w-5" />

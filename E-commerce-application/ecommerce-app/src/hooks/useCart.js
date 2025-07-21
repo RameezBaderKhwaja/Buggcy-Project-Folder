@@ -3,7 +3,6 @@
 import { useCartStore } from "@/services/cartService"
 import { useCallback, useMemo } from "react"
 
-// Custom hook for managing cart state using Zustand
 export const useCart = () => {
   const {
     items,
@@ -15,7 +14,6 @@ export const useCart = () => {
     clearCart: clearCartStore,
   } = useCartStore()
 
-  // Memoized cart operations
   const cartOperations = useMemo(
     () => ({
       addToCart: addToCartStore,
@@ -26,7 +24,6 @@ export const useCart = () => {
     [addToCartStore, removeFromCartStore, updateQuantityStore, clearCartStore],
   )
 
-  // Memoized cart summary
   const cartSummary = useMemo(
     () => ({
       items,
@@ -40,7 +37,6 @@ export const useCart = () => {
     [items, total, itemCount],
   )
 
-  // Callback to check if item is in cart
   const isInCart = useCallback(
     (productId) => {
       return items.some((item) => item.id === productId)
@@ -48,7 +44,6 @@ export const useCart = () => {
     [items],
   )
 
-  // Callback to get item quantity
   const getItemQuantity = useCallback(
     (productId) => {
       const item = items.find((item) => item.id === productId)

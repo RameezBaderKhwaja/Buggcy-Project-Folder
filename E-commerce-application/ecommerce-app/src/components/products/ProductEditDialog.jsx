@@ -61,7 +61,6 @@ const ProductEditDialog = ({ product, open, onOpenChange, onSave }) => {
     }
 
     try {
-      // Only send the changed fields
       const updatedData = {
         title: formData.title.trim(),
         price: priceValue,
@@ -69,8 +68,6 @@ const ProductEditDialog = ({ product, open, onOpenChange, onSave }) => {
         category: formData.category,
         image: formData.image.trim() || product.image,
       }
-
-      console.log("Saving product with data:", updatedData)
 
       await onSave(product, updatedData)
       onOpenChange(false)
@@ -168,7 +165,6 @@ const ProductEditDialog = ({ product, open, onOpenChange, onSave }) => {
             />
           </div>
 
-          {/* Display current rating (read-only) with enhanced info */}
           {product?.rating && (
             <div className="bg-muted/50 p-3 rounded-lg border-l-4 border-l-primary">
               <Label className="text-sm font-medium text-muted-foreground">Current Rating</Label>
@@ -176,9 +172,7 @@ const ProductEditDialog = ({ product, open, onOpenChange, onSave }) => {
                 <span className="text-sm font-semibold">{product.rating.rate}/5</span>
                 <span className="text-xs text-muted-foreground">({product.rating.count} reviews)</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                 Rating preserved •
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">Rating preserved</p>
             </div>
           )}
 

@@ -6,7 +6,7 @@ export const useModalStore = create((set) => ({
   isOpen: false,
   title: "",
   content: "",
-  type: "info", // info, success, error, warning
+  type: "info",
   onConfirm: null,
   onCancel: null,
 
