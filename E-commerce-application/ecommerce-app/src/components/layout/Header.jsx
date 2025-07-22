@@ -35,7 +35,7 @@ const Header = () => {
         <div className="lg:hidden">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="hover:bg-accent bg-transparent">
+              <Button  variant="ghost"size="sm"className="relative bg-transparent hover:border hover:border-border hover:bg-accent">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
@@ -82,13 +82,13 @@ const Header = () => {
 
         <div className="absolute right-6 flex items-center space-x-2">
           <Link to="/search">
-            <Button variant="ghost" size="sm" className="relative hover:bg-accent bg-transparent border border-border">
+            <Button variant="ghost" size="sm" className="relative hover:bg-accent bg-transparent">
               <Search className="h-5 w-5" />
             </Button>
           </Link>
 
           <Link to="/cart">
-            <Button variant="ghost" size="sm" className="relative hover:bg-accent bg-transparent border border-border">
+            <Button variant="ghost" size="sm" className="relative hover:bg-accent bg-transparent">
               <ShoppingCart className="h-5 w-5" />
               {itemCount > 0 && (
                 <Badge
@@ -121,7 +121,7 @@ const Header = () => {
             >
               <DropdownMenuItem asChild>
                 <Link to="/profile" className="cursor-pointer">
-                  <User className="mr-2 h-4 w-4" />
+                  <User className="mr-2 h-4 w-4 " />
                   Profile
                 </Link>
               </DropdownMenuItem>

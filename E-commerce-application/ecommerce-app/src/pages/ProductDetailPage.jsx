@@ -194,6 +194,7 @@ const ProductDetailPage = () => {
               {product.category}
             </Badge>
             <h1 className="text-3xl font-bold mb-4">{product.title}</h1>
+            <div className="text-3xl font-bold text-primary mb-6">${product.price.toFixed(2)}</div>
 
             <div className="flex items-center space-x-4 mb-4">
               <div className="flex items-center space-x-1">
@@ -203,8 +204,6 @@ const ProductDetailPage = () => {
               </div>
               {productInfo.isInCart && <Badge variant="outline">{productInfo.currentQuantity} in cart</Badge>}
             </div>
-
-            <div className="text-3xl font-bold text-primary mb-6">${product.price.toFixed(2)}</div>
           </div>
 
           <Separator />

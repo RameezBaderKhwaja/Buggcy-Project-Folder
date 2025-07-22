@@ -203,9 +203,13 @@ const ProductCard = ({ product, onAddToCart, showCrudButtons = false, onEdit, on
               </Badge>
             )}
 
-            <h3 className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors text-black flex items-start">
+            <h3
+              className="font-semibold text-lg mb-2 group-hover:text-primary transition-colors text-black leading-tight line-clamp-2"
+              title={product.title}
+            >
               {product.title}
             </h3>
+
 
             <div className="flex-grow" />
 
