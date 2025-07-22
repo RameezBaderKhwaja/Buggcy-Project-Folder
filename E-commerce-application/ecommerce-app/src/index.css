@@ -85,13 +85,6 @@ body,
   display: none;
 }
 
-/* Remove all previous hero image styles */
-/* .hero-image { ... } */
-/* .hero-image::before { ... } */
-/* .hero-image[src*="fakestoreapi"] { ... } */
-/* .hero-image img { ... } */
-
-/* For better contrast on the hero section */
 .hero-section-bg {
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 50%, #bfdbfe 100%);
 }
