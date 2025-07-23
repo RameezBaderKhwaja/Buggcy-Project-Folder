@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button"
 import OrderForm from "@/components/checkout/OrderForm"
 import { useCart } from "@/hooks/useCart"
+import { Link } from "react-router-dom"
 
 const CheckoutPage = () => {
   const navigate = useNavigate()
@@ -109,9 +110,17 @@ const CheckoutPage = () => {
                 )}
               </div>
               <Separator />
-              <div className="flex justify-between font-bold text-lg">
-                <span>Total:</span>
-                <span>${finalTotal.toFixed(2)}</span>
+              {/* New wrapper div for total and button with increased spacing */}
+              <div className="space-y-6">
+                <div className="flex justify-between font-bold text-lg">
+                  <span>Total:</span>
+                  <span>${finalTotal.toFixed(2)}</span>
+                </div>
+                <Link to="/checkout" className="block pt-2">
+                  <Button size="lg" className="w-full">
+                    Proceed to Checkout
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

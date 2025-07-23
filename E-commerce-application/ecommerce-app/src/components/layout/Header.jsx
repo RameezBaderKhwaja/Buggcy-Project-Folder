@@ -35,7 +35,7 @@ const Header = () => {
         <div className="lg:hidden">
           <Sheet>
             <SheetTrigger asChild>
-              <Button  variant="ghost"size="sm"className="relative bg-transparent hover:border hover:border-border hover:bg-accent">
+              <Button variant="ghost" size="sm" className="relative bg-transparent hover:bg-accent">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
@@ -109,7 +109,8 @@ const Header = () => {
               >
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-primary/10">
-                    <User className="h-4 w-4" />
+                    {/* Changed User icon color to text-primary to match other icons */}
+                    <User className="h-4 w-4 text-primary" />
                   </AvatarFallback>
                 </Avatar>
               </Button>

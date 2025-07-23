@@ -158,7 +158,7 @@ const Cart = () => {
             <span>Total</span>
             <span>${(grandTotal || (total || 0) * 1.08).toFixed(2)}</span>
           </div>
-          <Link to="/checkout">
+          <Link to="/checkout" className="block pt-2">
             <Button size="lg" className="w-full">
               Proceed to Checkout
             </Button>
