@@ -25,7 +25,7 @@ const SearchPage = () => {
     setLocalSearchQuery(searchQuery)
     setLocalSelectedCategory(selectedCategory)
     return () => resetSearchState()
-  }, [])
+  }, [resetSearchState, searchQuery, selectedCategory])
 
   const searchSuggestions = useMemo(() => {
     if (!localSearchQuery || !products) return []

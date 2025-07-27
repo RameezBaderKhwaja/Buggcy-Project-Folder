@@ -198,9 +198,10 @@ const ProductDetailPage = () => {
 
             <div className="flex items-center space-x-4 mb-4">
               <div className="flex items-center space-x-1">
-                {renderStars(product.rating?.rate)}
-                <span className="font-semibold ml-2">{product.rating?.rate || 0}</span>
-                <span className="text-muted-foreground">({product.rating?.count || 0} reviews)</span>
+                {/* Guard renderStars and rating display */}
+                {renderStars(product && product.rating && typeof product.rating.rate === 'number' ? product.rating.rate : 0)}
+                <span className="font-semibold ml-2">{product && product.rating && typeof product.rating.rate === 'number' ? product.rating.rate : 0}</span>
+                <span className="text-muted-foreground">({product && product.rating && typeof product.rating.count === 'number' ? product.rating.count : 0} reviews)</span>
               </div>
               {productInfo.isInCart && <Badge variant="outline">{productInfo.currentQuantity} in cart</Badge>}
             </div>

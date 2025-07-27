@@ -341,7 +341,13 @@ const OrderForm = ({ onOrderComplete, paymentMethod, setPaymentMethod, finalTota
         return
       }
 
+     
       if (paymentMethod === "stripe") {
+        showModal({
+          title: "Stripe Payment",
+          content: "Please use the Stripe payment section below to complete your payment.",
+          type: "info",
+        })
         return
       }
 

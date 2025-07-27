@@ -31,9 +31,7 @@ const ProductDetailPage = () => {
   const [quantity, setQuantity] = useState(1)
 
   const isWishlisted = useMemo(() => {
-    const status = product ? wishlistItems.some((item) => item.id === product.id) : false
-    console.log(`💖 ProductDetailPage: isWishlisted for ${product?.id}: ${status}`)
-    return status
+    return product ? wishlistItems.some((item) => item.id === product.id) : false
   }, [product, wishlistItems])
 
   useEffect(() => {
@@ -41,18 +39,10 @@ const ProductDetailPage = () => {
   }, [product])
 
   useEffect(() => {
-    console.log("🔍 PRODUCT DETAIL PAGE RENDER:", {
-      productId: product?.id,
-      productTitle: product?.title?.slice(0, 30),
-      isWishlisted: isWishlisted, // Use the memoized value
-      wishlistItemsCount: wishlistItems?.length || 0,
-      currentQuantityState: quantity,
-      timestamp: new Date().toLocaleTimeString(),
-    })
     if (product?.rating) {
-      console.log("🔍 PRODUCT RATING DATA (from product object):", product.rating)
+      // nothing
     } else {
-      console.log("⚠️ PRODUCT RATING DATA: Not available or null on product object.")
+      // nothing
     }
   }, [product, isWishlisted, wishlistItems, quantity])
 
@@ -71,8 +61,6 @@ const ProductDetailPage = () => {
     const ratingValue = rating || 0
     const fullStars = Math.floor(ratingValue)
     const hasHalfStar = ratingValue % 1 !== 0
-
-    console.log("⭐ RENDERING STARS (inside function):", { rating, ratingValue, fullStars, hasHalfStar })
 
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
@@ -97,15 +85,10 @@ const ProductDetailPage = () => {
     (e) => {
       e?.preventDefault()
       if (!product) {
-        console.log("❌ ProductDetailPage: No product available for wishlist toggle.")
         return
       }
 
-      console.log("💖 ProductDetailPage: Toggling wishlist for product ID:", product.id)
-      console.log("💖 ProductDetailPage: Current isWishlisted status BEFORE toggle:", isWishlisted)
-
       if (isWishlisted) {
-        console.log("🗑️ ProductDetailPage: Removing from wishlist...")
         removeFromWishlist(product.id)
         showModal({
           title: "Removed from Wishlist",
@@ -113,7 +96,6 @@ const ProductDetailPage = () => {
           type: "info",
         })
       } else {
-        console.log("➕ ProductDetailPage: Adding to wishlist...")
         addToWishlist(product)
         showModal({
           title: "Added to Wishlist",
@@ -121,7 +103,6 @@ const ProductDetailPage = () => {
           type: "success",
         })
       }
-      console.log("💖 ProductDetailPage: Wishlist toggle action dispatched.")
     },
     [product, isWishlisted, addToWishlist, removeFromWishlist, showModal],
   )
@@ -231,10 +212,10 @@ const ProductDetailPage = () => {
 
             <div className="flex items-center space-x-4 mb-4">
               <div className="flex items-center space-x-1">
-                {/* FIXED: Call renderStars with the correct rating value */}
-                {renderStars(product.rating?.rate)}
-                <span className="font-semibold ml-2">{product.rating?.rate || 0}</span>
-                <span className="text-muted-foreground">({product.rating?.count || 0} reviews)</span>
+                {/* Guard renderStars and rating display */}
+                {renderStars(product && product.rating && typeof product.rating.rate === 'number' ? product.rating.rate : 0)}
+                <span className="font-semibold ml-2">{product && product.rating && typeof product.rating.rate === 'number' ? product.rating.rate : 0}</span>
+                <span className="text-muted-foreground">({product && product.rating && typeof product.rating.count === 'number' ? product.rating.count : 0} reviews)</span>
               </div>
               {productInfo.isInCart && <Badge variant="outline">{productInfo.currentQuantity} in cart</Badge>}
             </div>

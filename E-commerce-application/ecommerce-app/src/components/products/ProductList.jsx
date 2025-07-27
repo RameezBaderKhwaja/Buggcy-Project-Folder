@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useCallback } from "react"
+import { useMemo, useCallback, useState } from "react"
 import { useProducts } from "@/hooks/useProducts"
 import { useCart } from "@/hooks/useCart"
 import ProductCard from "./ProductCard"
@@ -22,6 +22,7 @@ const ProductList = ({
     searchTerm,
   )
   const { addToCart } = useCart()
+  const [crudError, setCrudError] = useState("")
 
   const sortedProducts = useMemo(() => {
     if (!products || !Array.isArray(products)) return []
@@ -52,9 +53,10 @@ const ProductList = ({
     async (product, updatedData) => {
       try {
         const result = await updateProduct(product.id, updatedData)
+        setCrudError("")
         return result
       } catch (error) {
-        console.error("Failed to update product:", error)
+        setCrudError(error.message || "Failed to update product.")
         throw error
       }
     },
@@ -65,8 +67,9 @@ const ProductList = ({
     async (productId) => {
       try {
         await deleteProduct(productId)
+        setCrudError("")
       } catch (error) {
-        console.error("Failed to delete product:", error)
+        setCrudError(error.message || "Failed to delete product.")
       }
     },
     [deleteProduct],
@@ -113,6 +116,24 @@ const ProductList = ({
       <div className="text-center py-12">
         <p className="text-muted-foreground">No products found.</p>
       </div>
+    )
+  }
+
+  if (crudError) {
+    return (
+      <Alert variant="destructive">
+        <AlertDescription className="flex items-center justify-between">
+          <span>{crudError}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCrudError("")}
+            className="ml-4 bg-transparent border border-border hover:bg-accent"
+          >
+            Dismiss
+          </Button>
+        </AlertDescription>
+      </Alert>
     )
   }
 

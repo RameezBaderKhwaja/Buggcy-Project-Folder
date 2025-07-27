@@ -17,7 +17,6 @@ export const stripeService = {
  
     await new Promise((resolve) => setTimeout(resolve, 500))
     const mockClientSecret = `pi_mock_${Date.now()}_secret_${Math.random().toString(36).substr(2, 9)}`
-    console.log(`MOCK STRIPE SERVICE: Created mock payment intent for $${(amount / 100).toFixed(2)}`)
 
     return {
       clientSecret: mockClientSecret,
@@ -37,18 +36,15 @@ export const stripeService = {
    * @returns {Promise<{paymentMethod: object, error: object}>} - Resolves with paymentMethod or error.
    */
   processPaymentMethod: async (stripe, elements, cardElement) => {
-    console.log("STRIPE SERVICE: Attempting to create payment method...")
     const { paymentMethod, error } = await stripe.createPaymentMethod({
       type: "card",
       card: cardElement,
     })
 
     if (error) {
-      console.error("STRIPE SERVICE: Error creating payment method:", error)
       return { error }
     }
 
-    console.log("STRIPE SERVICE: Payment method created successfully:", paymentMethod)
     return { paymentMethod }
   },
 }

@@ -12,7 +12,6 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config) => {
-    console.log(`Making ${config.method?.toUpperCase()} request to ${config.url}`)
     return config
   },
   (error) => {
@@ -65,8 +64,6 @@ export const apiService = {
 
   updateProduct: async (id, productData) => {
     try {
-      console.log("API: Updating product", id, "with data:", productData)
-
       const sanitizedData = {
         ...productData,
         price: typeof productData.price === "string" ? Number.parseFloat(productData.price) : productData.price,
@@ -74,7 +71,6 @@ export const apiService = {
       }
 
       const response = await apiClient.put(`/products/${id}`, sanitizedData)
-      console.log("API: Update response:", response.data)
       return response.data
     } catch (error) {
       console.error("API: Update failed:", error)
@@ -97,7 +93,6 @@ export const apiService = {
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
     const mockOrderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`
-    console.log("API SERVICE: Order submitted", { orderData, mockOrderId })
     return {
       success: true,
       data: { ...orderData, orderId: mockOrderId, status: "Processing" },

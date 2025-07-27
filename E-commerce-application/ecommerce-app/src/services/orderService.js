@@ -5,12 +5,12 @@ import { persist } from "zustand/middleware"
 
 // Add this debug function at the top after imports
 const debugOrders = (action, orderId, orders) => {
-  console.log(`📦 ORDERS DEBUG: ${action}`, {
-    orderId,
-    currentOrders: orders?.map((o) => ({ id: o.orderId, total: o.total, status: o.status })),
-    orderCount: orders?.length || 0,
-    timestamp: new Date().toLocaleTimeString(),
-  })
+  // console.log(`📦 ORDERS DEBUG: ${action}`, {
+  //   orderId,
+  //   currentOrders: orders?.map((o) => ({ id: o.orderId, total: o.total, status: o.status })),
+  //   orderCount: orders?.length || 0,
+  //   timestamp: new Date().toLocaleTimeString(),
+  // })
 }
 
 // Order service using Zustand
@@ -52,15 +52,15 @@ export const useOrderStore = create(
       name: "shophub-orders",
       getStorage: () => localStorage,
       onRehydrateStorage: () => {
-        console.log("🔄 ORDERS: Starting rehydration...")
+        // console.log("🔄 ORDERS: Starting rehydration...")
         return (state, error) => {
           if (error) {
-            console.error("❌ ORDERS: Rehydration error", error)
+            // console.error("❌ ORDERS: Rehydration error", error)
           } else {
-            console.log("✅ ORDERS: Rehydration complete", {
-              orderCount: state?.orders?.length || 0,
-              orders: state?.orders?.map((o) => ({ id: o.orderId, total: o.total, status: o.status })) || [],
-            })
+            // console.log("✅ ORDERS: Rehydration complete", {
+            //   orderCount: state?.orders?.length || 0,
+            //   orders: state?.orders?.map((o) => ({ id: o.orderId, total: o.total, status: o.status })) || [],
+            // })
           }
         }
       },
