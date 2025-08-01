@@ -1,0 +1,47 @@
+import jwt from 'jsonwebtoken'
+import bcrypt from 'bcrypt'
+import { User } from '@prisma/client'
+import { JWTPayload } from './types'
+import { JWT_SECRET, JWT_EXPIRES_IN } from './constants'
+
+export function generateToken(user: User): string {
+  const payload: JWTPayload = {
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+  }
+
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
+}
+
+export function verifyToken(token: string): JWTPayload | null {
+  try {
+    return jwt.verify(token, JWT_SECRET) as JWTPayload
+  } catch (error) {
+    console.error('Token verification failed:', error)
+    return null
+  }
+}
+
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 12)
+}
+
+export async function comparePassword(
+  password: string,
+  hash: string
+): Promise<boolean> {
+  return bcrypt.compare(password, hash)
+}
+
+export function createAuthCookie(token: string) {
+  return {
+    name: 'auth-token',
+    value: token,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    maxAge: 7 * 24 * 60 * 60, // 7 days
+    path: '/',
+  }
+}
