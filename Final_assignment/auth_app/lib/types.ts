@@ -11,7 +11,6 @@ export interface AuthUser {
   createdAt: Date
   updatedAt: Date
 }
-
 export interface JWTPayload {
   userId: string
   email: string
@@ -27,8 +26,8 @@ export interface SecurityEvent {
   ipAddress: string
   userAgent: string
   success: boolean
-  details: Record<string, unknown>
-  timestamp: Date
+  details: Record<string, unknown> | string
+  timestamp: string | Date
   user?: {
     email: string
     name: string | null
@@ -55,3 +54,17 @@ export interface SecurityStats {
   eventTypes: Record<string, number>
   suspiciousActivity: number
 }
+
+export interface LoginInput {
+  email: string
+  password: string
+}
+
+export interface RegisterInput {
+  name: string
+  email: string
+  password: string
+  age: number
+  gender: "male" | "female" | "other" | "prefer-not-to-say"
+}
+

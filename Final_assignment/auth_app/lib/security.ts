@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt"
 import crypto from "crypto"
 import { prisma } from "./prisma"
+import type { SecurityEvent } from "./types"
 
 // Password security utilities
 export class PasswordSecurity {
@@ -31,49 +32,60 @@ export class PasswordSecurity {
     isValid: boolean
     score: number
     feedback: string[]
+    errors: string[]
   } {
     const feedback: string[] = []
+    const errors: string[] = []
     let score = 0
 
     if (password.length < this.MIN_LENGTH) {
-      feedback.push(`Password must be at least ${this.MIN_LENGTH} characters long`)
+      errors.push(`Password must be at least ${this.MIN_LENGTH} characters long`)
     } else {
       score += 1
     }
 
     if (!/[A-Z]/.test(password)) {
-      feedback.push("Password must contain at least one uppercase letter")
+      errors.push("Password must contain at least one uppercase letter")
     } else {
       score += 1
     }
 
     if (!/[a-z]/.test(password)) {
-      feedback.push("Password must contain at least one lowercase letter")
+      errors.push("Password must contain at least one lowercase letter")
     } else {
       score += 1
     }
 
     if (!/\d/.test(password)) {
-      feedback.push("Password must contain at least one number")
+      errors.push("Password must contain at least one number")
     } else {
       score += 1
     }
 
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-      feedback.push("Password must contain at least one special character")
+      errors.push("Password must contain at least one special character")
     } else {
       score += 1
     }
 
     if (this.COMMON_PASSWORDS.some((common) => password.toLowerCase().includes(common.toLowerCase()))) {
-      feedback.push("Password contains common words or patterns")
+      errors.push("Password contains common words or patterns")
       score = Math.max(0, score - 2)
     }
 
+    // Generate helpful feedback
+    if (score >= 4) {
+      feedback.push("Strong password!")
+    } else if (score >= 2) {
+      feedback.push("Good start, but could be stronger")
+    } else {
+      feedback.push("Password needs improvement")
+    }
     return {
       isValid: score >= 4 && password.length >= this.MIN_LENGTH,
       score,
       feedback,
+      errors,
     }
   }
 }
@@ -83,9 +95,15 @@ export class AccountSecurity {
   private static readonly MAX_LOGIN_ATTEMPTS = 5
   private static readonly LOCKOUT_DURATION = 15 * 60 * 1000 // 15 minutes
 
-  static async recordFailedLogin(userId: string, ipAddress: string): Promise<void> {
+  static async recordFailedLogin(email: string, ipAddress?: string): Promise<void> {
+    const user = await prisma.user.findUnique({
+      where: { email: email.toLowerCase() },
+    })
+
+    if (!user) return
+
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: user.id },
       data: {
         failedLoginAttempts: { increment: 1 },
         lastFailedLogin: new Date(),
@@ -95,8 +113,8 @@ export class AccountSecurity {
     // Log security event
     await SecurityLogger.logEvent({
       type: "FAILED_LOGIN",
-      userId,
-      ipAddress,
+      userId: user.id,
+      ipAddress: ipAddress || "unknown",
       details: { attempts: "incremented" },
     })
   }
@@ -107,7 +125,6 @@ export class AccountSecurity {
       data: {
         failedLoginAttempts: 0,
         lastLogin: new Date(),
-        accountLockedUntil: null,
       },
     })
 
@@ -119,13 +136,16 @@ export class AccountSecurity {
     })
   }
 
-  static async checkAccountLockout(userId: string): Promise<{
+  static async checkAccountLockout(email: string): Promise<{
     isLocked: boolean
+    lockoutEnd?: Date
+    attemptsRemaining: number
     remainingTime?: number
   }> {
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      where: { email: email.toLowerCase() },
       select: {
+        id: true,
         failedLoginAttempts: true,
         accountLockedUntil: true,
         lastFailedLogin: true,
@@ -133,13 +153,18 @@ export class AccountSecurity {
     })
 
     if (!user) {
-      return { isLocked: false }
+      return { isLocked: false, attemptsRemaining: this.MAX_LOGIN_ATTEMPTS }
     }
 
     // Check if account is currently locked
     if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
       const remainingTime = user.accountLockedUntil.getTime() - Date.now()
-      return { isLocked: true, remainingTime }
+      return { 
+        isLocked: true, 
+        lockoutEnd: user.accountLockedUntil,
+        attemptsRemaining: 0,
+        remainingTime 
+      }
     }
 
     // Check if we need to lock the account
@@ -147,23 +172,39 @@ export class AccountSecurity {
       const lockUntil = new Date(Date.now() + this.LOCKOUT_DURATION)
 
       await prisma.user.update({
-        where: { id: userId },
+        where: { id: user.id },
         data: { accountLockedUntil: lockUntil },
       })
 
       await SecurityLogger.logEvent({
         type: "ACCOUNT_LOCKED",
-        userId,
+        userId: user.id,
         details: {
           attempts: user.failedLoginAttempts,
           lockDuration: this.LOCKOUT_DURATION,
         },
       })
 
-      return { isLocked: true, remainingTime: this.LOCKOUT_DURATION }
+      return { 
+        isLocked: true, 
+        lockoutEnd: lockUntil,
+        attemptsRemaining: 0,
+        remainingTime: this.LOCKOUT_DURATION 
+      }
     }
 
-    return { isLocked: false }
+    const attemptsRemaining = this.MAX_LOGIN_ATTEMPTS - user.failedLoginAttempts
+    return { isLocked: false, attemptsRemaining }
+  }
+
+  static async clearFailedLogins(userId: string): Promise<void> {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        failedLoginAttempts: 0,
+        accountLockedUntil: null,
+      },
+    })
   }
 }
 
@@ -184,7 +225,7 @@ export class SecurityLogger {
           ipAddress: event.ipAddress || "unknown",
           userAgent: event.userAgent || "unknown",
           success: !event.type.includes("FAILED"),
-          details: event.details || {},
+          details: JSON.stringify(event.details || {}),
         },
       })
     } catch (error) {
@@ -192,8 +233,8 @@ export class SecurityLogger {
     }
   }
 
-  static async getRecentEvents(limit = 50): Promise<unknown[]> {
-    return prisma.securityLog.findMany({
+  static async getRecentEvents(limit = 50): Promise<SecurityEvent[]> {
+    const logs = await prisma.securityLog.findMany({
       take: limit,
       orderBy: { timestamp: "desc" },
       include: {
@@ -205,11 +246,16 @@ export class SecurityLogger {
         },
       },
     })
+
+    return logs.map(log => ({
+      ...log,
+      details: typeof log.details === 'string' ? JSON.parse(log.details) : log.details,
+    })) as SecurityEvent[]
   }
 
   static async getSecurityStats(): Promise<{
     totalEvents: number
-    recentEvents: unknown[]
+    recentEvents: SecurityEvent[]
     eventTypes: Record<string, number>
     suspiciousActivity: number
   }> {
@@ -254,6 +300,10 @@ export class TokenSecurity {
     return crypto.randomBytes(length).toString("hex")
   }
 
+  static generateCSRFToken(): string {
+    return this.generateSecureToken(32)
+  }
+
   static generatePasswordResetToken(): {
     token: string
     expires: Date
@@ -279,7 +329,7 @@ export class TokenSecurity {
       where: { id: user.id },
       data: {
         resetToken: token,
-        resetTokenExpires: expires,
+        resetExpires: expires,
       },
     })
 
@@ -296,7 +346,7 @@ export class TokenSecurity {
     const user = await prisma.user.findFirst({
       where: {
         resetToken: token,
-        resetTokenExpires: {
+        resetExpires: {
           gt: new Date(),
         },
       },
@@ -305,3 +355,33 @@ export class TokenSecurity {
     return user?.id || null
   }
 }
+
+// Email validation utility
+export function validateEmail(email: string): {
+  isValid: boolean
+  error?: string
+} {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  
+  if (!email) {
+    return { isValid: false, error: "Email is required" }
+  }
+  
+  if (!emailRegex.test(email)) {
+    return { isValid: false, error: "Invalid email format" }
+  }
+  
+  if (email.length > 254) {
+    return { isValid: false, error: "Email is too long" }
+  }
+  
+  return { isValid: true }
+}
+
+// Export commonly used functions
+export const validatePasswordStrength = PasswordSecurity.validatePasswordStrength
+export const checkAccountLockout = AccountSecurity.checkAccountLockout
+export const recordFailedLogin = AccountSecurity.recordFailedLogin
+export const clearFailedLogins = AccountSecurity.clearFailedLogins
+export const logSecurityEvent = SecurityLogger.logEvent
+export const generateCSRFToken = TokenSecurity.generateCSRFToken

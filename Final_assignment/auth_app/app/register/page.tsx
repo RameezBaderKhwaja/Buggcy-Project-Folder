@@ -4,11 +4,11 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuth } from "@/context/AuthContext"
+import { useAuth } from "@/app/context/AuthContext"
 import { motion } from "framer-motion"
 import { Eye, EyeOff, Github, Mail, Lock, User, Calendar, Users, Loader2 } from "lucide-react"
 import Link from "next/link"
-import type { RegisterInput } from "@/lib/validators"
+import type { RegisterInput } from "@/lib/types"
 import { usePasswordStrength } from "@/hooks/use-password-strength"
 
 export default function RegisterPage() {

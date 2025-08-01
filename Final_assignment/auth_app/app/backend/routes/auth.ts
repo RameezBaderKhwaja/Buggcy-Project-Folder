@@ -2,16 +2,24 @@ import express from "express"
 import passport from "passport"
 import bcrypt from "bcrypt"
 import { prisma } from "@/lib/prisma"
-import { generateToken, createAuthCookie, verifyToken } from "@/lib/auth"
+import { generateToken, createAuthCookie, verifyToken, TokenUser } from "@/lib/auth"
 import { registerSchema } from "@/lib/validators"
 import {
-  validatePasswordStrength,
+  PasswordSecurity,
   checkAccountLockout,
   recordFailedLogin,
   clearFailedLogins,
   logSecurityEvent,
   validateEmail,
 } from "@/lib/security"
+import type { AuthUser } from "@/lib/types"
+
+// --- TypeScript: Extend Express.User globally to match AuthUser ---
+declare global {
+  namespace Express {
+    interface User extends AuthUser {}
+  }
+}
 
 const router = express.Router()
 
@@ -30,7 +38,7 @@ router.post("/register", async (req, res) => {
     }
 
     // Password strength validation
-    const passwordValidation = validatePasswordStrength(password)
+    const passwordValidation = PasswordSecurity.validatePasswordStrength(password)
     if (!passwordValidation.isValid) {
       return res.status(400).json({
         success: false,
@@ -55,7 +63,7 @@ router.post("/register", async (req, res) => {
     if (existingUser) {
       // Log potential account enumeration attempt
       await logSecurityEvent({
-        event: "REGISTRATION_ATTEMPT_EXISTING_EMAIL",
+        type: "REGISTRATION_ATTEMPT_EXISTING_EMAIL",
         details: { email: validatedData.email },
         ipAddress: req.ip || "unknown",
         userAgent: req.get("User-Agent"),
@@ -82,8 +90,13 @@ router.post("/register", async (req, res) => {
       },
     })
 
-    // Generate token
-    const token = generateToken(user)
+    // Generate token with only required fields
+    const tokenUser: TokenUser = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    }
+    const token = generateToken(tokenUser)
     const cookie = createAuthCookie(token)
 
     // Set cookie
@@ -98,27 +111,27 @@ router.post("/register", async (req, res) => {
     // Log successful registration
     await logSecurityEvent({
       userId: user.id,
-      event: "USER_REGISTERED",
+      type: "USER_REGISTERED",
       details: { email: user.email, provider: "email" },
       ipAddress: req.ip || "unknown",
       userAgent: req.get("User-Agent"),
     })
 
     // Return user data (without password)
-    const { password: _, ...userWithoutPassword } = user
+    const { password: _password, ...userWithoutPassword } = user
     res.status(201).json({
       success: true,
       data: userWithoutPassword,
       message: "Registration successful",
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Registration error:", error)
 
-    if (error.errors) {
+    if (error && typeof error === 'object' && 'errors' in error) {
       return res.status(400).json({
         success: false,
         error: "Validation failed",
-        details: error.errors,
+        details: (error as { errors: unknown }).errors,
       })
     }
 
@@ -145,7 +158,7 @@ router.post("/login", async (req, res, next) => {
     const lockoutStatus = await checkAccountLockout(email.toLowerCase())
     if (lockoutStatus.isLocked) {
       await logSecurityEvent({
-        event: "LOGIN_ATTEMPT_LOCKED_ACCOUNT",
+        type: "LOGIN_ATTEMPT_LOCKED_ACCOUNT",
         details: {
           email,
           lockoutEnd: lockoutStatus.lockoutEnd,
@@ -161,7 +174,7 @@ router.post("/login", async (req, res, next) => {
       })
     }
 
-    passport.authenticate("local", async (err: any, user: any, info: any) => {
+    passport.authenticate("local", async (err: Error | null, user: AuthUser | false, info?: { message?: string }) => {
       if (err) {
         console.error("Login error:", err)
         return res.status(500).json({
@@ -175,7 +188,7 @@ router.post("/login", async (req, res, next) => {
         await recordFailedLogin(email.toLowerCase())
 
         await logSecurityEvent({
-          event: "LOGIN_FAILED",
+          type: "LOGIN_FAILED",
           details: {
             email,
             reason: info?.message || "Invalid credentials",
@@ -196,8 +209,13 @@ router.post("/login", async (req, res, next) => {
         // Clear failed login attempts on successful login
         await clearFailedLogins(user.id)
 
-        // Generate token
-        const token = generateToken(user)
+        // Generate token with only required fields
+        const tokenUser: TokenUser = {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        }
+        const token = generateToken(tokenUser)
         const cookie = createAuthCookie(token)
 
         // Set cookie
@@ -212,7 +230,7 @@ router.post("/login", async (req, res, next) => {
         // Log successful login
         await logSecurityEvent({
           userId: user.id,
-          event: "LOGIN_SUCCESS",
+          type: "LOGIN_SUCCESS",
           details: { email: user.email },
           ipAddress: req.ip || "unknown",
           userAgent: req.get("User-Agent"),
@@ -250,7 +268,7 @@ router.post("/logout", async (req, res) => {
       if (payload) {
         await logSecurityEvent({
           userId: payload.userId,
-          event: "USER_LOGOUT",
+          type: "USER_LOGOUT",
           details: {},
           ipAddress: req.ip || "unknown",
           userAgent: req.get("User-Agent"),
@@ -344,13 +362,18 @@ router.get(
 
 router.get("/google/callback", passport.authenticate("google", { session: false }), async (req, res) => {
   try {
-    const user = req.user as any
+    const user = req.user as AuthUser
     if (!user) {
       return res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
     }
 
-    // Generate token
-    const token = generateToken(user)
+    // Generate token with only required fields
+    const tokenUser: TokenUser = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    }
+    const token = generateToken(tokenUser)
     const cookie = createAuthCookie(token)
 
     // Set cookie
@@ -365,14 +388,14 @@ router.get("/google/callback", passport.authenticate("google", { session: false 
     // Log OAuth login
     await logSecurityEvent({
       userId: user.id,
-      event: "OAUTH_LOGIN_SUCCESS",
+      type: "OAUTH_LOGIN_SUCCESS",
       details: { provider: "google", email: user.email },
       ipAddress: req.ip || "unknown",
       userAgent: req.get("User-Agent"),
     })
 
     // Redirect to home
-    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/home`)
+    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/dashboard`)
   } catch (error) {
     console.error("Google callback error:", error)
     res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
@@ -388,13 +411,18 @@ router.get(
 
 router.get("/github/callback", passport.authenticate("github", { session: false }), async (req, res) => {
   try {
-    const user = req.user as any
+    const user = req.user as AuthUser
     if (!user) {
       return res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
     }
 
-    // Generate token
-    const token = generateToken(user)
+    // Generate token with only required fields
+    const tokenUser: TokenUser = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    }
+    const token = generateToken(tokenUser)
     const cookie = createAuthCookie(token)
 
     // Set cookie
@@ -409,14 +437,14 @@ router.get("/github/callback", passport.authenticate("github", { session: false 
     // Log OAuth login
     await logSecurityEvent({
       userId: user.id,
-      event: "OAUTH_LOGIN_SUCCESS",
+      type: "OAUTH_LOGIN_SUCCESS",
       details: { provider: "github", email: user.email },
       ipAddress: req.ip || "unknown",
       userAgent: req.get("User-Agent"),
     })
 
     // Redirect to home
-    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/home`)
+    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/dashboard`)
   } catch (error) {
     console.error("GitHub callback error:", error)
     res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)

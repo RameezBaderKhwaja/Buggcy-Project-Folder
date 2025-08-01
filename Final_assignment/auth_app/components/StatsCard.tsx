@@ -6,7 +6,7 @@ import { DivideIcon as LucideIcon } from 'lucide-react'
 interface StatsCardProps {
   title: string
   value: string | number
-  icon: LucideIcon
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>
   trend?: {
     value: number
     isPositive: boolean

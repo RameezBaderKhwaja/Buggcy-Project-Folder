@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
+import type { Request, Response, NextFunction } from "express"
 import { verifyToken } from "./auth"
 import { prisma } from "./prisma"
-import { USER_ROLES } from "./constants"
+import type { AuthUser } from "./types"
 
-export async function withAuth(request: NextRequest, handler: (req: NextRequest, user: any) => Promise<NextResponse>) {
+export async function withAuth(request: NextRequest, handler: (req: NextRequest, user: AuthUser) => Promise<NextResponse>) {
   try {
     const token = request.cookies.get("auth-token")?.value
 
@@ -28,6 +29,7 @@ export async function withAuth(request: NextRequest, handler: (req: NextRequest,
         gender: true,
         provider: true,
         createdAt: true,
+        updatedAt: true,
       },
     })
 
@@ -35,7 +37,7 @@ export async function withAuth(request: NextRequest, handler: (req: NextRequest,
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 })
     }
 
-    return handler(request, user)
+    return handler(request, user as AuthUser)
   } catch (error) {
     console.error("Auth middleware error:", error)
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
@@ -44,10 +46,10 @@ export async function withAuth(request: NextRequest, handler: (req: NextRequest,
 
 export async function withAdminAuth(
   request: NextRequest,
-  handler: (req: NextRequest, user: any) => Promise<NextResponse>,
+  handler: (req: NextRequest, user: AuthUser) => Promise<NextResponse>,
 ) {
   return withAuth(request, async (req, user) => {
-    if (user.role !== USER_ROLES.ADMIN) {
+    if (user.role !== "ADMIN") {
       return NextResponse.json({ success: false, error: "Forbidden - Admin access required" }, { status: 403 })
     }
     return handler(req, user)
@@ -55,7 +57,11 @@ export async function withAdminAuth(
 }
 
 // Express middleware versions
-export function expressWithAuth(req: any, res: any, next: any) {
+interface AuthenticatedRequest extends Request {
+  user?: AuthUser
+}
+
+export function authenticateToken(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
     const token = req.cookies["auth-token"]
 
@@ -74,7 +80,19 @@ export function expressWithAuth(req: any, res: any, next: any) {
       })
     }
 
-    req.user = payload
+    req.user = {
+      id: payload.userId,
+      email: payload.email,
+      name: null,
+      role: payload.role,
+      image: null,
+      age: null,
+      gender: null,
+      provider: "",
+      providerId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
     next()
   } catch (error) {
     console.error("Auth middleware error:", error)
@@ -85,15 +103,73 @@ export function expressWithAuth(req: any, res: any, next: any) {
   }
 }
 
-export function expressWithAdminAuth(req: any, res: any, next: any) {
+export function requireAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  if (!req.user || req.user.role !== "ADMIN") {
+    return res.status(403).json({
+      success: false,
+      error: "Forbidden - Admin access required",
+    })
+  }
+  next()
+}
+
+export async function expressWithAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+  try {
+    const token = req.cookies["auth-token"]
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized - No token provided",
+      })
+    }
+
+    const payload = verifyToken(token)
+    if (!payload) {
+      return res.status(401).json({
+        success: false,
+        error: "Unauthorized - Invalid token",
+      })
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        image: true,
+        age: true,
+        gender: true,
+        provider: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    })
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      })
+    }
+
+    req.user = user as AuthUser
+    next()
+  } catch (error) {
+    console.error("Auth middleware error:", error)
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    })
+  }
+}
+
+export async function expressWithAdminAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   expressWithAuth(req, res, async () => {
     try {
-      const user = await prisma.user.findUnique({
-        where: { id: req.user.userId },
-        select: { role: true },
-      })
-
-      if (!user || user.role !== USER_ROLES.ADMIN) {
+      if (!req.user || req.user.role !== "ADMIN") {
         return res.status(403).json({
           success: false,
           error: "Forbidden - Admin access required",

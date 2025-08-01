@@ -1,12 +1,9 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -20,6 +17,7 @@ model User {
   age       Int?
   gender    String?
   provider  String   @default("local")
+  providerId String?
   
   // Security fields
   failedLoginAttempts Int       @default(0)
@@ -27,7 +25,7 @@ model User {
   lastLogin          DateTime?
   lastFailedLogin    DateTime?
   resetToken         String?
-  resetTokenExpires  DateTime?
+  resetExpires       DateTime?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -43,7 +41,7 @@ model SecurityLog {
   ipAddress String
   userAgent String
   success   Boolean  @default(true)
-  details   Json?
+  details   String?
   timestamp DateTime @default(now())
   
   // Relations

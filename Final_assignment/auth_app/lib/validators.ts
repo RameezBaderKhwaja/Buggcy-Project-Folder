@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { validatePasswordStrength, validateEmail } from "./security"
+import { PasswordSecurity, validateEmail } from "./security"
 
 export const loginSchema = z.object({
   email: z
@@ -7,7 +7,7 @@ export const loginSchema = z.object({
     .email("Invalid email address")
     .refine(
       (email) => validateEmail(email).isValid,
-      (email) => ({ message: validateEmail(email).error || "Invalid email" }),
+      { message: "Invalid email" },
     ),
   password: z.string().min(1, "Password is required"),
 })
@@ -19,13 +19,11 @@ export const registerSchema = z.object({
     .email("Invalid email address")
     .refine(
       (email) => validateEmail(email).isValid,
-      (email) => ({ message: validateEmail(email).error || "Invalid email" }),
+      { message: "Invalid email" },
     ),
   password: z.string().refine(
-    (password) => validatePasswordStrength(password).isValid,
-    (password) => ({
-      message: validatePasswordStrength(password).errors.join(", "),
-    }),
+    (password) => PasswordSecurity.validatePasswordStrength(password).isValid,
+    { message: "Password does not meet security requirements" },
   ),
   age: z.number().min(18, "Must be at least 18 years old").max(120, "Invalid age"),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
@@ -44,17 +42,15 @@ export const passwordResetSchema = z.object({
     .email("Invalid email address")
     .refine(
       (email) => validateEmail(email).isValid,
-      (email) => ({ message: validateEmail(email).error || "Invalid email" }),
+      { message: "Invalid email" },
     ),
 })
 
 export const passwordChangeSchema = z.object({
   token: z.string().min(1, "Reset token is required"),
   password: z.string().refine(
-    (password) => validatePasswordStrength(password).isValid,
-    (password) => ({
-      message: validatePasswordStrength(password).errors.join(", "),
-    }),
+    (password) => PasswordSecurity.validatePasswordStrength(password).isValid,
+    { message: "Password does not meet security requirements" },
   ),
 })
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/context/AuthContext"
+import { useAuth } from "@/app/context/AuthContext"
 import { motion } from "framer-motion"
 import { ArrowRight, Users, Shield, Zap, Globe } from "lucide-react"
 import Link from "next/link"

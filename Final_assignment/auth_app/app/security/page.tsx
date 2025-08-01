@@ -11,6 +11,7 @@ import { Shield, AlertTriangle, Activity, Search, Eye, Clock, User, Globe } from
 import { useSecurity } from "@/hooks/use-security"
 import { useDebounce } from "@/hooks/use-debounce"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
+import type { SecurityEvent } from "@/lib/types"
 
 export default function SecurityPage() {
   const { user } = useAuth()
@@ -65,7 +66,7 @@ export default function SecurityPage() {
   }
 
   const filteredEvents =
-    stats?.recentEvents.filter((event: Record<string, unknown>) => {
+    stats?.recentEvents?.filter((event: SecurityEvent) => {
       const matchesSearch =
         !debouncedSearch || JSON.stringify(event).toLowerCase().includes(debouncedSearch.toLowerCase())
       const matchesFilter = filterType === "all" || event.event === filterType
@@ -207,14 +208,14 @@ export default function SecurityPage() {
                     <p className="text-gray-500">No events found matching your criteria</p>
                   </div>
                 ) : (
-                  filteredEvents.map((event: Record<string, unknown>, index: number) => (
+                  filteredEvents.map((event: SecurityEvent, index: number) => (
                     <div
                       key={index}
                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                     >
                       <div className="flex items-center space-x-4">
-                        <Badge className={getEventColor(event.event as string)}>
-                          {(event.event as string).replace(/_/g, " ")}
+                        <Badge className={getEventColor(event.event)}>
+                          {event.event.replace(/_/g, " ")}
                         </Badge>
                         <div>
                           <div className="flex items-center space-x-2">
@@ -222,7 +223,7 @@ export default function SecurityPage() {
                               <div className="flex items-center space-x-1">
                                 <User className="w-4 h-4 text-gray-400" />
                                 <span className="text-sm font-medium">
-                                  {(event.user as Record<string, unknown>).email}
+                                  {event.user.email}
                                 </span>
                               </div>
                             )}
@@ -232,12 +233,12 @@ export default function SecurityPage() {
                             </div>
                           </div>
                           <p className="text-xs text-gray-500 mt-1">
-                            {event.userAgent && (event.userAgent as string).substring(0, 60)}...
+                            {event.userAgent && event.userAgent.substring(0, 60)}...
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-gray-600">{new Date(event.timestamp as string).toLocaleString()}</p>
+                        <p className="text-sm text-gray-600">{event.timestamp ? new Date(event.timestamp).toLocaleString() : ""}</p>
                         <Badge variant={event.success ? "default" : "destructive"}>
                           {event.success ? "Success" : "Failed"}
                         </Badge>

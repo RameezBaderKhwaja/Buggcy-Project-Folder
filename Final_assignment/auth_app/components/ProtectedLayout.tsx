@@ -4,7 +4,7 @@ import type React from "react"
 import { useAuth } from "@/app/context/AuthContext"
 import { LoadingSpinner } from "./LoadingSpinner"
 import { AppSidebar } from "@/components/app-sidebar"
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/Sidebar"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 

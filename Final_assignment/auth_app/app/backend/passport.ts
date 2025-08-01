@@ -23,10 +23,16 @@ export interface PassportUser extends AuthUser {
   provider: string;
 }
 
+// Extend Express User interface using module augmentation (preferred over namespaces)
+declare module "express-serve-static-core" {
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+  interface User extends PassportUser {}
+}
+
 // ==============
 // Helper: Clean
 // ==============
-const sanitizeUser = (user: Partial<AuthUser> & { password?: string | null }): PassportUser => {
+const sanitizeUser = (user: Partial<AuthUser> & { password?: string | null; providerId?: string | null }): PassportUser => {
   const { password, ...userWithoutPassword } = user;
   return userWithoutPassword as PassportUser;
 };
@@ -40,7 +46,7 @@ passport.use(
       usernameField: "email",
       passwordField: "password",
     },
-    async (email: string, password: string, done) => {
+    async (email: string, password: string, done: (error: Error | null, user?: Express.User | false, options?: { message: string }) => void) => {
       try {
         const user = await prisma.user.findUnique({
           where: { email: email.toLowerCase() },
@@ -56,7 +62,7 @@ passport.use(
         }
 
         return done(null, sanitizeUser(user));
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Local strategy error:", error);
         return done(error as Error);
       }
@@ -70,7 +76,7 @@ passport.use(
 const googleStrategyOptions: GoogleStrategyOptionsWithRequest = {
   clientID: process.env.GOOGLE_CLIENT_ID || "",
   clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-  callbackURL: "/api/auth/oauth/google/callback",
+  callbackURL: `${process.env.NEXT_PUBLIC_API_URL}/api/auth/oauth/google/callback`,
   passReqToCallback: true,
 };
 
@@ -80,8 +86,8 @@ passport.use(
     async (
       req: Request,
       accessToken: string,
-      _refreshToken: string,
-      _params: unknown,
+      refreshToken: string,
+      params: unknown,
       profile: GoogleProfile,
       done: GoogleVerifyCallback
     ) => {
@@ -97,6 +103,7 @@ passport.use(
               where: { id: user.id },
               data: {
                 provider: "google",
+                providerId: profile.id,
                 image: profile.photos?.[0]?.value || user.image,
               },
             });
@@ -107,13 +114,14 @@ passport.use(
               email,
               name: profile.displayName || profile.name?.givenName || email.split("@")[0],
               provider: "google",
+              providerId: profile.id,
               image: profile.photos?.[0]?.value,
             },
           });
         }
 
         return done(null, sanitizeUser(user));
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Google strategy error:", error);
         return done(error as Error);
       }
@@ -127,7 +135,7 @@ passport.use(
 const githubStrategyOptions: GitHubStrategyOptions = {
   clientID: process.env.GITHUB_CLIENT_ID || "",
   clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-  callbackURL: "/api/auth/oauth/github/callback",
+  callbackURL: `${process.env.NEXT_PUBLIC_API_URL}/api/auth/oauth/github/callback`,
 };
 
 passport.use(
@@ -135,9 +143,9 @@ passport.use(
     githubStrategyOptions,
     async (
       accessToken: string,
-      _refreshToken: string,
+      refreshToken: string,
       profile: GitHubProfile,
-      done: (error: unknown, user?: Express.User | false | null) => void
+      done: (error: Error | null, user?: Express.User | false) => void
     ) => {
       try {
         const rawEmail = profile.emails?.find((emailObj) => {
@@ -155,6 +163,7 @@ passport.use(
               where: { id: user.id },
               data: {
                 provider: "github",
+                providerId: profile.id,
                 image: profile.photos?.[0]?.value || user.image,
               },
             });
@@ -165,13 +174,14 @@ passport.use(
               email,
               name: profile.displayName || profile.username || email.split("@")[0],
               provider: "github",
+              providerId: profile.id,
               image: profile.photos?.[0]?.value,
             },
           });
         }
 
         return done(null, sanitizeUser(user));
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("GitHub strategy error:", error);
         return done(error as Error);
       }
@@ -199,12 +209,13 @@ passport.deserializeUser(async (id: string, done) => {
         age: true,
         gender: true,
         provider: true,
+        providerId: true,
         createdAt: true,
         updatedAt: true,
       },
     });
     done(null, user ? (user as PassportUser) : null);
-  } catch (error) {
+  } catch (error: unknown) {
     done(error);
   }
 });

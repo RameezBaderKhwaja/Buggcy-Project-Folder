@@ -4,7 +4,15 @@ import { User } from '@prisma/client'
 import { JWTPayload } from './types'
 import { JWT_SECRET, JWT_EXPIRES_IN } from './constants'
 
-export function generateToken(user: User): string {
+// Type for token generation - only includes required fields
+interface TokenUser {
+  id: string
+  email: string
+  role: "USER" | "ADMIN"
+}
+
+// Updated generateToken function to accept minimal user data or full User object
+export function generateToken(user: TokenUser | Pick<User, 'id' | 'email' | 'role'>): string {
   const payload: JWTPayload = {
     userId: user.id,
     email: user.email,
@@ -45,3 +53,6 @@ export function createAuthCookie(token: string) {
     path: '/',
   }
 }
+
+// Export the TokenUser type for use in other files
+export type { TokenUser }

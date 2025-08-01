@@ -18,17 +18,17 @@ export interface CloudinaryUploadResult {
 
 export async function uploadImage(
   file: Buffer | string,
-  options: {
-    folder?: string
+  folder?: string,
+  options?: {
     public_id?: string
     transformation?: Record<string, unknown>
-  } = {},
+  }
 ): Promise<CloudinaryUploadResult> {
   try {
     const result = await cloudinary.uploader.upload(file as string, {
-      folder: options.folder || "user_profiles",
-      public_id: options.public_id,
-      transformation: options.transformation || {
+      folder: folder || "user_profiles",
+      public_id: options?.public_id,
+      transformation: options?.transformation || {
         width: 400,
         height: 400,
         crop: "fill",
@@ -36,7 +36,7 @@ export async function uploadImage(
         quality: "auto",
         format: "webp",
       },
-      ...options,
+      ...(options || {}),
     })
 
     return {

@@ -9,20 +9,20 @@ import userRoutes from "./routes/user"
 import profileRoutes from "./routes/profile"
 import statsRoutes from "./routes/stats"
 import securityRoutes from "./routes/security"
-import { createRateLimiter, sanitizeInputs, securityHeaders, requestLogger } from "./middleware/security"
+import {
+  createRateLimiter,
+  sanitizeInputs,
+  securityHeaders,
+  requestLogger,
+} from "./middleware/security"
+import { logSecurityEvent } from "@/lib/security"
+import type { IncomingMessage, ServerResponse } from "http"
 
 const app = express()
 
-// Trust proxy for accurate IP addresses
 app.set("trust proxy", 1)
-
-// Request logging
 app.use(requestLogger)
-
-// Security headers
 app.use(securityHeaders)
-
-// Enhanced helmet configuration
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -40,55 +40,59 @@ app.use(
       },
     },
     crossOriginEmbedderPolicy: false,
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true,
-    },
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
   }),
 )
-
 app.use(
   cors({
     origin: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie", "X-CSRF-Token"],
-    exposedHeaders: ["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Cookie",
+      "X-CSRF-Token",
+    ],
+    exposedHeaders: [
+      "X-RateLimit-Limit",
+      "X-RateLimit-Remaining",
+      "X-RateLimit-Reset",
+    ],
   }),
 )
 
-// Global rate limiting
 const globalLimiter = createRateLimiter({
   maxAttempts: 1000,
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   message: "Too many requests from this IP, please try again later.",
 })
 app.use(globalLimiter)
 
-// Strict rate limiting for auth endpoints
 const authLimiter = createRateLimiter({
   maxAttempts: 10,
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   message: "Too many authentication attempts, please try again later.",
 })
 app.use("/auth", authLimiter)
 
-// Very strict rate limiting for password reset
 const passwordResetLimiter = createRateLimiter({
   maxAttempts: 3,
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000,
   message: "Too many password reset attempts, please try again later.",
 })
 app.use("/security/password-reset", passwordResetLimiter)
 
-// Body parsing middleware with size limits
 app.use(
   express.json({
     limit: "10mb",
-    verify: (req, res, buf) => {
-      // Store raw body for webhook verification if needed
-      ;(req as any).rawBody = buf
+    verify(
+      req: IncomingMessage & { rawBody?: Buffer },
+      res: ServerResponse,
+      buf: Buffer,
+      encoding: string,
+    ) {
+      req.rawBody = buf
     },
   }),
 )
@@ -99,21 +103,15 @@ app.use(
   }),
 )
 app.use(cookieParser())
-
-// Input sanitization
 app.use(sanitizeInputs)
-
-// Passport middleware
 app.use(passport.initialize())
 
-// Routes
 app.use("/auth", authRoutes)
 app.use("/users", userRoutes)
 app.use("/profile", profileRoutes)
 app.use("/stats", statsRoutes)
 app.use("/security", securityRoutes)
 
-// Health check with security info
 app.get("/health", (req, res) => {
   res.json({
     status: "OK",
@@ -126,7 +124,6 @@ app.get("/health", (req, res) => {
   })
 })
 
-// Security endpoint for monitoring
 app.get("/security/status", (req, res) => {
   res.json({
     success: true,
@@ -145,42 +142,38 @@ app.get("/security/status", (req, res) => {
   })
 })
 
-// 404 handler
 app.use("*", (req, res) => {
   res.status(404).json({ success: false, error: "Route not found" })
 })
 
-// Enhanced error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error("Express error:", err)
-
-  // Log security-related errors
-  if (err.status === 401 || err.status === 403) {
-    const { logSecurityEvent } = require("@/lib/security")
-    logSecurityEvent({
-      event: "SECURITY_ERROR",
-      details: {
-        error: err.message,
-        stack: err.stack,
-        url: req.url,
-        method: req.method,
-      },
-      ipAddress: req.ip || "unknown",
-      userAgent: req.get("User-Agent"),
-    }).catch(console.error)
-  }
-
-  // Don't leak error details in production
-  const isDevelopment = process.env.NODE_ENV === "development"
-
-  res.status(err.status || 500).json({
-    success: false,
-    error: err.status === 429 ? err.message : "Internal server error",
-    ...(isDevelopment && {
-      details: err.message,
-      stack: err.stack,
-    }),
-  })
-})
+app.use(
+  (
+    err: Error & { status?: number },
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ) => {
+    console.error("Express error:", err)
+    if (err.status === 401 || err.status === 403) {
+      logSecurityEvent({
+        type: "SECURITY_ERROR",
+        details: {
+          error: err.message,
+          stack: err.stack,
+          url: req.url,
+          method: req.method,
+        },
+        ipAddress: req.ip || "unknown",
+        userAgent: req.get("User-Agent") || "",
+      }).catch(console.error)
+    }
+    const isDev = process.env.NODE_ENV === "development"
+    res.status(err.status || 500).json({
+      success: false,
+      error: err.status === 429 ? err.message : "Internal server error",
+      ...(isDev && { details: err.message, stack: err.stack }),
+    })
+  },
+)
 
 export { app }

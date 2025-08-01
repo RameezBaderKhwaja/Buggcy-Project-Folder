@@ -3,7 +3,8 @@ import multer from "multer"
 import { prisma } from "@/lib/prisma"
 import { uploadImage } from "@/lib/cloudinary"
 import { verifyToken } from "@/lib/auth"
-import { profileUpdateSchema } from "@/lib/validators"
+import { profileUpdateSchema, type ProfileUpdateInput } from "@/lib/validators"
+import { expressWithAuth } from "@/lib/middleware"
 
 const router = express.Router()
 
@@ -23,37 +24,23 @@ const upload = multer({
 })
 
 // Update user profile
-router.put("/", upload.single("image"), async (req, res) => {
+router.put("/", expressWithAuth, upload.single("image"), async (req, res) => {
   try {
-    const token = req.cookies["auth-token"]
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: "Unauthorized - No token provided",
-      })
-    }
-
-    const payload = verifyToken(token)
-    if (!payload) {
-      return res.status(401).json({
-        success: false,
-        error: "Invalid token",
-      })
-    }
+    const user = (req as express.Request & { user: { id: string } }).user
 
     // Parse form data
-    const updateData: any = {}
+    const updateData: Partial<ProfileUpdateInput> = {}
 
     if (req.body.name) updateData.name = req.body.name
-    if (req.body.age) updateData.age = Number.parseInt(req.body.age)
+    if (req.body.age) updateData.age = parseInt(req.body.age)
     if (req.body.gender) updateData.gender = req.body.gender
 
     // Handle image upload
+    
     if (req.file) {
       try {
-        const imageUrl = await uploadImage(req.file.buffer, "profile-images")
-        updateData.image = imageUrl
+        const result = await uploadImage(req.file.buffer, "profile-images")
+        updateData.image = result.secure_url 
       } catch (uploadError) {
         console.error("Image upload error:", uploadError)
         return res.status(400).json({
@@ -68,7 +55,7 @@ router.put("/", upload.single("image"), async (req, res) => {
 
     // Update user
     const updatedUser = await prisma.user.update({
-      where: { id: payload.userId },
+      where: { id: user.id },
       data: validatedData,
       select: {
         id: true,
@@ -89,14 +76,14 @@ router.put("/", upload.single("image"), async (req, res) => {
       data: updatedUser,
       message: "Profile updated successfully",
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Profile update error:", error)
 
-    if (error.errors) {
+    if (error && typeof error === 'object' && 'errors' in error) {
       return res.status(400).json({
         success: false,
         error: "Validation failed",
-        details: error.errors,
+        details: (error as { errors: unknown }).errors,
       })
     }
 

@@ -1,6 +1,11 @@
 export const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-this-in-production"
 export const JWT_EXPIRES_IN = "7d"
 
+export const USER_ROLES = {
+  USER: "USER",
+  ADMIN: "ADMIN",
+} as const
+
 export const API_ROUTES = {
   AUTH: {
     LOGIN: "/api/auth/login",

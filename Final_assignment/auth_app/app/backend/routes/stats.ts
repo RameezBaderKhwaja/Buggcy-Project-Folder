@@ -1,29 +1,12 @@
 import express from "express"
 import { prisma } from "@/lib/prisma"
-import { verifyToken } from "@/lib/auth"
+import { expressWithAdminAuth } from "@/lib/middleware"
 
 const router = express.Router()
 
 // Get dashboard statistics
-router.get("/dashboard", async (req, res) => {
+router.get("/dashboard", expressWithAdminAuth, async (req, res) => {
   try {
-    const token = req.cookies["auth-token"]
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: "Unauthorized - No token provided",
-      })
-    }
-
-    const payload = verifyToken(token)
-    if (!payload) {
-      return res.status(401).json({
-        success: false,
-        error: "Invalid token",
-      })
-    }
-
     // Get total users
     const totalUsers = await prisma.user.count()
 
