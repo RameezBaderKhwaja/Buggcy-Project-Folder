@@ -80,6 +80,7 @@ export function authenticateToken(req: AuthenticatedRequest, res: Response, next
       })
     }
 
+<<<<<<< HEAD
     req.user = {
       id: payload.userId,
       email: payload.email,
@@ -93,6 +94,9 @@ export function authenticateToken(req: AuthenticatedRequest, res: Response, next
       createdAt: new Date(),
       updatedAt: new Date(),
     }
+=======
+    req.user = payload as AuthUser
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
     next()
   } catch (error) {
     console.error("Auth middleware error:", error)

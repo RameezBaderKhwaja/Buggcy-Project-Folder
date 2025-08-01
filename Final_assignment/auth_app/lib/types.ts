@@ -27,7 +27,11 @@ export interface SecurityEvent {
   userAgent: string
   success: boolean
   details: Record<string, unknown> | string
+<<<<<<< HEAD
   timestamp: string | Date
+=======
+  timestamp: Date
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
   user?: {
     email: string
     name: string | null
@@ -66,5 +70,9 @@ export interface RegisterInput {
   password: string
   age: number
   gender: "male" | "female" | "other" | "prefer-not-to-say"
+<<<<<<< HEAD
 }
 
+=======
+}
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20

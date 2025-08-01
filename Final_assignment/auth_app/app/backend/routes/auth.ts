@@ -13,6 +13,7 @@ import {
   validateEmail,
 } from "@/lib/security"
 import type { AuthUser } from "@/lib/types"
+<<<<<<< HEAD
 
 // --- TypeScript: Extend Express.User globally to match AuthUser ---
 declare global {
@@ -20,8 +21,14 @@ declare global {
     interface User extends AuthUser {}
   }
 }
+=======
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
 
 const router = express.Router()
+
+interface AuthenticatedRequest extends express.Request {
+  user?: AuthUser
+}
 
 // Register endpoint with enhanced security
 router.post("/register", async (req, res) => {
@@ -360,9 +367,13 @@ router.get(
   }),
 )
 
-router.get("/google/callback", passport.authenticate("google", { session: false }), async (req, res) => {
+router.get("/google/callback", passport.authenticate("google", { session: false }), async (req: AuthenticatedRequest, res) => {
   try {
+<<<<<<< HEAD
     const user = req.user as AuthUser
+=======
+    const user = req.user
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
     if (!user) {
       return res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
     }
@@ -409,9 +420,13 @@ router.get(
   }),
 )
 
-router.get("/github/callback", passport.authenticate("github", { session: false }), async (req, res) => {
+router.get("/github/callback", passport.authenticate("github", { session: false }), async (req: AuthenticatedRequest, res) => {
   try {
+<<<<<<< HEAD
     const user = req.user as AuthUser
+=======
+    const user = req.user
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
     if (!user) {
       return res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
     }

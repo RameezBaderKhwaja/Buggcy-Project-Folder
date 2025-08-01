@@ -231,7 +231,11 @@ router.post("/log", strictRateLimit, authenticateToken, async (req, res) => {
     const user = (req as express.Request & { user: { id: string } }).user
 
     await logSecurityEvent({
+<<<<<<< HEAD
       type: type,
+=======
+      event: type,
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
       userId: user.id,
       ipAddress: req.ip,
       userAgent: req.get("User-Agent"),

@@ -23,10 +23,18 @@ export interface PassportUser extends AuthUser {
   provider: string;
 }
 
+<<<<<<< HEAD
 // Extend Express User interface using module augmentation (preferred over namespaces)
 declare module "express-serve-static-core" {
   // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface User extends PassportUser {}
+=======
+// Extend Express User interface
+declare global {
+  namespace Express {
+    interface User extends PassportUser {}
+  }
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
 }
 
 // ==============

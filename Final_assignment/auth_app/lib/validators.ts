@@ -23,7 +23,13 @@ export const registerSchema = z.object({
     ),
   password: z.string().refine(
     (password) => PasswordSecurity.validatePasswordStrength(password).isValid,
+<<<<<<< HEAD
     { message: "Password does not meet security requirements" },
+=======
+    (password) => ({
+      message: PasswordSecurity.validatePasswordStrength(password).errors.join(", "),
+    }),
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
   ),
   age: z.number().min(18, "Must be at least 18 years old").max(120, "Invalid age"),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
@@ -50,7 +56,13 @@ export const passwordChangeSchema = z.object({
   token: z.string().min(1, "Reset token is required"),
   password: z.string().refine(
     (password) => PasswordSecurity.validatePasswordStrength(password).isValid,
+<<<<<<< HEAD
     { message: "Password does not meet security requirements" },
+=======
+    (password) => ({
+      message: PasswordSecurity.validatePasswordStrength(password).errors.join(", "),
+    }),
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
   ),
 })
 

@@ -86,12 +86,17 @@ app.use("/security/password-reset", passwordResetLimiter)
 app.use(
   express.json({
     limit: "10mb",
+<<<<<<< HEAD
     verify(
       req: IncomingMessage & { rawBody?: Buffer },
       res: ServerResponse,
       buf: Buffer,
       encoding: string,
     ) {
+=======
+    verify: (req: Request & { rawBody?: Buffer }, res, buf) => {
+      // Store raw body for webhook verification if needed
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
       req.rawBody = buf
     },
   }),
@@ -146,6 +151,7 @@ app.use("*", (req, res) => {
   res.status(404).json({ success: false, error: "Route not found" })
 })
 
+<<<<<<< HEAD
 app.use(
   (
     err: Error & { status?: number },
@@ -175,5 +181,38 @@ app.use(
     })
   },
 )
+=======
+// Enhanced error handler
+app.use((err: Error & { status?: number }, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error("Express error:", err)
+
+  // Log security-related errors
+  if (err.status === 401 || err.status === 403) {
+    logSecurityEvent({
+      event: "SECURITY_ERROR",
+      details: {
+        error: err.message,
+        stack: err.stack,
+        url: req.url,
+        method: req.method,
+      },
+      ipAddress: req.ip || "unknown",
+      userAgent: req.get("User-Agent"),
+    }).catch(console.error)
+  }
+
+  // Don't leak error details in production
+  const isDevelopment = process.env.NODE_ENV === "development"
+
+  res.status(err.status || 500).json({
+    success: false,
+    error: err.status === 429 ? err.message : "Internal server error",
+    ...(isDevelopment && {
+      details: err.message,
+      stack: err.stack,
+    }),
+  })
+})
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
 
 export { app }

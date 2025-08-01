@@ -16,7 +16,11 @@ export const createRateLimiter = (options: {
     legacyHeaders: false,
     handler: async (req: Request, res: Response) => {
       await logSecurityEvent({
+<<<<<<< HEAD
         type: "RATE_LIMIT_EXCEEDED",
+=======
+        event: "RATE_LIMIT_EXCEEDED",
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
         ipAddress: req.ip,
         userAgent: req.get("User-Agent"),
         details: { endpoint: req.path, method: req.method },
@@ -56,7 +60,11 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
 
     if (isError || req.path.includes("/auth/")) {
       await logSecurityEvent({
+<<<<<<< HEAD
         type: isError ? "REQUEST_ERROR" : "REQUEST_SUCCESS",
+=======
+        event: isError ? "REQUEST_ERROR" : "REQUEST_SUCCESS",
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
         ipAddress: req.ip,
         userAgent: req.get("User-Agent"),
         details: {

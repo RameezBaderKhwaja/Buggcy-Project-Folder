@@ -2,7 +2,11 @@ import { type NextRequest, NextResponse } from "next/server"
 import type { Request, Response } from "express"
 import { app } from "@/app/backend"
 
+<<<<<<< HEAD
 type MockResponse = {
+=======
+interface MockResponse extends Partial<Response> {
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
   statusCode: number
   headers: Record<string, string>
   body: string
@@ -15,7 +19,11 @@ type MockResponse = {
   redirect: (url: string) => MockResponse
 }
 
+<<<<<<< HEAD
 interface MockRequest {
+=======
+interface MockRequest extends Partial<Request> {
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
   method: string
   url: string
   headers: Record<string, string>
@@ -28,8 +36,15 @@ interface MockRequest {
   get: (name: string) => string | undefined
 }
 
+<<<<<<< HEAD
 async function handler(req: NextRequest) {
   return new Promise<NextResponse>((resolve, reject) => {
+=======
+// Convert Express app to handle Next.js API routes
+async function handler(req: NextRequest) {
+  return new Promise<NextResponse>((resolve, reject) => {
+    // Create a mock response object that Express can work with
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
     const mockRes: MockResponse = {
       statusCode: 200,
       headers: {},
@@ -38,7 +53,11 @@ async function handler(req: NextRequest) {
         this.statusCode = code
         return this
       },
+<<<<<<< HEAD
       json(data) {
+=======
+      json: function (data: unknown) {
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
         this.body = JSON.stringify(data)
         this.headers["Content-Type"] = "application/json"
         resolve(
@@ -49,7 +68,11 @@ async function handler(req: NextRequest) {
         )
         return this
       },
+<<<<<<< HEAD
       send(data) {
+=======
+      send: function (data: unknown) {
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
         this.body = typeof data === "string" ? data : JSON.stringify(data)
         resolve(
           new NextResponse(this.body, {
@@ -63,12 +86,20 @@ async function handler(req: NextRequest) {
         this.headers[name] = value
         return this
       },
+<<<<<<< HEAD
       cookie(name, value, options = {}) {
+=======
+      cookie: function (name: string, value: string, options: Record<string, unknown> = {}) {
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
         const cookieString = `${name}=${value}; Path=${options.path || "/"}; ${options.httpOnly ? "HttpOnly; " : ""}${options.secure ? "Secure; " : ""}${options.sameSite ? `SameSite=${options.sameSite}; ` : ""}${options.maxAge ? `Max-Age=${options.maxAge}; ` : ""}`
         this.headers["Set-Cookie"] = cookieString
         return this
       },
+<<<<<<< HEAD
       clearCookie(name, options = {}) {
+=======
+      clearCookie: function (name: string, options: Record<string, unknown> = {}) {
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
         const cookieString = `${name}=; Path=${options.path || "/"}; Expires=Thu, 01 Jan 1970 00:00:00 GMT; ${options.httpOnly ? "HttpOnly; " : ""}${options.secure ? "Secure; " : ""}`
         this.headers["Set-Cookie"] = cookieString
         return this
@@ -79,11 +110,19 @@ async function handler(req: NextRequest) {
       },
     }
 
+<<<<<<< HEAD
+=======
+    // Create a mock request object
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
     const mockReq: MockRequest = {
       method: req.method,
       url: req.url.replace(new URL(req.url).origin, "").replace("/api", ""),
       headers: Object.fromEntries(req.headers.entries()),
+<<<<<<< HEAD
       body: undefined,
+=======
+      body: undefined as unknown,
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
       query: Object.fromEntries(new URL(req.url).searchParams.entries()),
       params: {},
       cookies: Object.fromEntries(
@@ -97,13 +136,48 @@ async function handler(req: NextRequest) {
       ),
       user: undefined,
       ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown",
+<<<<<<< HEAD
       get(name) {
+=======
+      get: function(name: string) {
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
         return this.headers[name.toLowerCase()]
       },
     }
 
+<<<<<<< HEAD
     const handle = () =>
       app(mockReq as Request, mockRes as unknown as Response, (err: unknown) => {
+=======
+    // Handle request body for POST/PUT requests
+    if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
+      req
+        .json()
+        .then((body) => {
+          mockReq.body = body
+          // Pass to Express app
+          app(mockReq as Request, mockRes as Response, (err: unknown) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(new NextResponse("Not Found", { status: 404 }))
+            }
+          })
+        })
+        .catch((err) => {
+          mockReq.body = {}
+          app(mockReq as Request, mockRes as Response, (err: unknown) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(new NextResponse("Not Found", { status: 404 }))
+            }
+          })
+        })
+    } else {
+      // Pass to Express app
+      app(mockReq as Request, mockRes as Response, (err: unknown) => {
+>>>>>>> afd9a5d4366b9dde9da7ba6eed1080cf8b0f9b20
         if (err) {
           reject(err)
         } else {
