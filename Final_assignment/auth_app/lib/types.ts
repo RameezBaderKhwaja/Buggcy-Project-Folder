@@ -27,7 +27,7 @@ export interface SecurityEvent {
   ipAddress: string
   userAgent: string
   success: boolean
-  details: Record<string, unknown>
+  details: Record<string, unknown> | string
   timestamp: Date
   user?: {
     email: string
@@ -54,4 +54,17 @@ export interface SecurityStats {
   recentEvents: SecurityEvent[]
   eventTypes: Record<string, number>
   suspiciousActivity: number
+}
+
+export interface LoginInput {
+  email: string
+  password: string
+}
+
+export interface RegisterInput {
+  name: string
+  email: string
+  password: string
+  age: number
+  gender: "male" | "female" | "other" | "prefer-not-to-say"
 }

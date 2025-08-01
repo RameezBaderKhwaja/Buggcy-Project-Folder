@@ -1,19 +1,22 @@
 import rateLimit from "express-rate-limit"
-import helmet from "helmet"
 import type { Request, Response, NextFunction } from "express"
-import { SecurityLogger } from "@/lib/security"
+import { logSecurityEvent } from "@/lib/security"
 
 // Rate limiting configurations
-export const createRateLimit = (windowMs: number, max: number, message?: string) => {
+export const createRateLimiter = (options: {
+  maxAttempts: number
+  windowMs: number
+  message?: string
+}) => {
   return rateLimit({
-    windowMs,
-    max,
-    message: message || "Too many requests from this IP, please try again later.",
+    windowMs: options.windowMs,
+    max: options.maxAttempts,
+    message: options.message || "Too many requests from this IP, please try again later.",
     standardHeaders: true,
     legacyHeaders: false,
     handler: async (req: Request, res: Response) => {
-      await SecurityLogger.logEvent({
-        type: "RATE_LIMIT_EXCEEDED",
+      await logSecurityEvent({
+        event: "RATE_LIMIT_EXCEEDED",
         ipAddress: req.ip,
         userAgent: req.get("User-Agent"),
         details: { endpoint: req.path, method: req.method },
@@ -28,27 +31,19 @@ export const createRateLimit = (windowMs: number, max: number, message?: string)
 }
 
 // Different rate limits for different endpoints
-export const authRateLimit = createRateLimit(15 * 60 * 1000, 5, "Too many authentication attempts")
-export const generalRateLimit = createRateLimit(15 * 60 * 1000, 100)
-export const strictRateLimit = createRateLimit(15 * 60 * 1000, 3, "Too many sensitive requests")
-
-// Security headers middleware
-export const securityHeaders = helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      scriptSrc: ["'self'"],
-      connectSrc: ["'self'"],
-    },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true,
-  },
+export const authRateLimit = createRateLimiter({
+  maxAttempts: 5,
+  windowMs: 15 * 60 * 1000,
+  message: "Too many authentication attempts"
+})
+export const generalRateLimit = createRateLimiter({
+  maxAttempts: 100,
+  windowMs: 15 * 60 * 1000
+})
+export const strictRateLimit = createRateLimiter({
+  maxAttempts: 3,
+  windowMs: 15 * 60 * 1000,
+  message: "Too many sensitive requests"
 })
 
 // Request logging middleware
@@ -60,8 +55,8 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
     const isError = res.statusCode >= 400
 
     if (isError || req.path.includes("/auth/")) {
-      await SecurityLogger.logEvent({
-        type: isError ? "REQUEST_ERROR" : "REQUEST_SUCCESS",
+      await logSecurityEvent({
+        event: isError ? "REQUEST_ERROR" : "REQUEST_SUCCESS",
         ipAddress: req.ip,
         userAgent: req.get("User-Agent"),
         details: {
@@ -78,7 +73,7 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
 }
 
 // Input sanitization middleware
-export const sanitizeInput = (req: Request, res: Response, next: NextFunction) => {
+export const sanitizeInputs = (req: Request, res: Response, next: NextFunction) => {
   const sanitize = (obj: Record<string, unknown>) => {
     for (const key in obj) {
       if (typeof obj[key] === "string") {
@@ -100,8 +95,18 @@ export const sanitizeInput = (req: Request, res: Response, next: NextFunction) =
   next()
 }
 
+// Security headers middleware
+export const securityHeaders = (req: Request, res: Response, next: NextFunction) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.setHeader('X-Frame-Options', 'DENY')
+  res.setHeader('X-XSS-Protection', '1; mode=block')
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
+  next()
+}
+
 // CSRF protection middleware (basic implementation)
-export const csrfProtection = (req: Request, res: Response, next: NextFunction) => {
+export const csrfProtection = (req: Request & { session?: { csrfToken?: string } }, res: Response, next: NextFunction) => {
   if (["POST", "PUT", "DELETE", "PATCH"].includes(req.method)) {
     const token = req.headers["x-csrf-token"] || req.body._csrf
     const sessionToken = req.session?.csrfToken

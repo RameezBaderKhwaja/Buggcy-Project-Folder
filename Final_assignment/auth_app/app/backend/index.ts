@@ -86,9 +86,9 @@ app.use("/security/password-reset", passwordResetLimiter)
 app.use(
   express.json({
     limit: "10mb",
-    verify: (req, res, buf) => {
+    verify: (req: Request & { rawBody?: Buffer }, res, buf) => {
       // Store raw body for webhook verification if needed
-      ;(req as any).rawBody = buf
+      req.rawBody = buf
     },
   }),
 )
@@ -151,12 +151,11 @@ app.use("*", (req, res) => {
 })
 
 // Enhanced error handler
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error & { status?: number }, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error("Express error:", err)
 
   // Log security-related errors
   if (err.status === 401 || err.status === 403) {
-    const { logSecurityEvent } = require("@/lib/security")
     logSecurityEvent({
       event: "SECURITY_ERROR",
       details: {

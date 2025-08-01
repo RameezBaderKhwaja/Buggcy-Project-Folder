@@ -5,15 +5,20 @@ import { prisma } from "@/lib/prisma"
 import { generateToken, createAuthCookie, verifyToken } from "@/lib/auth"
 import { registerSchema } from "@/lib/validators"
 import {
-  validatePasswordStrength,
+  PasswordSecurity,
   checkAccountLockout,
   recordFailedLogin,
   clearFailedLogins,
   logSecurityEvent,
   validateEmail,
 } from "@/lib/security"
+import type { AuthUser } from "@/lib/types"
 
 const router = express.Router()
+
+interface AuthenticatedRequest extends express.Request {
+  user?: AuthUser
+}
 
 // Register endpoint with enhanced security
 router.post("/register", async (req, res) => {
@@ -30,7 +35,7 @@ router.post("/register", async (req, res) => {
     }
 
     // Password strength validation
-    const passwordValidation = validatePasswordStrength(password)
+    const passwordValidation = PasswordSecurity.validatePasswordStrength(password)
     if (!passwordValidation.isValid) {
       return res.status(400).json({
         success: false,
@@ -105,20 +110,20 @@ router.post("/register", async (req, res) => {
     })
 
     // Return user data (without password)
-    const { password: _, ...userWithoutPassword } = user
+    const { password: _password, ...userWithoutPassword } = user
     res.status(201).json({
       success: true,
       data: userWithoutPassword,
       message: "Registration successful",
     })
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Registration error:", error)
 
-    if (error.errors) {
+    if (error && typeof error === 'object' && 'errors' in error) {
       return res.status(400).json({
         success: false,
         error: "Validation failed",
-        details: error.errors,
+        details: (error as { errors: unknown }).errors,
       })
     }
 
@@ -161,7 +166,7 @@ router.post("/login", async (req, res, next) => {
       })
     }
 
-    passport.authenticate("local", async (err: any, user: any, info: any) => {
+    passport.authenticate("local", async (err: Error | null, user: AuthUser | false, info?: { message?: string }) => {
       if (err) {
         console.error("Login error:", err)
         return res.status(500).json({
@@ -342,9 +347,9 @@ router.get(
   }),
 )
 
-router.get("/google/callback", passport.authenticate("google", { session: false }), async (req, res) => {
+router.get("/google/callback", passport.authenticate("google", { session: false }), async (req: AuthenticatedRequest, res) => {
   try {
-    const user = req.user as any
+    const user = req.user
     if (!user) {
       return res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
     }
@@ -372,7 +377,7 @@ router.get("/google/callback", passport.authenticate("google", { session: false 
     })
 
     // Redirect to home
-    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/home`)
+    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/dashboard`)
   } catch (error) {
     console.error("Google callback error:", error)
     res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
@@ -386,9 +391,9 @@ router.get(
   }),
 )
 
-router.get("/github/callback", passport.authenticate("github", { session: false }), async (req, res) => {
+router.get("/github/callback", passport.authenticate("github", { session: false }), async (req: AuthenticatedRequest, res) => {
   try {
-    const user = req.user as any
+    const user = req.user
     if (!user) {
       return res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
     }
@@ -416,7 +421,7 @@ router.get("/github/callback", passport.authenticate("github", { session: false 
     })
 
     // Redirect to home
-    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/home`)
+    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/dashboard`)
   } catch (error) {
     console.error("GitHub callback error:", error)
     res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)

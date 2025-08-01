@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext"
 import { motion } from "framer-motion"
 import { Eye, EyeOff, Github, Mail, Lock, Loader2 } from "lucide-react"
 import Link from "next/link"
-import type { LoginInput } from "@/lib/validators"
+import type { LoginInput } from "@/lib/types"
 
 export default function LoginPage() {
   const router = useRouter()

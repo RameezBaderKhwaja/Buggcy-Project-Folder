@@ -1,7 +1,8 @@
 import express from "express"
+import bcrypt from "bcrypt"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
-import { logSecurityEvent, generateCSRFToken, SecurityLogger } from "@/lib/security"
+import { logSecurityEvent, generateCSRFToken, SecurityLogger, PasswordSecurity } from "@/lib/security"
 import { strictRateLimit } from "../middleware/security"
 import { authenticateToken, requireAdmin } from "@/lib/middleware"
 
@@ -25,39 +26,10 @@ router.get("/csrf-token", (req, res) => {
 })
 
 // Get security logs (admin only)
-router.get("/logs", async (req, res) => {
+router.get("/logs", authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const token = req.cookies["auth-token"]
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: "Unauthorized",
-      })
-    }
-
-    const payload = verifyToken(token)
-    if (!payload) {
-      return res.status(401).json({
-        success: false,
-        error: "Invalid token",
-      })
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: payload.userId },
-      select: { role: true },
-    })
-
-    if (!user || user.role !== "ADMIN") {
-      return res.status(403).json({
-        success: false,
-        error: "Admin access required",
-      })
-    }
-
-    const page = Number.parseInt(req.query.page as string) || 1
-    const limit = Number.parseInt(req.query.limit as string) || 50
+    const page = parseInt(req.query.page as string) || 1
+    const limit = parseInt(req.query.limit as string) || 50
     const skip = (page - 1) * limit
 
     const logs = await prisma.securityLog.findMany({
@@ -78,7 +50,7 @@ router.get("/logs", async (req, res) => {
       data: {
         logs: logs.map((log) => ({
           ...log,
-          details: JSON.parse(log.details),
+          details: typeof log.details === 'string' ? JSON.parse(log.details) : log.details,
         })),
         pagination: {
           page,
@@ -205,8 +177,7 @@ router.post("/password-reset", async (req, res) => {
     }
 
     // Validate password strength
-    const { validatePasswordStrength } = await import("@/lib/security")
-    const validation = validatePasswordStrength(password)
+    const validation = PasswordSecurity.validatePasswordStrength(password)
 
     if (!validation.isValid) {
       return res.status(400).json({
@@ -217,7 +188,6 @@ router.post("/password-reset", async (req, res) => {
     }
 
     // Hash new password
-    const bcrypt = await import("bcrypt")
     const hashedPassword = await bcrypt.hash(password, 12)
 
     // Update user
@@ -228,7 +198,7 @@ router.post("/password-reset", async (req, res) => {
         resetToken: null,
         resetExpires: null,
         failedLoginAttempts: 0,
-        lockoutEnd: null,
+        accountLockedUntil: null,
       },
     })
 
@@ -258,10 +228,11 @@ router.post("/password-reset", async (req, res) => {
 router.post("/log", strictRateLimit, authenticateToken, async (req, res) => {
   try {
     const { type, details } = req.body
+    const user = (req as express.Request & { user: { id: string } }).user
 
-    await SecurityLogger.logEvent({
-      type,
-      userId: req.user?.id,
+    await logSecurityEvent({
+      event: type,
+      userId: user.id,
       ipAddress: req.ip,
       userAgent: req.get("User-Agent"),
       details,
@@ -283,7 +254,7 @@ router.post("/log", strictRateLimit, authenticateToken, async (req, res) => {
 // Get recent security events (Admin only)
 router.get("/events", strictRateLimit, authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const limit = Number.parseInt(req.query.limit as string) || 50
+    const limit = parseInt(req.query.limit as string) || 50
     const events = await SecurityLogger.getRecentEvents(limit)
 
     res.json({

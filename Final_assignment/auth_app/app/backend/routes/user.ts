@@ -1,22 +1,12 @@
 import express from "express"
 import { prisma } from "@/lib/prisma"
+import { expressWithAuth, expressWithAdminAuth } from "@/lib/middleware"
 
 const router = express.Router()
 
 // Get all users (admin only)
-router.get("/", async (req, res) => {
+router.get("/", expressWithAdminAuth, async (req, res) => {
   try {
-    const token = req.cookies["auth-token"]
-
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: "Unauthorized - No token provided",
-      })
-    }
-
-    // For now, allow all authenticated users to see user list
-    // In production, you might want to restrict this to admins only
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -48,7 +38,7 @@ router.get("/", async (req, res) => {
 })
 
 // Get user by ID
-router.get("/:id", async (req, res) => {
+router.get("/:id", expressWithAuth, async (req, res) => {
   try {
     const { id } = req.params
 

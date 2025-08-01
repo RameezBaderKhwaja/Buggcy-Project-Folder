@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { validatePasswordStrength, validateEmail } from "./security"
+import { PasswordSecurity, validateEmail } from "./security"
 
 export const loginSchema = z.object({
   email: z
@@ -22,9 +22,9 @@ export const registerSchema = z.object({
       (email) => ({ message: validateEmail(email).error || "Invalid email" }),
     ),
   password: z.string().refine(
-    (password) => validatePasswordStrength(password).isValid,
+    (password) => PasswordSecurity.validatePasswordStrength(password).isValid,
     (password) => ({
-      message: validatePasswordStrength(password).errors.join(", "),
+      message: PasswordSecurity.validatePasswordStrength(password).errors.join(", "),
     }),
   ),
   age: z.number().min(18, "Must be at least 18 years old").max(120, "Invalid age"),
@@ -51,9 +51,9 @@ export const passwordResetSchema = z.object({
 export const passwordChangeSchema = z.object({
   token: z.string().min(1, "Reset token is required"),
   password: z.string().refine(
-    (password) => validatePasswordStrength(password).isValid,
+    (password) => PasswordSecurity.validatePasswordStrength(password).isValid,
     (password) => ({
-      message: validatePasswordStrength(password).errors.join(", "),
+      message: PasswordSecurity.validatePasswordStrength(password).errors.join(", "),
     }),
   ),
 })
