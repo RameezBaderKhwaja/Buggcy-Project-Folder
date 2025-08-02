@@ -25,7 +25,7 @@ export class DataEncryption {
       const tag = cipher.getAuthTag()
 
       return iv.toString("hex") + ":" + tag.toString("hex") + ":" + encrypted
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Encryption error:", error)
       throw new Error("Failed to encrypt data")
     }
@@ -51,7 +51,7 @@ export class DataEncryption {
       decrypted += decipher.final("utf8")
 
       return decrypted
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Decryption error:", error)
       throw new Error("Failed to decrypt data")
     }

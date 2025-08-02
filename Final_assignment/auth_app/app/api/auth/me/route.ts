@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { verifyToken } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
+export const runtime = "nodejs"
+
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get("auth-token")?.value
@@ -10,9 +12,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "No token provided" }, { status: 401 })
     }
 
-    const payload = verifyToken(token)
+    let payload
+    try {
+      payload = verifyToken(token)
+    } catch (err) {
+      return NextResponse.json({ success: false, error: "Malformed or corrupted token" }, { status: 401 })
+    }
     if (!payload) {
-      return NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 })
+      return NextResponse.json({ success: false, error: "Invalid or expired token" }, { status: 401 })
     }
 
     const user = await prisma.user.findUnique({
@@ -25,9 +32,7 @@ export async function GET(request: NextRequest) {
         image: true,
         age: true,
         gender: true,
-        provider: true,
         createdAt: true,
-        updatedAt: true,
       },
     })
 

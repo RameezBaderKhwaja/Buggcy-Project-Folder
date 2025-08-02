@@ -10,13 +10,29 @@ interface GoogleUser {
   verified_email: boolean
 }
 
+export const runtime = "nodejs"
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const code = searchParams.get("code")
+    const state = searchParams.get("state")
+
+    // Check for required env vars
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.NEXT_PUBLIC_API_URL) {
+      console.error("Missing Google OAuth env vars")
+      return NextResponse.redirect(new URL("/login?error=server_config", request.url))
+    }
 
     if (!code) {
       return NextResponse.redirect(new URL("/login?error=no_code", request.url))
+    }
+
+    // CSRF state verification (if state was set in initiation step)
+    const cookies = request.cookies
+    const expectedState = cookies.get("google_oauth_state")?.value
+    if (expectedState && state !== expectedState) {
+      return NextResponse.redirect(new URL("/login?error=invalid_state", request.url))
     }
 
     // Exchange code for access token
@@ -34,7 +50,12 @@ export async function GET(request: NextRequest) {
       }),
     })
 
-    const tokenData = (await tokenResponse.json()) as { access_token?: string; error?: string }
+    const tokenData = (await tokenResponse.json()) as { access_token?: string; error?: string; error_description?: string }
+
+    if (tokenData.error) {
+      console.error("Google token exchange error:", tokenData.error, tokenData.error_description)
+      return NextResponse.redirect(new URL(`/login?error=token_exchange_failed&desc=${encodeURIComponent(tokenData.error_description || "")}`, request.url))
+    }
 
     if (!tokenData.access_token) {
       return NextResponse.redirect(new URL("/login?error=token_exchange_failed", request.url))
@@ -47,11 +68,26 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    if (!userResponse.ok) {
+      console.error("Failed to fetch Google user info", await userResponse.text())
+      return NextResponse.redirect(new URL("/login?error=userinfo_failed", request.url))
+    }
+
     const googleUser = (await userResponse.json()) as GoogleUser
 
-    // Check if user exists
-    let user = await prisma.user.findUnique({
-      where: { email: googleUser.email },
+    // Check for verified email
+    if (!googleUser.verified_email) {
+      return NextResponse.redirect(new URL("/login?error=email_not_verified", request.url))
+    }
+
+    // Check if user exists by email or providerId
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: googleUser.email },
+          { providerId: googleUser.id },
+        ],
+      },
     })
 
     if (!user) {
@@ -67,18 +103,16 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Generate token and set cookie
-    const token = generateToken(user)
+    // Generate token with minimal payload
+    const token = generateToken({ id: user.id, email: user.email, role: user.role })
     const cookie = createAuthCookie(token)
 
     const response = NextResponse.redirect(new URL("/dashboard", request.url))
-    response.cookies.set(cookie.name, cookie.value, {
-      httpOnly: cookie.httpOnly,
-      secure: cookie.secure,
-      sameSite: cookie.sameSite,
-      maxAge: cookie.maxAge,
-      path: cookie.path,
-    })
+    // Set cookie using headers for Node.js runtime compatibility
+    response.headers.append(
+      "Set-Cookie",
+      `${cookie.name}=${cookie.value}; Path=${cookie.path}; HttpOnly; SameSite=${cookie.sameSite}; Max-Age=${cookie.maxAge};${cookie.secure ? " Secure;" : ""}`
+    )
 
     return response
   } catch (error: unknown) {

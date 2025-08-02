@@ -1,6 +1,6 @@
 import express from "express"
 import passport from "passport"
-import bcrypt from "bcrypt"
+import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/prisma"
 import { generateToken, createAuthCookie, verifyToken, TokenUser } from "@/lib/auth"
 import { registerSchema } from "@/lib/validators"
@@ -13,6 +13,13 @@ import {
   validateEmail,
 } from "@/lib/security"
 import type { AuthUser } from "@/lib/types"
+import {
+  generalRateLimit,
+  requestLogger,
+  sanitizeInputs,
+  securityHeaders,
+  csrfProtection,
+} from "../middleware/security"
 
 // --- TypeScript: Extend Express.User globally to match AuthUser ---
 declare global {
@@ -23,21 +30,61 @@ declare global {
 
 const router = express.Router()
 
+// Global security middlewares
+router.use(generalRateLimit, requestLogger, sanitizeInputs, securityHeaders, csrfProtection)
+
+// Helper for async logging
+const safeLogSecurityEvent = (event: Parameters<typeof logSecurityEvent>[0]) => {
+  logSecurityEvent(event).catch((err: unknown) => console.error("Log error:", err))
+}
+
+// Helper for OAuth callback
+async function handleOAuthCallback(
+  req: express.Request & { user?: AuthUser }, 
+  res: express.Response, 
+  provider: string
+) {
+  try {
+    const user = req.user
+    if (!user) {
+      return res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
+    }
+    const tokenUser: TokenUser = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+    }
+    const token = generateToken(tokenUser)
+    const cookie = createAuthCookie(token)
+    res.cookie(cookie.name, cookie.value, {
+      httpOnly: cookie.httpOnly,
+      secure: cookie.secure,
+      sameSite: cookie.sameSite,
+      maxAge: cookie.maxAge * 1000, // always ms
+      path: cookie.path,
+    })
+    safeLogSecurityEvent({
+      userId: user.id,
+      type: "OAUTH_LOGIN_SUCCESS",
+      details: { provider, email: user.email },
+      ipAddress: req.ip || "unknown",
+      userAgent: req.get("User-Agent"),
+    })
+    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/dashboard`)
+  } catch (error) {
+    console.error(`${provider} callback error:`, error)
+    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
+  }
+}
+
 // Register endpoint with enhanced security
-router.post("/register", async (req, res) => {
+router.post("/register", async (req, res, next) => {
   try {
     const { name, email, password, age, gender } = req.body
-
-    // Enhanced email validation
     const emailValidation = validateEmail(email)
     if (!emailValidation.isValid) {
-      return res.status(400).json({
-        success: false,
-        error: emailValidation.error,
-      })
+      return res.status(400).json({ success: false, error: emailValidation.error })
     }
-
-    // Password strength validation
     const passwordValidation = PasswordSecurity.validatePasswordStrength(password)
     if (!passwordValidation.isValid) {
       return res.status(400).json({
@@ -46,39 +93,18 @@ router.post("/register", async (req, res) => {
         details: passwordValidation.errors,
       })
     }
-
-    const validatedData = registerSchema.parse({
-      name,
-      email,
-      password,
-      age,
-      gender,
-    })
-
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email: validatedData.email.toLowerCase() },
-    })
-
+    const validatedData = registerSchema.parse({ name, email, password, age, gender })
+    const existingUser = await prisma.user.findUnique({ where: { email: validatedData.email.toLowerCase() } })
     if (existingUser) {
-      // Log potential account enumeration attempt
-      await logSecurityEvent({
+      safeLogSecurityEvent({
         type: "REGISTRATION_ATTEMPT_EXISTING_EMAIL",
         details: { email: validatedData.email },
         ipAddress: req.ip || "unknown",
         userAgent: req.get("User-Agent"),
       })
-
-      return res.status(400).json({
-        success: false,
-        error: "User already exists with this email",
-      })
+      return res.status(400).json({ success: false, error: "User already exists with this email" })
     }
-
-    // Hash password with enhanced security
     const hashedPassword = await bcrypt.hash(validatedData.password, 12)
-
-    // Create user
     const user = await prisma.user.create({
       data: {
         name: validatedData.name,
@@ -89,17 +115,9 @@ router.post("/register", async (req, res) => {
         gender: validatedData.gender,
       },
     })
-
-    // Generate token with only required fields
-    const tokenUser: TokenUser = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    }
+    const tokenUser: TokenUser = { id: user.id, email: user.email, role: user.role }
     const token = generateToken(tokenUser)
     const cookie = createAuthCookie(token)
-
-    // Set cookie
     res.cookie(cookie.name, cookie.value, {
       httpOnly: cookie.httpOnly,
       secure: cookie.secure,
@@ -107,38 +125,17 @@ router.post("/register", async (req, res) => {
       maxAge: cookie.maxAge * 1000,
       path: cookie.path,
     })
-
-    // Log successful registration
-    await logSecurityEvent({
+    safeLogSecurityEvent({
       userId: user.id,
       type: "USER_REGISTERED",
       details: { email: user.email, provider: "email" },
       ipAddress: req.ip || "unknown",
       userAgent: req.get("User-Agent"),
     })
-
-    // Return user data (without password)
     const { password: _password, ...userWithoutPassword } = user
-    res.status(201).json({
-      success: true,
-      data: userWithoutPassword,
-      message: "Registration successful",
-    })
+    res.status(201).json({ success: true, data: userWithoutPassword, message: "Registration successful" })
   } catch (error: unknown) {
-    console.error("Registration error:", error)
-
-    if (error && typeof error === 'object' && 'errors' in error) {
-      return res.status(400).json({
-        success: false,
-        error: "Validation failed",
-        details: (error as { errors: unknown }).errors,
-      })
-    }
-
-    res.status(500).json({
-      success: false,
-      error: "Internal server error",
-    })
+    next(error)
   }
 })
 
@@ -146,48 +143,33 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body
-
     if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        error: "Email and password are required",
-      })
+      return res.status(400).json({ success: false, error: "Email and password are required" })
     }
-
-    // Check account lockout
     const lockoutStatus = await checkAccountLockout(email.toLowerCase())
     if (lockoutStatus.isLocked) {
-      await logSecurityEvent({
+      safeLogSecurityEvent({
         type: "LOGIN_ATTEMPT_LOCKED_ACCOUNT",
         details: {
           email,
-          lockoutEnd: lockoutStatus.lockoutEnd,
+          lockoutEnd: lockoutStatus.lockoutEnd?.toISOString(),
         },
         ipAddress: req.ip || "unknown",
         userAgent: req.get("User-Agent"),
       })
-
       return res.status(423).json({
         success: false,
-        error: `Account is locked. Try again after ${lockoutStatus.lockoutEnd?.toLocaleString()}`,
-        lockoutEnd: lockoutStatus.lockoutEnd,
+        error: `Account is locked. Try again after ${lockoutStatus.lockoutEnd?.toISOString()}`,
+        lockoutEnd: lockoutStatus.lockoutEnd?.toISOString(),
       })
     }
-
     passport.authenticate("local", async (err: Error | null, user: AuthUser | false, info?: { message?: string }) => {
       if (err) {
-        console.error("Login error:", err)
-        return res.status(500).json({
-          success: false,
-          error: "Internal server error",
-        })
+        return next(err)
       }
-
       if (!user) {
-        // Record failed login attempt
         await recordFailedLogin(email.toLowerCase())
-
-        await logSecurityEvent({
+        safeLogSecurityEvent({
           type: "LOGIN_FAILED",
           details: {
             email,
@@ -197,28 +179,17 @@ router.post("/login", async (req, res, next) => {
           ipAddress: req.ip || "unknown",
           userAgent: req.get("User-Agent"),
         })
-
         return res.status(401).json({
           success: false,
           error: info?.message || "Invalid credentials",
           attemptsRemaining: lockoutStatus.attemptsRemaining,
         })
       }
-
       try {
-        // Clear failed login attempts on successful login
         await clearFailedLogins(user.id)
-
-        // Generate token with only required fields
-        const tokenUser: TokenUser = {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-        }
+        const tokenUser: TokenUser = { id: user.id, email: user.email, role: user.role }
         const token = generateToken(tokenUser)
         const cookie = createAuthCookie(token)
-
-        // Set cookie
         res.cookie(cookie.name, cookie.value, {
           httpOnly: cookie.httpOnly,
           secure: cookie.secure,
@@ -226,47 +197,31 @@ router.post("/login", async (req, res, next) => {
           maxAge: cookie.maxAge * 1000,
           path: cookie.path,
         })
-
-        // Log successful login
-        await logSecurityEvent({
+        safeLogSecurityEvent({
           userId: user.id,
           type: "LOGIN_SUCCESS",
           details: { email: user.email },
           ipAddress: req.ip || "unknown",
           userAgent: req.get("User-Agent"),
         })
-
-        res.json({
-          success: true,
-          data: user,
-          message: "Login successful",
-        })
+        res.json({ success: true, data: user, message: "Login successful" })
       } catch (error) {
-        console.error("Token generation error:", error)
-        res.status(500).json({
-          success: false,
-          error: "Internal server error",
-        })
+        next(error)
       }
     })(req, res, next)
-  } catch (error) {
-    console.error("Login route error:", error)
-    res.status(500).json({
-      success: false,
-      error: "Internal server error",
-    })
+  } catch (error: unknown) {
+    next(error)
   }
 })
 
 // Enhanced logout endpoint
-router.post("/logout", async (req, res) => {
+router.post("/logout", async (req, res, next) => {
   try {
     const token = req.cookies["auth-token"]
-
     if (token) {
       const payload = verifyToken(token)
       if (payload) {
-        await logSecurityEvent({
+        safeLogSecurityEvent({
           userId: payload.userId,
           type: "USER_LOGOUT",
           details: {},
@@ -275,47 +230,29 @@ router.post("/logout", async (req, res) => {
         })
       }
     }
-
     res.clearCookie("auth-token", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
     })
-
-    res.json({
-      success: true,
-      message: "Logged out successfully",
-    })
-  } catch (error) {
-    console.error("Logout error:", error)
-    res.status(500).json({
-      success: false,
-      error: "Internal server error",
-    })
+    res.json({ success: true, message: "Logged out successfully" })
+  } catch (error: unknown) {
+    next(error)
   }
 })
 
 // Get current user endpoint (unchanged but with logging)
-router.get("/me", async (req, res) => {
+router.get("/me", async (req, res, next) => {
   try {
     const token = req.cookies["auth-token"]
-
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: "No token provided",
-      })
+      return res.status(401).json({ success: false, error: "No token provided" })
     }
-
     const payload = verifyToken(token)
     if (!payload) {
-      return res.status(401).json({
-        success: false,
-        error: "Invalid token",
-      })
+      return res.status(401).json({ success: false, error: "Invalid token" })
     }
-
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: {
@@ -331,124 +268,39 @@ router.get("/me", async (req, res) => {
         updatedAt: true,
       },
     })
-
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: "User not found",
-      })
+      return res.status(404).json({ success: false, error: "User not found" })
     }
-
-    res.json({
-      success: true,
-      data: user,
-    })
-  } catch (error) {
-    console.error("Get user error:", error)
-    res.status(500).json({
-      success: false,
-      error: "Internal server error",
-    })
+    res.json({ success: true, data: user })
+  } catch (error: unknown) {
+    next(error)
   }
 })
 
-// OAuth routes remain the same but with enhanced logging
+// OAuth routes with DRY callback handler
 router.get(
   "/google",
-  passport.authenticate("google", {
-    scope: ["profile", "email"],
-  }),
+  passport.authenticate("google", { scope: ["profile", "email"] }),
 )
-
-router.get("/google/callback", passport.authenticate("google", { session: false }), async (req, res) => {
-  try {
-    const user = req.user as AuthUser
-    if (!user) {
-      return res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
-    }
-
-    // Generate token with only required fields
-    const tokenUser: TokenUser = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    }
-    const token = generateToken(tokenUser)
-    const cookie = createAuthCookie(token)
-
-    // Set cookie
-    res.cookie(cookie.name, cookie.value, {
-      httpOnly: cookie.httpOnly,
-      secure: cookie.secure,
-      sameSite: cookie.sameSite,
-      maxAge: cookie.maxAge * 1000,
-      path: cookie.path,
-    })
-
-    // Log OAuth login
-    await logSecurityEvent({
-      userId: user.id,
-      type: "OAUTH_LOGIN_SUCCESS",
-      details: { provider: "google", email: user.email },
-      ipAddress: req.ip || "unknown",
-      userAgent: req.get("User-Agent"),
-    })
-
-    // Redirect to home
-    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/dashboard`)
-  } catch (error) {
-    console.error("Google callback error:", error)
-    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
-  }
-})
-
+router.get(
+  "/google/callback",
+  passport.authenticate("google", { session: false }),
+  (req, res) => handleOAuthCallback(req, res, "google"),
+)
 router.get(
   "/github",
-  passport.authenticate("github", {
-    scope: ["user:email"],
-  }),
+  passport.authenticate("github", { scope: ["user:email"] }),
+)
+router.get(
+  "/github/callback",
+  passport.authenticate("github", { session: false }),
+  (req, res) => handleOAuthCallback(req, res, "github"),
 )
 
-router.get("/github/callback", passport.authenticate("github", { session: false }), async (req, res) => {
-  try {
-    const user = req.user as AuthUser
-    if (!user) {
-      return res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
-    }
-
-    // Generate token with only required fields
-    const tokenUser: TokenUser = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-    }
-    const token = generateToken(tokenUser)
-    const cookie = createAuthCookie(token)
-
-    // Set cookie
-    res.cookie(cookie.name, cookie.value, {
-      httpOnly: cookie.httpOnly,
-      secure: cookie.secure,
-      sameSite: cookie.sameSite,
-      maxAge: cookie.maxAge * 1000,
-      path: cookie.path,
-    })
-
-    // Log OAuth login
-    await logSecurityEvent({
-      userId: user.id,
-      type: "OAUTH_LOGIN_SUCCESS",
-      details: { provider: "github", email: user.email },
-      ipAddress: req.ip || "unknown",
-      userAgent: req.get("User-Agent"),
-    })
-
-    // Redirect to home
-    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/dashboard`)
-  } catch (error) {
-    console.error("GitHub callback error:", error)
-    res.redirect(`${process.env.NEXT_PUBLIC_API_URL}/login?error=oauth_failed`)
-  }
+// Centralized error handler
+router.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error("Auth route error:", err)
+  res.status(500).json({ success: false, error: "Internal server error" })
 })
 
 export default router

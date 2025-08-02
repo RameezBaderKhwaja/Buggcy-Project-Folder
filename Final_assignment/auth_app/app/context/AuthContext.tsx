@@ -1,142 +1,293 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from "react"
 import type { AuthUser, LoginInput, RegisterInput } from "@/lib/types"
 import { API_ROUTES } from "@/lib/constants"
+
+// Enhanced types for better error handling
+interface AuthResult {
+  success: boolean
+  error?: string
+}
+
+interface UpdateProfileResult {
+  success: boolean
+  error?: string
+}
 
 interface AuthContextType {
   user: AuthUser | null
   loading: boolean
-  login: (data: LoginInput) => Promise<boolean>
-  register: (data: RegisterInput) => Promise<boolean>
+  login: (data: LoginInput) => Promise<AuthResult>
+  register: (data: RegisterInput) => Promise<AuthResult>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
-  updateProfile: (data: FormData) => Promise<boolean>
+  updateProfile: (data: FormData) => Promise<UpdateProfileResult>
 }
+
+// Constants for fetch options
+const FETCH_OPTIONS = {
+  JSON_HEADERS: {
+    "Content-Type": "application/json",
+  },
+  DEFAULT_OPTIONS: {
+    credentials: "include" as RequestCredentials,
+  },
+} as const
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [csrfToken, setCsrfToken] = useState<string | null>(null)
+  
+  // Ref to track component mount status for cleanup
+  const isMountedRef = useRef(true)
+  
+  // AbortController for cancelling requests
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
-    checkAuth()
+    isMountedRef.current = true
+    initializeAuth()
+    
+    return () => {
+      isMountedRef.current = false
+      // Cancel any pending requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
   }, [])
 
-  const checkAuth = async () => {
+  // Enhanced API fetch wrapper with retry logic and error handling
+  const apiFetch = useCallback(async (
+    url: string, 
+    options: RequestInit = {},
+    retries = 3
+  ): Promise<Response> => {
+    // Create new AbortController for this request
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
+    const fetchOptions: RequestInit = {
+      ...FETCH_OPTIONS.DEFAULT_OPTIONS,
+      ...options,
+      signal: controller.signal,
+      headers: {
+        ...options.headers,
+        // Add CSRF token for state-changing operations
+        ...(csrfToken && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method || 'GET') 
+          ? { 'X-CSRF-Token': csrfToken } 
+          : {}),
+      },
+    }
+
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        const response = await fetch(url, fetchOptions)
+        
+        // If request was successful or client error (4xx), don't retry
+        if (response.ok || (response.status >= 400 && response.status < 500)) {
+          return response
+        }
+        
+        // Server error (5xx) - retry if not last attempt
+        if (attempt === retries) {
+          return response
+        }
+        
+        // Exponential backoff delay
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        
+      } catch (error) {
+        // If aborted, don't retry
+        if (error instanceof Error && error.name === 'AbortError') {
+          throw error
+        }
+        
+        // Network error - retry if not last attempt
+        if (attempt === retries) {
+          throw error
+        }
+        
+        // Exponential backoff delay
+        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+    
+    throw new Error('Max retries exceeded')
+  }, [csrfToken])
+
+  // Initialize authentication and CSRF token
+  const initializeAuth = useCallback(async () => {
     try {
-      const response = await fetch(API_ROUTES.AUTH.ME, {
-        credentials: "include",
-      })
+      // Fetch CSRF token first
+      await fetchCsrfToken()
+      // Then check authentication
+      await checkAuth()
+    } catch (error) {
+      console.error("Auth initialization failed:", error)
+      if (isMountedRef.current) {
+        setLoading(false)
+      }
+    }
+  }, [])
+
+  // Fetch CSRF token for secure requests
+  const fetchCsrfToken = useCallback(async () => {
+    try {
+      const response = await apiFetch('/api/security/csrf-token')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && isMountedRef.current) {
+          setCsrfToken(data.token)
+        }
+      }
+    } catch (error) {
+      // CSRF token is optional, don't fail initialization
+      console.warn("CSRF token fetch failed:", error)
+    }
+  }, [apiFetch])
+
+  const checkAuth = useCallback(async () => {
+    try {
+      const response = await apiFetch(API_ROUTES.AUTH.ME)
 
       if (response.ok) {
         const data = await response.json()
-        if (data.success) {
+        if (data.success && isMountedRef.current) {
           setUser(data.data)
         }
       }
     } catch (error) {
-      console.error("Auth check failed:", error)
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error("Auth check failed:", error)
+      }
     } finally {
-      setLoading(false)
+      if (isMountedRef.current) {
+        setLoading(false)
+      }
     }
-  }
+  }, [apiFetch])
 
-  const login = async (data: LoginInput): Promise<boolean> => {
+  const login = useCallback(async (data: LoginInput): Promise<AuthResult> => {
     try {
-      const response = await fetch(API_ROUTES.AUTH.LOGIN, {
+      const response = await apiFetch(API_ROUTES.AUTH.LOGIN, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: FETCH_OPTIONS.JSON_HEADERS,
         body: JSON.stringify(data),
-        credentials: "include",
       })
 
       const result = await response.json()
 
       if (result.success) {
-        setUser(result.data)
-        return true
+        if (isMountedRef.current) {
+          setUser(result.data)
+        }
+        return { success: true }
       }
-      return false
+      return { success: false, error: result.error || "Login failed" }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return { success: false, error: "Request cancelled" }
+      }
       console.error("Login failed:", error)
-      return false
+      return { success: false, error: "Network or server error" }
     }
-  }
+  }, [apiFetch])
 
-  const register = async (data: RegisterInput): Promise<boolean> => {
+  const register = useCallback(async (data: RegisterInput): Promise<AuthResult> => {
     try {
-      const response = await fetch(API_ROUTES.AUTH.REGISTER, {
+      const response = await apiFetch(API_ROUTES.AUTH.REGISTER, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: FETCH_OPTIONS.JSON_HEADERS,
         body: JSON.stringify(data),
-        credentials: "include",
       })
 
       const result = await response.json()
 
       if (result.success) {
-        setUser(result.data)
-        return true
+        if (isMountedRef.current) {
+          setUser(result.data)
+        }
+        return { success: true }
       }
-      return false
+      return { success: false, error: result.error || "Registration failed" }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return { success: false, error: "Request cancelled" }
+      }
       console.error("Registration failed:", error)
-      return false
+      return { success: false, error: "Network or server error" }
     }
-  }
+  }, [apiFetch])
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
-      await fetch(API_ROUTES.AUTH.LOGOUT, {
+      await apiFetch(API_ROUTES.AUTH.LOGOUT, {
         method: "POST",
-        credentials: "include",
       })
-      setUser(null)
+      if (isMountedRef.current) {
+        setUser(null)
+      }
     } catch (error) {
-      console.error("Logout failed:", error)
+      if (error instanceof Error && error.name !== 'AbortError') {
+        console.error("Logout failed:", error)
+      }
+      // Always clear user on logout attempt
+      if (isMountedRef.current) {
+        setUser(null)
+      }
     }
-  }
+  }, [apiFetch])
 
-  const updateProfile = async (formData: FormData): Promise<boolean> => {
+  const updateProfile = useCallback(async (formData: FormData): Promise<UpdateProfileResult> => {
     try {
-      const response = await fetch(API_ROUTES.PROFILE, {
+      const response = await apiFetch(API_ROUTES.PROFILE, {
         method: "PUT",
         body: formData,
-        credentials: "include",
       })
 
       const result = await response.json()
 
       if (result.success) {
-        setUser(result.data)
-        return true
+        if (isMountedRef.current) {
+          setUser(result.data)
+        }
+        return { success: true }
       }
-      return false
+      return { success: false, error: result.error || "Profile update failed" }
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return { success: false, error: "Request cancelled" }
+      }
       console.error("Profile update failed:", error)
-      return false
+      return { success: false, error: "Network or server error" }
     }
-  }
+  }, [apiFetch])
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     await checkAuth()
-  }
+  }, [checkAuth])
+
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    user,
+    loading,
+    login,
+    register,
+    logout,
+    refreshUser,
+    updateProfile,
+  }), [user, loading, login, register, logout, refreshUser, updateProfile])
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        register,
-        logout,
-        refreshUser,
-        updateProfile,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   )

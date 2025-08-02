@@ -1,18 +1,178 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { motion } from "framer-motion"
+import Head from "next/head"
+import Image from "next/image"
 import ProtectedLayout from "@/components/ProtectedLayout"
-import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, User, Mail, Calendar, Shield } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { 
+  ArrowLeft, 
+  User, 
+  Mail, 
+  Calendar, 
+  Shield, 
+  AlertTriangle, 
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Activity
+} from "lucide-react"
 import type { AuthUser } from "@/lib/types"
 import { formatDate, capitalizeFirst } from "@/lib/utils"
+import { toast } from "sonner"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+// Enhanced API URL handling with proper error checking
+const getApiUrl = () => {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL
+  if (!apiUrl) {
+    console.warn("Missing NEXT_PUBLIC_API_URL environment variable. Defaulting to localhost.")
+    return "http://localhost:3000"
+  }
+  return apiUrl
+}
+
+const API_URL = getApiUrl()
+
+// Enhanced profile completion checker
+const isProfileComplete = (user: AuthUser): { isComplete: boolean; completionPercentage: number; missingFields: string[] } => {
+  const requiredFields = [
+    { key: 'name', label: 'Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'age', label: 'Age' },
+    { key: 'gender', label: 'Gender' },
+    { key: 'image', label: 'Profile Image' }
+  ]
+  
+  const completedFields = requiredFields.filter(field => {
+    const value = user[field.key as keyof AuthUser]
+    return value !== null && value !== undefined && value !== ''
+  })
+  
+  const missingFields = requiredFields
+    .filter(field => {
+      const value = user[field.key as keyof AuthUser]
+      return value === null || value === undefined || value === ''
+    })
+    .map(field => field.label)
+  
+  const completionPercentage = Math.round((completedFields.length / requiredFields.length) * 100)
+  const isComplete = completedFields.length === requiredFields.length
+  
+  return { isComplete, completionPercentage, missingFields }
+}
+
+// Loading skeleton component
+const UserDetailSkeleton = () => (
+  <div className="space-y-8">
+    <div className="space-y-4">
+      <Skeleton className="h-10 w-32" />
+      <Skeleton className="h-8 w-64" />
+      <Skeleton className="h-4 w-96" />
+    </div>
+    
+    <Card>
+      <CardHeader>
+        <div className="flex items-center space-x-4">
+          <Skeleton className="w-20 h-20 rounded-full" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-6 w-64" />
+            <div className="flex space-x-2">
+              <Skeleton className="h-6 w-16" />
+              <Skeleton className="h-6 w-20" />
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+    </Card>
+    
+    <div className="grid gap-6 md:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-48" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-6 w-full" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-48" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-6 w-full" />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  </div>
+)
+
+// Enhanced error component
+const ErrorDisplay = ({ 
+  error, 
+  onRetry, 
+  onGoBack, 
+  isRetrying = false 
+}: { 
+  error: string
+  onRetry: () => void
+  onGoBack: () => void
+  isRetrying?: boolean
+}) => (
+  <div className="text-center py-12">
+    <div className="max-w-md mx-auto">
+      <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        {error === "User not found" ? "User Not Found" : "Something Went Wrong"}
+      </h2>
+      <p className="text-gray-600 mb-6">
+        {error === "User not found" 
+          ? "The user you're looking for doesn't exist or has been removed."
+          : error
+        }
+      </p>
+      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+        <Button 
+          onClick={onRetry} 
+          disabled={isRetrying}
+          variant="default"
+        >
+          {isRetrying ? (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+              Retrying...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try Again
+            </>
+          )}
+        </Button>
+        <Button onClick={onGoBack} variant="outline">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Users
+        </Button>
+      </div>
+    </div>
+  </div>
+)
 
 export default function UserDetailPage() {
   const params = useParams()
@@ -20,105 +180,181 @@ export default function UserDetailPage() {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [isRetrying, setIsRetrying] = useState(false)
 
-  useEffect(() => {
-    if (params.id) {
-      fetchUser(params.id as string)
+  // Enhanced fetch function with better error handling
+  const fetchUser = useCallback(async (id: string, isRetry = false) => {
+    if (isRetry) {
+      setIsRetrying(true)
+      setError("")
+    } else {
+      setLoading(true)
     }
-  }, [params.id])
 
-  const fetchUser = async (id: string) => {
     try {
       const response = await fetch(`${API_URL}/api/users/${id}`, {
         credentials: "include",
+        headers: {
+          'Content-Type': 'application/json',
+        },
       })
 
       if (response.ok) {
         const result = await response.json()
         if (result.success) {
           setUser(result.data)
+          setError("")
+          if (isRetry) {
+            toast.success("User data loaded successfully!")
+          }
         } else {
           setError(result.error || "Failed to load user")
+          if (isRetry) {
+            toast.error("Failed to load user data")
+          }
         }
       } else if (response.status === 404) {
         setError("User not found")
+        if (isRetry) {
+          toast.error("User not found")
+        }
       } else {
-        setError("Failed to load user")
+        const errorMessage = `Server error: ${response.status}`
+        setError(errorMessage)
+        if (isRetry) {
+          toast.error(errorMessage)
+        }
       }
     } catch (error) {
       console.error("Failed to fetch user:", error)
-      setError("Failed to load user")
+      const errorMessage = "Network error. Please check your connection."
+      setError(errorMessage)
+      if (isRetry) {
+        toast.error(errorMessage)
+      }
     } finally {
       setLoading(false)
+      setIsRetrying(false)
     }
-  }
+  }, [])
 
+  useEffect(() => {
+    if (params.id) {
+      fetchUser(params.id as string)
+    }
+  }, [params.id, fetchUser])
+
+  // Retry handler
+  const handleRetry = useCallback(() => {
+    if (params.id) {
+      fetchUser(params.id as string, true)
+    }
+  }, [params.id, fetchUser])
+
+  // Go back handler
+  const handleGoBack = useCallback(() => {
+    router.push("/users")
+  }, [router])
+
+  // Loading state
   if (loading) {
     return (
       <ProtectedLayout>
-        <div className="flex items-center justify-center h-full">
-          <LoadingSpinner />
+        <div className="p-8">
+          <UserDetailSkeleton />
         </div>
       </ProtectedLayout>
     )
   }
 
+  // Error state
   if (error) {
     return (
       <ProtectedLayout>
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={() => router.push("/users")}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Users
-          </Button>
+        <div className="p-8">
+          <ErrorDisplay 
+            error={error}
+            onRetry={handleRetry}
+            onGoBack={handleGoBack}
+            isRetrying={isRetrying}
+          />
         </div>
       </ProtectedLayout>
     )
   }
 
+  // User not found (shouldn't happen with proper error handling, but kept for safety)
   if (!user) {
     return (
       <ProtectedLayout>
-        <div className="text-center">
-          <p className="text-gray-600">User not found</p>
+        <div className="p-8">
+          <ErrorDisplay 
+            error="User not found"
+            onRetry={handleRetry}
+            onGoBack={handleGoBack}
+            isRetrying={isRetrying}
+          />
         </div>
       </ProtectedLayout>
     )
   }
 
-  return (
-    <ProtectedLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <Button variant="ghost" onClick={() => router.push("/users")} className="mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Users
-          </Button>
-          <h1 className="text-3xl font-bold text-gray-900">User Profile</h1>
-          <p className="text-gray-600">Detailed information about the user</p>
-        </motion.div>
+  // Calculate profile completion
+  const profileCompletion = isProfileComplete(user)
 
-        {/* User Profile Card */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+  return (
+    <>
+      <Head>
+        <title>{user.name ? `${user.name} - User Profile` : 'User Profile'}</title>
+        <meta name="description" content={`Profile page for ${user.name || 'user'} - ${user.email}`} />
+      </Head>
+      
+      <ProtectedLayout>
+        <div className="p-8 space-y-8">
+          {/* Header */}
+          <div>
+            <Button variant="ghost" onClick={handleGoBack} className="mb-4">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Users
+            </Button>
+            <h1 className="text-3xl font-bold text-gray-900">User Profile</h1>
+            <p className="text-gray-600">Detailed information about {user.name || 'this user'}</p>
+          </div>
+
+          {/* User Profile Card */}
           <Card>
             <CardHeader>
               <div className="flex items-center space-x-4">
                 {user.image ? (
-                  <img
-                    src={user.image || "/placeholder.svg"}
-                    alt={user.name || "User"}
-                    className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
-                  />
+                  <div className="relative">
+                    <Image
+                      src={user.image}
+                      alt={user.name || "User profile"}
+                      width={80}
+                      height={80}
+                      className="rounded-full object-cover border-4 border-white shadow-lg"
+                      onError={(e) => {
+                        // Fallback to placeholder on image error
+                        const target = e.target as HTMLImageElement
+                        target.style.display = 'none'
+                        target.nextElementSibling?.classList.remove('hidden')
+                      }}
+                    />
+                    <div className="hidden w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-2xl">
+                      {user.name ? user.name.charAt(0).toUpperCase() : <User className="w-10 h-10" />}
+                    </div>
+                  </div>
                 ) : (
                   <div className="w-20 h-20 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-2xl">
                     {user.name ? user.name.charAt(0).toUpperCase() : <User className="w-10 h-10" />}
                   </div>
                 )}
                 <div className="flex-1">
-                  <CardTitle className="text-2xl">{user.name || "No name"}</CardTitle>
-                  <p className="text-gray-600 text-lg">{user.email}</p>
+                  <CardTitle className="text-2xl">{user.name || "No name provided"}</CardTitle>
+                  <p className="text-gray-600 text-lg flex items-center">
+                    <Mail className="w-4 h-4 mr-2" />
+                    {user.email}
+                  </p>
                   <div className="flex items-center space-x-2 mt-2">
                     <Badge variant={user.role === "ADMIN" ? "destructive" : "secondary"}>
                       <Shield className="w-3 h-3 mr-1" />
@@ -136,15 +372,19 @@ export default function UserDetailPage() {
                     >
                       {capitalizeFirst(user.provider)}
                     </Badge>
+                    <Badge 
+                      variant={profileCompletion.isComplete ? "default" : "secondary"}
+                      className="ml-2"
+                    >
+                      {profileCompletion.completionPercentage}% Complete
+                    </Badge>
                   </div>
                 </div>
               </div>
             </CardHeader>
           </Card>
-        </motion.div>
 
-        {/* User Details Grid */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          {/* User Details Grid */}
           <div className="grid gap-6 md:grid-cols-2">
             {/* Personal Information */}
             <Card>
@@ -178,6 +418,18 @@ export default function UserDetailPage() {
                     <p className="text-lg font-medium">{capitalizeFirst(user.gender)}</p>
                   </div>
                 )}
+                {!profileCompletion.isComplete && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Missing Information</label>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {profileCompletion.missingFields.map((field) => (
+                        <Badge key={field} variant="outline" className="text-xs">
+                          {field}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -192,7 +444,12 @@ export default function UserDetailPage() {
               <CardContent className="space-y-4">
                 <div>
                   <label className="text-sm font-medium text-gray-600">Account Type</label>
-                  <p className="text-lg font-medium">{user.role}</p>
+                  <div className="flex items-center space-x-2">
+                    <p className="text-lg font-medium">{user.role}</p>
+                    <Badge variant={user.role === "ADMIN" ? "destructive" : "secondary"}>
+                      {user.role === "ADMIN" ? "Administrator" : "Standard User"}
+                    </Badge>
+                  </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Authentication Provider</label>
@@ -207,22 +464,26 @@ export default function UserDetailPage() {
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Last Updated</label>
-                  <p className="text-lg font-medium">{formatDate(user.updatedAt)}</p>
+                  <p className="text-lg font-medium flex items-center">
+                    <Clock className="w-4 h-4 mr-2 text-gray-400" />
+                    {formatDate(user.updatedAt)}
+                  </p>
                 </div>
               </CardContent>
             </Card>
           </div>
-        </motion.div>
 
-        {/* Activity Summary */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          {/* Enhanced Activity Summary */}
           <Card>
             <CardHeader>
-              <CardTitle>Activity Summary</CardTitle>
+              <CardTitle className="flex items-center space-x-2">
+                <Activity className="w-5 h-5" />
+                <span>Activity Summary</span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="grid gap-4 md:grid-cols-4">
+                <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
                   <Calendar className="w-8 h-8 text-blue-600 mx-auto mb-2" />
                   <p className="text-sm font-medium text-gray-600">Account Age</p>
                   <p className="text-lg font-bold text-blue-600">
@@ -230,23 +491,53 @@ export default function UserDetailPage() {
                     days
                   </p>
                 </div>
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <Shield className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                
+                <div className="text-center p-4 bg-green-50 rounded-lg border border-green-200">
+                  {profileCompletion.isComplete ? (
+                    <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                  ) : (
+                    <XCircle className="w-8 h-8 text-orange-600 mx-auto mb-2" />
+                  )}
                   <p className="text-sm font-medium text-gray-600">Account Status</p>
-                  <p className="text-lg font-bold text-green-600">Active</p>
+                  <p className={`text-lg font-bold ${profileCompletion.isComplete ? 'text-green-600' : 'text-orange-600'}`}>
+                    {profileCompletion.isComplete ? 'Complete' : 'Incomplete'}
+                  </p>
                 </div>
-                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                
+                <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-200">
                   <User className="w-8 h-8 text-purple-600 mx-auto mb-2" />
                   <p className="text-sm font-medium text-gray-600">Profile Completion</p>
                   <p className="text-lg font-bold text-purple-600">
-                    {user.name && user.age && user.gender ? "Complete" : "Incomplete"}
+                    {profileCompletion.completionPercentage}%
+                  </p>
+                </div>
+                
+                <div className="text-center p-4 bg-indigo-50 rounded-lg border border-indigo-200">
+                  <Shield className="w-8 h-8 text-indigo-600 mx-auto mb-2" />
+                  <p className="text-sm font-medium text-gray-600">Security Level</p>
+                  <p className="text-lg font-bold text-indigo-600">
+                    {user.role === "ADMIN" ? "High" : "Standard"}
                   </p>
                 </div>
               </div>
+              
+              {!profileCompletion.isComplete && (
+                <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start space-x-3">
+                    <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-medium text-amber-800">Profile Incomplete</h4>
+                      <p className="text-sm text-amber-700 mt-1">
+                        This user's profile is missing some information. Missing fields: {profileCompletion.missingFields.join(', ')}.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
-        </motion.div>
-      </div>
-    </ProtectedLayout>
+        </div>
+      </ProtectedLayout>
+    </>
   )
 }

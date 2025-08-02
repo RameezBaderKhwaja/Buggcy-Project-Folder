@@ -4,12 +4,14 @@ import { app } from "@/app/backend"
 
 type MockResponse = {
   statusCode: number
-  headers: Record<string, string>
+  headers: Record<string, string | string[]>
   body: string
   status: (code: number) => MockResponse
   json: (data: unknown) => MockResponse
   send: (data: unknown) => MockResponse
-  setHeader: (name: string, value: string) => MockResponse
+  setHeader: (name: string, value: string | string[]) => MockResponse
+  removeHeader: (name: string) => MockResponse
+  getHeader: (name: string) => string | string[] | undefined
   cookie: (name: string, value: string, options?: Record<string, unknown>) => MockResponse
   clearCookie: (name: string, options?: Record<string, unknown>) => MockResponse
   redirect: (url: string) => MockResponse
@@ -18,7 +20,7 @@ type MockResponse = {
 interface MockRequest {
   method: string
   url: string
-  headers: Record<string, string>
+  headers: Record<string, string | string[]>
   body: unknown
   query: Record<string, string>
   params: Record<string, string>
@@ -29,103 +31,173 @@ interface MockRequest {
 }
 
 async function handler(req: NextRequest) {
-  return new Promise<NextResponse>((resolve, reject) => {
+  return new Promise<NextResponse>(async (resolve, reject) => {
+    // Normalize headers to lowercase
+    const normalizedHeaders = Object.fromEntries(
+      Array.from(req.headers.entries()).map(([k, v]) => [k.toLowerCase(), v])
+    );
+
+    // Extract params from pathname if needed (simple example, can be improved)
+    const pathname = req.nextUrl ? req.nextUrl.pathname : req.url.replace(new URL(req.url).origin, "");
+    // Example: /api/user/123 -> { id: "123" } for /api/user/[id]
+    let params: Record<string, string> = {};
+    const paramMatch = pathname.match(/\/(\w+)\/(\w+)/);
+    if (paramMatch) {
+      params = { [paramMatch[1]]: paramMatch[2] };
+    }
+
     const mockRes: MockResponse = {
       statusCode: 200,
       headers: {},
       body: "",
       status(code) {
-        this.statusCode = code
-        return this
+        this.statusCode = code;
+        return this;
       },
       json(data) {
-        this.body = JSON.stringify(data)
-        this.headers["Content-Type"] = "application/json"
-        resolve(
-          new NextResponse(this.body, {
-            status: this.statusCode,
-            headers: this.headers,
-          }),
-        )
-        return this
+        this.body = JSON.stringify(data);
+        this.headers["Content-Type"] = "application/json";
+        // Handle Set-Cookie as array for NextResponse
+        const response = new NextResponse(this.body, {
+          status: this.statusCode,
+        });
+        Object.entries(this.headers).forEach(([key, value]) => {
+          if (key === "Set-Cookie" && Array.isArray(value)) {
+            value.forEach((cookie) => response.headers.append("Set-Cookie", cookie));
+          } else if (typeof value === "string") {
+            response.headers.set(key, value);
+          }
+        });
+        resolve(response);
+        return this;
       },
       send(data) {
-        this.body = typeof data === "string" ? data : JSON.stringify(data)
-        resolve(
-          new NextResponse(this.body, {
-            status: this.statusCode,
-            headers: this.headers,
-          }),
-        )
-        return this
+        this.body = typeof data === "string" ? data : JSON.stringify(data);
+        // Handle Set-Cookie as array for NextResponse
+        const response = new NextResponse(this.body, {
+          status: this.statusCode,
+        });
+        Object.entries(this.headers).forEach(([key, value]) => {
+          if (key === "Set-Cookie" && Array.isArray(value)) {
+            value.forEach((cookie) => response.headers.append("Set-Cookie", cookie));
+          } else if (typeof value === "string") {
+            response.headers.set(key, value);
+          }
+        });
+        resolve(response);
+        return this;
       },
       setHeader(name, value) {
-        this.headers[name] = value
-        return this
+        // Support multi-value headers (e.g., Set-Cookie)
+        if (name.toLowerCase() === "set-cookie") {
+          if (!Array.isArray(this.headers["Set-Cookie"])) this.headers["Set-Cookie"] = [];
+          if (Array.isArray(value)) {
+            (this.headers["Set-Cookie"] as string[]).push(...value);
+          } else {
+            (this.headers["Set-Cookie"] as string[]).push(value);
+          }
+        } else {
+          this.headers[name] = value;
+        }
+        return this;
+      },
+      removeHeader(name) {
+        delete this.headers[name];
+        return this;
+      },
+      getHeader(name) {
+        return this.headers[name];
       },
       cookie(name, value, options = {}) {
-        const cookieString = `${name}=${value}; Path=${options.path || "/"}; ${options.httpOnly ? "HttpOnly; " : ""}${options.secure ? "Secure; " : ""}${options.sameSite ? `SameSite=${options.sameSite}; ` : ""}${options.maxAge ? `Max-Age=${options.maxAge}; ` : ""}`
-        this.headers["Set-Cookie"] = cookieString
-        return this
+        const cookieString = `${name}=${value}; Path=${options.path || "/"}; ${options.httpOnly ? "HttpOnly; " : ""}${options.secure ? "Secure; " : ""}${options.sameSite ? `SameSite=${options.sameSite}; ` : ""}${options.maxAge ? `Max-Age=${options.maxAge}; ` : ""}`;
+        if (!Array.isArray(this.headers["Set-Cookie"])) this.headers["Set-Cookie"] = [];
+        (this.headers["Set-Cookie"] as string[]).push(cookieString);
+        return this;
       },
       clearCookie(name, options = {}) {
-        const cookieString = `${name}=; Path=${options.path || "/"}; Expires=Thu, 01 Jan 1970 00:00:00 GMT; ${options.httpOnly ? "HttpOnly; " : ""}${options.secure ? "Secure; " : ""}`
-        this.headers["Set-Cookie"] = cookieString
-        return this
+        const cookieString = `${name}=; Path=${options.path || "/"}; Expires=Thu, 01 Jan 1970 00:00:00 GMT; ${options.httpOnly ? "HttpOnly; " : ""}${options.secure ? "Secure; " : ""}`;
+        if (!Array.isArray(this.headers["Set-Cookie"])) this.headers["Set-Cookie"] = [];
+        (this.headers["Set-Cookie"] as string[]).push(cookieString);
+        return this;
       },
       redirect(url) {
-        resolve(NextResponse.redirect(new URL(url, req.url)))
-        return this
+        resolve(NextResponse.redirect(new URL(url, req.url)));
+        return this;
       },
-    }
+    };
 
     const mockReq: MockRequest = {
       method: req.method,
-      url: req.url.replace(new URL(req.url).origin, "").replace("/api", ""),
-      headers: Object.fromEntries(req.headers.entries()),
-      body: undefined,
+      url: pathname.replace("/api", ""),
+      headers: normalizedHeaders,
+      body: {},
       query: Object.fromEntries(new URL(req.url).searchParams.entries()),
-      params: {},
+      params,
       cookies: Object.fromEntries(
-        req.headers
-          .get("cookie")
-          ?.split(";")
-          .map((cookie) => {
-            const [name, value] = cookie.trim().split("=")
-            return [name, value]
-          }) || [],
+        (normalizedHeaders["cookie"] || "")
+          .split(";")
+          .filter(Boolean)
+          .map((cookie: string) => {
+            const [name, ...rest] = cookie.trim().split("=");
+            return [name, rest.join("=")];
+          })
       ),
       user: undefined,
-      ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown",
+      ip: normalizedHeaders["x-forwarded-for"] || normalizedHeaders["x-real-ip"] || "unknown",
       get(name) {
-        return this.headers[name.toLowerCase()]
+        return this.headers[name.toLowerCase()] as string;
       },
-    }
+    };
 
-    const handle = () =>
-      app(mockReq as Request, mockRes as unknown as Response, (err: unknown) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(new NextResponse("Not Found", { status: 404 }))
+    const handle = () => {
+      try {
+        app(mockReq as Request, mockRes as unknown as Response, (err: unknown) => {
+          if (err) {
+            console.error("Express error:", err);
+            reject(err);
+          } else {
+            console.warn("No route matched for", mockReq.url);
+            resolve(new NextResponse("Not Found", { status: 404 }));
+          }
+        });
+      } catch (err) {
+        console.error("Handler crashed:", err);
+        resolve(new NextResponse("Internal Server Error", { status: 500 }));
+      }
+    };
+
+    // Improved body parsing
+    if (["POST", "PUT", "PATCH"].includes(req.method)) {
+      const contentType = normalizedHeaders["content-type"] || "";
+      if (contentType.includes("application/json")) {
+        try {
+          mockReq.body = await req.json();
+        } catch {
+          mockReq.body = {};
         }
-      })
-
-    if (req.method === "POST" || req.method === "PUT" || req.method === "PATCH") {
-      req
-        .json()
-        .then((body) => {
-          mockReq.body = body
-          handle()
-        })
-        .catch(() => {
-          mockReq.body = {}
-          handle()
-        })
+        handle();
+      } else if (contentType.includes("text/plain")) {
+        try {
+          mockReq.body = await req.text();
+        } catch {
+          mockReq.body = {};
+        }
+        handle();
+      } else if (contentType.includes("form")) {
+        try {
+          mockReq.body = Object.fromEntries(await req.formData());
+        } catch {
+          mockReq.body = {};
+        }
+        handle();
+      } else {
+        mockReq.body = {};
+        handle();
+      }
     } else {
-      handle()
+      handle();
     }
-  })
+  });
 }
 
 export { handler as GET, handler as POST, handler as PUT, handler as DELETE, handler as PATCH }

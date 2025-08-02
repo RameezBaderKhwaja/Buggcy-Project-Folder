@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt"
+import bcrypt from "bcryptjs"
 import crypto from "crypto"
 import { prisma } from "./prisma"
 import type { SecurityEvent } from "./types"

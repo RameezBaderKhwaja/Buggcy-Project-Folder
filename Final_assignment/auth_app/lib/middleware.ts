@@ -38,7 +38,7 @@ export async function withAuth(request: NextRequest, handler: (req: NextRequest,
     }
 
     return handler(request, user as AuthUser)
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Auth middleware error:", error)
     return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
   }
@@ -49,10 +49,15 @@ export async function withAdminAuth(
   handler: (req: NextRequest, user: AuthUser) => Promise<NextResponse>,
 ) {
   return withAuth(request, async (req, user) => {
-    if (user.role !== "ADMIN") {
-      return NextResponse.json({ success: false, error: "Forbidden - Admin access required" }, { status: 403 })
+    try {
+      if (user.role !== "ADMIN") {
+        return NextResponse.json({ success: false, error: "Forbidden - Admin access required" }, { status: 403 })
+      }
+      return handler(req, user)
+    } catch (error: unknown) {
+      console.error("Admin auth error:", error)
+      return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
     }
-    return handler(req, user)
   })
 }
 
@@ -94,7 +99,7 @@ export function authenticateToken(req: AuthenticatedRequest, res: Response, next
       updatedAt: new Date(),
     }
     next()
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Auth middleware error:", error)
     res.status(500).json({
       success: false,
@@ -104,13 +109,21 @@ export function authenticateToken(req: AuthenticatedRequest, res: Response, next
 }
 
 export function requireAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
-  if (!req.user || req.user.role !== "ADMIN") {
-    return res.status(403).json({
+  try {
+    if (!req.user || req.user.role !== "ADMIN") {
+      return res.status(403).json({
+        success: false,
+        error: "Forbidden - Admin access required",
+      })
+    }
+    next()
+  } catch (error: unknown) {
+    console.error("Admin middleware error:", error)
+    res.status(500).json({
       success: false,
-      error: "Forbidden - Admin access required",
+      error: "Internal server error",
     })
   }
-  next()
 }
 
 export async function expressWithAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
@@ -157,7 +170,7 @@ export async function expressWithAuth(req: AuthenticatedRequest, res: Response, 
 
     req.user = user as AuthUser
     next()
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Auth middleware error:", error)
     res.status(500).json({
       success: false,
@@ -177,7 +190,7 @@ export async function expressWithAdminAuth(req: AuthenticatedRequest, res: Respo
       }
 
       next()
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Admin auth middleware error:", error)
       res.status(500).json({
         success: false,

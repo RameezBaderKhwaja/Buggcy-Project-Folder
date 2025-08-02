@@ -5,10 +5,13 @@ import { generateToken, createAuthCookie } from "@/lib/auth"
 interface GitHubUser {
   id: number
   login: string
-  email: string
+  email: string | null
   name: string
   avatar_url: string
 }
+
+export const runtime = "nodejs"
+// TODO: Add CSRF state parameter handling for OAuth security
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,9 +52,19 @@ export async function GET(request: NextRequest) {
 
     const githubUser = (await userResponse.json()) as GitHubUser
 
-    // Check if user exists
-    let user = await prisma.user.findUnique({
-      where: { email: githubUser.email },
+    // Handle null email from GitHub
+    if (!githubUser.email) {
+      return NextResponse.redirect(new URL("/login?error=no_email_from_github", request.url))
+    }
+
+    // Check if user exists by email or providerId
+    let user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: githubUser.email },
+          { providerId: githubUser.id.toString() },
+        ],
+      },
     })
 
     if (!user) {
@@ -67,18 +80,16 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Generate token and set cookie
-    const token = generateToken(user)
+    // Generate token with minimal payload
+    const token = generateToken({ id: user.id, email: user.email, role: user.role })
     const cookie = createAuthCookie(token)
 
     const response = NextResponse.redirect(new URL("/dashboard", request.url))
-    response.cookies.set(cookie.name, cookie.value, {
-      httpOnly: cookie.httpOnly,
-      secure: cookie.secure,
-      sameSite: cookie.sameSite,
-      maxAge: cookie.maxAge,
-      path: cookie.path,
-    })
+    // Set cookie using headers for Node.js runtime compatibility
+    response.headers.append(
+      "Set-Cookie",
+      `${cookie.name}=${cookie.value}; Path=${cookie.path}; HttpOnly; SameSite=${cookie.sameSite}; Max-Age=${cookie.maxAge};${cookie.secure ? " Secure;" : ""}`
+    )
 
     return response
   } catch (error: unknown) {
