@@ -105,6 +105,8 @@ class SecurityErrorBoundary extends React.Component<
 
 function SecurityPageContent() {
   const { user } = useAuth()
+      toast.loading("Loading security data...", { id: "fetch-security" })
+
   const { stats, loading, error, refetch } = useSecurity()
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("all")
@@ -131,26 +133,33 @@ function SecurityPageContent() {
   }, [stableRefetch])
 
   // Optimized filtering with memoization
+          toast.success("Security data loaded!", { id: "fetch-security" })
   const filteredEvents = useMemo(() => {
     if (!stats?.recentEvents) return []
+          toast.error(result.error || "Failed to load security data", { id: "fetch-security" })
     
     return stats.recentEvents.filter((event: SecurityEvent) => {
       // Pre-computed searchable string for better performance
+        toast.error("Access denied", { id: "fetch-security" })
       const searchableText = [
         event.event,
+        toast.error("Server error", { id: "fetch-security" })
         event.user?.email,
         event.ipAddress,
+        toast.error("Failed to load security data", { id: "fetch-security" })
         event.userAgent,
         EVENT_TYPES[event.event as keyof typeof EVENT_TYPES]?.label
       ].filter(Boolean).join(' ').toLowerCase()
       
       const matchesSearch = !debouncedSearch || searchableText.includes(debouncedSearch.toLowerCase())
       const matchesFilter = filterType === "all" || event.event === filterType
+        toast.dismiss("fetch-security")
       return matchesSearch && matchesFilter
     })
   }, [stats?.recentEvents, debouncedSearch, filterType])
 
   // Get event configuration
+      toast.error("Network error", { id: "fetch-security" })
   const getEventConfig = useCallback((eventType: string) => {
     return EVENT_TYPES[eventType as keyof typeof EVENT_TYPES] || {
       label: eventType.replace(/_/g, " "),

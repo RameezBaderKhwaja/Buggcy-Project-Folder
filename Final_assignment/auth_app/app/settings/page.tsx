@@ -3,9 +3,11 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import ProtectedLayout from '@/components/ProtectedLayout'
 import { motion } from 'framer-motion'
-import { Bell, Shield, Palette, Globe, Save, Loader2, Check, AlertCircle } from 'lucide-react'
+import { Bell, Shield, Palette, Globe, Save, Loader2, Check, AlertCircle, LogOut } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
+import { useAuth } from '@/app/context/AuthContext'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -87,9 +89,12 @@ const Switch = ({
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
+  const { logout } = useAuth()
+  const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   
   // Settings state
   const [settings, setSettings] = useState<UserSettings>({
@@ -174,7 +179,7 @@ export default function SettingsPage() {
       // if (!response.ok) throw new Error('Failed to save settings')
       
       // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise(resolve => setTimeout(resolve, 500))
       
       setInitialSettings(settings)
       setHasChanges(false)
@@ -188,6 +193,19 @@ export default function SettingsPage() {
     }
   }, [settings, hasChanges])
 
+  // Handle logout
+  const handleLogout = useCallback(async () => {
+    setLoggingOut(true)
+    try {
+      await logout()
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout failed:', error)
+      toast.error('Failed to logout. Please try again.')
+    } finally {
+      setLoggingOut(false)
+    }
+  }, [logout, router])
   // Don't render until mounted (prevents hydration mismatch)
   if (!mounted) {
     return (
@@ -314,6 +332,26 @@ export default function SettingsPage() {
                 <div className="text-left">
                   <h4 className="font-medium">Login History</h4>
                   <p className="text-sm text-muted-foreground">View your recent login activity</p>
+                </div>
+              </Button>
+              
+              {/* Logout Button */}
+              <Button 
+                variant="destructive" 
+                className="w-full justify-start h-auto p-4"
+                onClick={handleLogout}
+                disabled={loggingOut}
+              >
+                <div className="flex items-center">
+                  {loggingOut ? (
+                    <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                  ) : (
+                    <LogOut className="w-5 h-5 mr-3" />
+                  )}
+                  <div className="text-left">
+                    <h4 className="font-medium">{loggingOut ? 'Signing Out...' : 'Sign Out'}</h4>
+                    <p className="text-sm text-muted-foreground">Sign out of your account</p>
+                  </div>
                 </div>
               </Button>
             </CardContent>

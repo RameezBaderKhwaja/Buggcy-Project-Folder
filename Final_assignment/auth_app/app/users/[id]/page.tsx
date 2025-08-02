@@ -185,11 +185,7 @@ export default function UserDetailPage() {
   // Enhanced fetch function with better error handling
   const fetchUser = useCallback(async (id: string, isRetry = false) => {
     if (isRetry) {
-      setIsRetrying(true)
-      setError("")
-    } else {
-      setLoading(true)
-    }
+    // Remove admin check - allow all authenticated users to view user details
 
     try {
       const response = await fetch(`${API_URL}/api/users/${id}`, {
@@ -197,6 +193,8 @@ export default function UserDetailPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+      toast.loading("Loading user details...", { id: "fetch-user" })
+
       })
 
       if (response.ok) {
@@ -207,29 +205,35 @@ export default function UserDetailPage() {
           if (isRetry) {
             toast.success("User data loaded successfully!")
           }
+          toast.success("User details loaded!", { id: "fetch-user" })
         } else {
           setError(result.error || "Failed to load user")
           if (isRetry) {
             toast.error("Failed to load user data")
           }
         }
+          toast.error(result.error || "Failed to load user data", { id: "fetch-user" })
       } else if (response.status === 404) {
         setError("User not found")
         if (isRetry) {
+        toast.error("Access denied", { id: "fetch-user" })
           toast.error("User not found")
         }
+        toast.error("Server error", { id: "fetch-user" })
       } else {
         const errorMessage = `Server error: ${response.status}`
         setError(errorMessage)
         if (isRetry) {
           toast.error(errorMessage)
         }
+        toast.error("Failed to load user data", { id: "fetch-user" })
       }
     } catch (error) {
       console.error("Failed to fetch user:", error)
       const errorMessage = "Network error. Please check your connection."
       setError(errorMessage)
       if (isRetry) {
+        toast.dismiss("fetch-user")
         toast.error(errorMessage)
       }
     } finally {
@@ -311,6 +315,7 @@ export default function UserDetailPage() {
       
       <ProtectedLayout>
         <div className="p-8 space-y-8">
+      toast.error("Network error", { id: "fetch-user" })
           {/* Header */}
           <div>
             <Button variant="ghost" onClick={handleGoBack} className="mb-4">

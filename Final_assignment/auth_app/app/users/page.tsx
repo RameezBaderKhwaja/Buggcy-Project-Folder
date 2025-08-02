@@ -211,6 +211,7 @@ export default function UsersPage() {
     }
 
     try {
+      toast.loading("Loading users...", { id: "fetch-users" })
       const response = await fetch(`${API_URL}/api/users`, {
         credentials: "include",
         headers: {
@@ -223,29 +224,33 @@ export default function UsersPage() {
         if (result.success) {
           setUsers(result.data)
           setError("")
+          toast.success("Users loaded successfully!", { id: "fetch-users" })
           if (isRetry) {
-            toast.success("Users loaded successfully!")
+            toast.success("Users reloaded successfully!")
           }
         } else {
           const errorMessage = result.error || "Failed to load users"
           setError(errorMessage)
+          toast.error(errorMessage, { id: "fetch-users" })
           if (isRetry) {
-            toast.error(errorMessage)
+            toast.error("Retry failed: " + errorMessage)
           }
         }
       } else {
         const errorMessage = `Server error: ${response.status} ${response.statusText}`
         setError(errorMessage)
+        toast.error(errorMessage, { id: "fetch-users" })
         if (isRetry) {
-          toast.error(errorMessage)
+          toast.error("Retry failed: " + errorMessage)
         }
       }
     } catch (error) {
       console.error("Failed to fetch users:", error)
       const errorMessage = "Network error. Please check your connection and try again."
       setError(errorMessage)
+      toast.error(errorMessage, { id: "fetch-users" })
       if (isRetry) {
-        toast.error(errorMessage)
+        toast.error("Retry failed: " + errorMessage)
       }
     } finally {
       setLoading(false)

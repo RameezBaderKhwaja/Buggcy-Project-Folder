@@ -4,6 +4,7 @@ import type React from "react"
 import { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from "react"
 import type { AuthUser, LoginInput, RegisterInput } from "@/lib/types"
 import { API_ROUTES } from "@/lib/constants"
+import { toast } from "sonner"
 
 // Enhanced types for better error handling
 interface AuthResult {
@@ -66,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const apiFetch = useCallback(async (
     url: string, 
     options: RequestInit = {},
-    retries = 3
+    retries = 1
   ): Promise<Response> => {
     // Create new AbortController for this request
     const controller = new AbortController()
@@ -100,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         // Exponential backoff delay
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000)
+        const delay = Math.min(500 * Math.pow(2, attempt - 1), 2000)
         await new Promise(resolve => setTimeout(resolve, delay))
         
       } catch (error) {
@@ -115,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         // Exponential backoff delay
-        const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000)
+        const delay = Math.min(500 * Math.pow(2, attempt - 1), 2000)
         await new Promise(resolve => setTimeout(resolve, delay))
       }
     }
@@ -177,6 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (data: LoginInput): Promise<AuthResult> => {
     try {
+      toast.loading("Signing in...", { id: "login" })
       const response = await apiFetch(API_ROUTES.AUTH.LOGIN, {
         method: "POST",
         headers: FETCH_OPTIONS.JSON_HEADERS,
@@ -188,21 +190,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (result.success) {
         if (isMountedRef.current) {
           setUser(result.data)
+          toast.success("Login successful!", { id: "login" })
         }
         return { success: true }
       }
+      toast.error(result.error || "Login failed", { id: "login" })
       return { success: false, error: result.error || "Login failed" }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
+        toast.dismiss("login")
         return { success: false, error: "Request cancelled" }
       }
       console.error("Login failed:", error)
+      toast.error("Network or server error", { id: "login" })
       return { success: false, error: "Network or server error" }
     }
   }, [apiFetch])
 
   const register = useCallback(async (data: RegisterInput): Promise<AuthResult> => {
     try {
+      toast.loading("Creating account...", { id: "register" })
       const response = await apiFetch(API_ROUTES.AUTH.REGISTER, {
         method: "POST",
         headers: FETCH_OPTIONS.JSON_HEADERS,
@@ -214,30 +221,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (result.success) {
         if (isMountedRef.current) {
           setUser(result.data)
+          toast.success("Account created successfully!", { id: "register" })
         }
         return { success: true }
       }
+      toast.error(result.error || "Registration failed", { id: "register" })
       return { success: false, error: result.error || "Registration failed" }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
+        toast.dismiss("register")
         return { success: false, error: "Request cancelled" }
       }
       console.error("Registration failed:", error)
+      toast.error("Network or server error", { id: "register" })
       return { success: false, error: "Network or server error" }
     }
   }, [apiFetch])
 
   const logout = useCallback(async () => {
     try {
+      toast.loading("Signing out...", { id: "logout" })
       await apiFetch(API_ROUTES.AUTH.LOGOUT, {
         method: "POST",
       })
       if (isMountedRef.current) {
         setUser(null)
+        toast.success("Logged out successfully", { id: "logout" })
       }
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
         console.error("Logout failed:", error)
+        toast.error("Logout failed", { id: "logout" })
       }
       // Always clear user on logout attempt
       if (isMountedRef.current) {
@@ -248,6 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updateProfile = useCallback(async (formData: FormData): Promise<UpdateProfileResult> => {
     try {
+      toast.loading("Updating profile...", { id: "profile-update" })
       const response = await apiFetch(API_ROUTES.PROFILE, {
         method: "PUT",
         body: formData,
@@ -258,15 +273,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (result.success) {
         if (isMountedRef.current) {
           setUser(result.data)
+          toast.success("Profile updated successfully!", { id: "profile-update" })
         }
         return { success: true }
       }
+      toast.error(result.error || "Profile update failed", { id: "profile-update" })
       return { success: false, error: result.error || "Profile update failed" }
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
+        toast.dismiss("profile-update")
         return { success: false, error: "Request cancelled" }
       }
       console.error("Profile update failed:", error)
+      toast.error("Network or server error", { id: "profile-update" })
       return { success: false, error: "Network or server error" }
     }
   }, [apiFetch])

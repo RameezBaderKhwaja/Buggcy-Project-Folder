@@ -65,9 +65,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, logout } = useAuth()
   const router = useRouter()
 
-  const handleLogout = async () => {
-    await logout()
-    router.push("/login")
+  const handleUserClick = () => {
+    router.push("/profile")
   }
 
   const visibleNavigationItems = navigationItems.filter((item) => !item.adminOnly || user?.role === "ADMIN")
@@ -87,6 +86,27 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <span className="truncate text-xs">Secure Authentication</span>
                 </div>
               </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          
+          {/* User Info Section */}
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" onClick={handleUserClick} className="cursor-pointer">
+              {user?.image ? (
+                <img
+                  src={user.image || "/placeholder.svg"}
+                  alt={user.name || "User"}
+                  className="size-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                  <User className="size-4" />
+                </div>
+              )}
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold">{user?.name || "User"}</span>
+                <span className="truncate text-xs">{user?.email}</span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -132,60 +152,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton
-                  size="lg"
-                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                >
-                  {user?.image ? (
-                    <img
-                      src={user.image || "/placeholder.svg"}
-                      alt={user.name || "User"}
-                      className="size-8 rounded-full"
-                    />
-                  ) : (
-                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                      <User className="size-4" />
-                    </div>
-                  )}
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user?.name || "User"}</span>
-                    <span className="truncate text-xs">{user?.email}</span>
-                  </div>
-                  <ChevronUp className="ml-auto size-4" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-                side="bottom"
-                align="end"
-                sideOffset={4}
-              >
-                <DropdownMenuItem asChild>
-                  <Link href="/profile">
-                    <User className="mr-2 size-4" />
-                    Profile
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings">
-                    <Settings className="mr-2 size-4" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 size-4" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   )

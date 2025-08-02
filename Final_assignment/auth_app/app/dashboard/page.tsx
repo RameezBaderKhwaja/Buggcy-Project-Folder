@@ -384,7 +384,10 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold" aria-label={`This month registrations: ${Object.values(stats.monthlyRegistrations).slice(-1)[0] || 0}`}>
-                  {(Object.values(stats.monthlyRegistrations).slice(-1)[0] || 0).toLocaleString()}
+                  {(() => {
+                    const currentMonth = new Date().toISOString().substring(0, 7)
+                    return (stats.monthlyRegistrations[currentMonth] || 0).toLocaleString()
+                  })()}
                 </div>
                 <p className="text-xs text-muted-foreground">New registrations</p>
               </CardContent>
@@ -396,14 +399,14 @@ export default function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           {/* Age Groups Chart */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="col-span-4">
+            <Card className="col-span-4 min-h-[450px]">
               <CardHeader>
                 <CardTitle>Age Distribution</CardTitle>
                 <CardDescription>User distribution across age groups</CardDescription>
               </CardHeader>
-              <CardContent className="pl-2">
+              <CardContent className="pl-2 h-[380px]">
                 <figure aria-label="Age distribution bar chart">
-                  <ResponsiveContainer width="100%" height={350}>
+                  <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={ageGroupData} accessibilityLayer>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
@@ -419,14 +422,14 @@ export default function DashboardPage() {
 
           {/* Gender Distribution Chart */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <Card className="col-span-3">
+            <Card className="col-span-3 min-h-[450px]">
               <CardHeader>
                 <CardTitle>Gender Distribution</CardTitle>
                 <CardDescription>User distribution by gender</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="h-[380px]">
                 <figure aria-label="Gender distribution pie chart">
-                  <ResponsiveContainer width="100%" height={350}>
+                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart accessibilityLayer>
                       <Pie
                         data={genderData}
@@ -456,14 +459,14 @@ export default function DashboardPage() {
 
         {/* Registration Trend Chart */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <Card>
+          <Card className="min-h-[450px]">
             <CardHeader>
               <CardTitle>Registration Trend</CardTitle>
               <CardDescription>Monthly user registrations over time</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="h-[380px]">
               <figure aria-label="Monthly registration trend line chart">
-                <ResponsiveContainer width="100%" height={350}>
+                <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={monthlyData} accessibilityLayer>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />

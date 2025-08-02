@@ -67,7 +67,9 @@ router.put(
               deleteImage(publicId).catch(() => {}) // fire-and-forget
             }
           }
-          const result = await uploadImage(req.file.buffer, "profile-images")
+          // Convert buffer to base64 data URL for Cloudinary
+          const base64Data = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
+          const result = await uploadImage(base64Data, "profile-images")
           updateData.image = result.secure_url
         } catch (uploadError) {
           console.error(`Image upload error [user:${user.id}]:`, uploadError)

@@ -293,9 +293,16 @@ export default function ProfilePage() {
                 
                 <div>
                   <h3 className="text-lg font-medium text-gray-900">Profile Photo</h3>
-                  <p className="text-sm text-gray-600">
-                    Click the camera icon to upload a new photo (max 5MB)
-                  </p>
+                  {!imagePreview && (
+                    <p className="text-sm text-gray-600">
+                      Click the camera icon to upload a new photo (max 5MB)
+                    </p>
+                  )}
+                  {imagePreview && imageFile && (
+                    <p className="text-sm text-green-600">
+                      New photo selected - click Save to update
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -132,17 +132,18 @@ export default function LoginPage() {
       if (!isMountedRef.current) return
       
       if (success) {
-        toast.success("Login successful! Redirecting to dashboard...")
-        router.push(ROUTES.DASHBOARD)
+        // Don't show toast here as it's handled in AuthContext
+        const redirectUrl = "/dashboard" // Let middleware handle the actual redirect
+        router.push(redirectUrl)
       } else {
         setError(error || "Invalid email or password")
-        toast.error(error || "Invalid email or password")
+        // Don't show toast here as it's handled in AuthContext
       }
     } catch (err) {
       if (!isMountedRef.current) return
       
       setError("An error occurred during login")
-      toast.error("An error occurred during login")
+      // Don't show toast here as it's handled in AuthContext
     } finally {
       if (isMountedRef.current) {
         setLoading(false)
