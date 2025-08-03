@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "generate": "prisma generate",
     "start": "next start",
     "lint": "next lint"
+    
   },
   "dependencies": {
     "@prisma/internals": "^6.13.0",
