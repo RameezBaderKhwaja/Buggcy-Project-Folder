@@ -11,10 +11,5 @@
       "src": "/api/(.*)",
       "dest": "/api/$1"
     }
-  ],
-  "functions": {
-    "app/api/[[...route]]/route.ts": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
