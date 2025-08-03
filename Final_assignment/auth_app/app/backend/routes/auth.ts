@@ -14,11 +14,11 @@ import {
 } from "@/lib/security"
 import type { AuthUser } from "@/lib/types"
 import {
+  csrfProtection,
   generalRateLimit,
   requestLogger,
   sanitizeInputs,
   securityHeaders,
-  csrfProtection,
 } from "../middleware/security"
 
 export const runtime = "nodejs"
@@ -35,6 +35,7 @@ const router = express.Router()
 
 // Global security middlewares
 router.use(generalRateLimit, requestLogger, sanitizeInputs, securityHeaders, csrfProtection)
+router.use(generalRateLimit, requestLogger, sanitizeInputs, securityHeaders)
 
 // Helper for async logging
 const safeLogSecurityEvent = (event: Parameters<typeof logSecurityEvent>[0]) => {

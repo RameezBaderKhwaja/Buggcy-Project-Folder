@@ -378,7 +378,8 @@ export default function DashboardPage() {
                 <div className="text-2xl font-bold" aria-label={`This month registrations: ${Object.values(stats.monthlyRegistrations).slice(-1)[0] || 0}`}>
                   {(() => {
                     const currentMonth = new Date().toISOString().substring(0, 7)
-                    return (stats.monthlyRegistrations[currentMonth] || 0).toLocaleString()
+                    const currentMonthRegistrations = stats.monthlyRegistrations[currentMonth] || 0
+                    return currentMonthRegistrations.toLocaleString()
                   })()}
                 </div>
                 <p className="text-xs text-muted-foreground">New registrations</p>
@@ -391,12 +392,12 @@ export default function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           {/* Age Groups Chart */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="col-span-4 min-h-[500px] flex flex-col">
+            <Card className="col-span-full lg:col-span-4 min-h-[500px] flex flex-col">
               <CardHeader>
                 <CardTitle>Age Distribution</CardTitle>
                 <CardDescription>User distribution across age groups</CardDescription>
               </CardHeader>
-              <CardContent className="p-6 flex-grow">
+              <CardContent className="p-4 sm:p-6 flex-grow">
                 <figure aria-label="Age distribution bar chart" className="h-full w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={ageGroupData} accessibilityLayer>
@@ -414,12 +415,12 @@ export default function DashboardPage() {
 
           {/* Gender Distribution Chart */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <Card className="col-span-3 min-h-[500px] flex flex-col">
+            <Card className="col-span-full lg:col-span-3 min-h-[500px] flex flex-col">
               <CardHeader>
                 <CardTitle>Gender Distribution</CardTitle>
                 <CardDescription>User distribution by gender</CardDescription>
               </CardHeader>
-              <CardContent className="p-6 flex-grow">
+              <CardContent className="p-4 sm:p-6 flex-grow">
                 <figure aria-label="Gender distribution pie chart" className="h-full w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart accessibilityLayer>
@@ -451,12 +452,12 @@ export default function DashboardPage() {
 
         {/* Registration Trend Chart */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <Card className="min-h-[500px] flex flex-col">
+          <Card className="col-span-full min-h-[500px] flex flex-col">
             <CardHeader>
               <CardTitle>Registration Trend</CardTitle>
               <CardDescription>Monthly user registrations over time</CardDescription>
             </CardHeader>
-            <CardContent className="p-6 flex-grow">
+            <CardContent className="p-4 sm:p-6 flex-grow">
               <figure aria-label="Monthly registration trend line chart" className="h-full w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={monthlyData} accessibilityLayer>

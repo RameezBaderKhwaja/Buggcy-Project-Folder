@@ -7,6 +7,8 @@ import { verifyToken } from "@/lib/auth"
 import { profileUpdateSchema, type ProfileUpdateInput } from "@/lib/validators"
 import { expressWithAuth } from "@/lib/middleware"
 import { generalRateLimit, csrfProtection, sanitizeInputs } from "../middleware/security"
+import bcrypt from "bcryptjs"
+import { PasswordSecurity } from "@/lib/security"
 
 export const runtime = "nodejs"
 
@@ -14,6 +16,7 @@ const router = express.Router()
 
 // Apply security middlewares
 router.use(generalRateLimit, csrfProtection, sanitizeInputs)
+router.use(generalRateLimit, sanitizeInputs)
 
 // Configure multer for file uploads (memory storage, document risk)
 const upload = multer({
@@ -111,6 +114,98 @@ router.put(
       }
       
       res.status(500).json({ success: false, error: "An internal server error occurred while updating the profile." })
+    }
+  }
+)
+
+// Change password endpoint
+router.put(
+  "/change-password",
+  expressWithAuth,
+  async (req: Request, res: Response) => {
+    try {
+      const user = req.user as { id: string } | undefined;
+      if (!user || !user.id) {
+        return res.status(401).json({ success: false, error: "Unauthorized" });
+      }
+
+      const { currentPassword, newPassword, confirmPassword } = req.body;
+
+      // Validate input
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "All fields are required" 
+        });
+      }
+
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "New passwords do not match" 
+        });
+      }
+
+      // Validate new password strength
+      const passwordValidation = PasswordSecurity.validatePasswordStrength(newPassword);
+      if (!passwordValidation.isValid) {
+        return res.status(400).json({
+          success: false,
+          error: "New password does not meet security requirements",
+          details: passwordValidation.errors,
+        });
+      }
+
+      // Get current user with password
+      const currentUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { id: true, password: true, email: true }
+      });
+
+      if (!currentUser || !currentUser.password) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Cannot change password for OAuth users" 
+        });
+      }
+
+      // Verify current password
+      const isCurrentPasswordValid = await bcrypt.compare(currentPassword, currentUser.password);
+      if (!isCurrentPasswordValid) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Current password is incorrect" 
+        });
+      }
+
+      // Hash new password
+      const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+
+      // Update password in database
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { 
+          password: hashedNewPassword,
+          // Clear any existing reset tokens
+          resetToken: null,
+          resetExpires: null,
+          // Reset failed login attempts
+          failedLoginAttempts: 0,
+          accountLockedUntil: null,
+        },
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Password changed successfully" 
+      });
+    } catch (error: unknown) {
+      const userId = req.user?.id || 'unknown';
+      console.error(`[PASSWORD_CHANGE_ERROR] User: ${userId} - `, error);
+      res.status(500).json({ 
+        success: false, 
+        error: "An internal server error occurred while changing password." 
+      });
     }
   }
 )
