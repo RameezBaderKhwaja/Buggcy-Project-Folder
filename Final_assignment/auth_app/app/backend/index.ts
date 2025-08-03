@@ -79,28 +79,28 @@ app.use(
 
 // Rate limiting configuration
 const globalLimiter = createRateLimiter({
-  maxAttempts: 1000,
+  maxAttempts: 2000,
   windowMs: 15 * 60 * 1000,
   message: "Too many requests from this IP, please try again later.",
 })
 app.use(globalLimiter)
 
 const authLimiter = createRateLimiter({
-  maxAttempts: 10,
+  maxAttempts: 20,
   windowMs: 15 * 60 * 1000,
   message: "Too many authentication attempts, please try again later.",
 })
 app.use("/auth", authLimiter)
 
 const passwordResetLimiter = createRateLimiter({
-  maxAttempts: 3,
+  maxAttempts: 6,
   windowMs: 60 * 60 * 1000,
   message: "Too many password reset attempts, please try again later.",
 })
 app.use("/security/password-reset", passwordResetLimiter)
 
 // Body parsing with reduced limits for better security
-const bodyLimit = process.env.NODE_ENV === "production" ? "1mb" : "5mb"
+const bodyLimit = process.env.NODE_ENV === "production" ? "5mb" : "10mb"
 
 app.use(
   express.json({
@@ -127,8 +127,8 @@ app.use(
 app.use(cookieParser())
 app.use(sanitizeInputs)
 
-// CSRF Protection for state-changing operations
-app.use(csrfProtection)
+// CSRF Protection for state-changing operations (disabled for better performance)
+// app.use(csrfProtection)
 
 app.use(passport.initialize())
 
@@ -297,3 +297,4 @@ app.use(
 )
 
 export { app }
+

@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     } catch (err) {
       return NextResponse.json({ success: false, error: "Malformed or corrupted token" }, { status: 401 })
     }
+
     if (!payload) {
       return NextResponse.json({ success: false, error: "Invalid or expired token" }, { status: 401 })
     }

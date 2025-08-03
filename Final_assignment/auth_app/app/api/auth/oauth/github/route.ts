@@ -17,7 +17,7 @@ export async function GET() {
   githubAuthUrl.searchParams.set("redirect_uri", `${process.env.NEXT_PUBLIC_API_URL}/api/auth/oauth/github/callback`);
   githubAuthUrl.searchParams.set("scope", "user:email");
   githubAuthUrl.searchParams.set("state", state);
-  // Optional: githubAuthUrl.searchParams.set("allow_signup", "true");
+  githubAuthUrl.searchParams.set("allow_signup", "true");
 
   console.debug("Redirecting to GitHub OAuth:", githubAuthUrl.toString());
 

@@ -295,26 +295,26 @@ export class SecurityLogger {
 }
 
 // Token utilities
-export class TokenSecurity {
-  static generateSecureToken(length = 32): string {
+export namespace TokenSecurity {
+  export function generateSecureToken(length = 32): string {
     return crypto.randomBytes(length).toString("hex")
   }
 
-  static generateCSRFToken(): string {
-    return this.generateSecureToken(32)
+  export function generateCSRFToken(): string {
+    return generateSecureToken(32)
   }
 
-  static generatePasswordResetToken(): {
+  export function generatePasswordResetToken(): {
     token: string
     expires: Date
   } {
     return {
-      token: this.generateSecureToken(),
+      token: generateSecureToken(),
       expires: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
     }
   }
 
-  static async createPasswordResetToken(email: string): Promise<string | null> {
+  export async function createPasswordResetToken(email: string): Promise<string | null> {
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase() },
     })
@@ -323,7 +323,7 @@ export class TokenSecurity {
       return null
     }
 
-    const { token, expires } = this.generatePasswordResetToken()
+    const { token, expires } = generatePasswordResetToken()
 
     await prisma.user.update({
       where: { id: user.id },
@@ -342,7 +342,7 @@ export class TokenSecurity {
     return token
   }
 
-  static async validatePasswordResetToken(token: string): Promise<string | null> {
+  export async function validatePasswordResetToken(token: string): Promise<string | null> {
     const user = await prisma.user.findFirst({
       where: {
         resetToken: token,

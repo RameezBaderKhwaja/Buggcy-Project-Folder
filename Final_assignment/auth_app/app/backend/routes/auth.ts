@@ -21,6 +21,9 @@ import {
   csrfProtection,
 } from "../middleware/security"
 
+export const runtime = "nodejs"
+
+
 // --- TypeScript: Extend Express.User globally to match AuthUser ---
 declare global {
   namespace Express {

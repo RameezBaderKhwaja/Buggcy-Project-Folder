@@ -52,14 +52,6 @@ interface MonthlyDataPoint {
   registrations: number
 }
 
-// Get API URL from environment
-const getApiUrl = (): string => {
-  if (typeof window !== 'undefined') {
-    return window.location.origin
-  }
-  return process.env.NEXT_PUBLIC_API_URL || ''
-}
-
 // Get user's locale for date formatting
 const getUserLocale = (): string => {
   if (typeof window !== 'undefined' && navigator.language) {
@@ -117,8 +109,7 @@ export default function DashboardPage() {
       const controller = new AbortController()
       abortControllerRef.current = controller
 
-      const apiUrl = getApiUrl()
-      const response = await fetch(`${apiUrl}/api/stats/dashboard`, {
+      const response = await fetch(`/api/stats/dashboard`, {
         credentials: "include",
         signal: controller.signal,
       })
@@ -128,6 +119,7 @@ export default function DashboardPage() {
       if (response.ok) {
         const result = await response.json()
         if (result.success && isMountedRef.current) {
+          console.log("Dashboard Stats:", result.data)
           setStats(result.data)
         } else {
           setError(result.error || "Failed to load dashboard data")
@@ -384,7 +376,10 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold" aria-label={`This month registrations: ${Object.values(stats.monthlyRegistrations).slice(-1)[0] || 0}`}>
-                  {(Object.values(stats.monthlyRegistrations).slice(-1)[0] || 0).toLocaleString()}
+                  {(() => {
+                    const currentMonth = new Date().toISOString().substring(0, 7)
+                    return (stats.monthlyRegistrations[currentMonth] || 0).toLocaleString()
+                  })()}
                 </div>
                 <p className="text-xs text-muted-foreground">New registrations</p>
               </CardContent>
@@ -396,14 +391,14 @@ export default function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           {/* Age Groups Chart */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="col-span-4">
+            <Card className="col-span-4 min-h-[500px] flex flex-col">
               <CardHeader>
                 <CardTitle>Age Distribution</CardTitle>
                 <CardDescription>User distribution across age groups</CardDescription>
               </CardHeader>
-              <CardContent className="pl-2">
-                <figure aria-label="Age distribution bar chart">
-                  <ResponsiveContainer width="100%" height={350}>
+              <CardContent className="p-6 flex-grow">
+                <figure aria-label="Age distribution bar chart" className="h-full w-full">
+                  <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={ageGroupData} accessibilityLayer>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
@@ -419,14 +414,14 @@ export default function DashboardPage() {
 
           {/* Gender Distribution Chart */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <Card className="col-span-3">
+            <Card className="col-span-3 min-h-[500px] flex flex-col">
               <CardHeader>
                 <CardTitle>Gender Distribution</CardTitle>
                 <CardDescription>User distribution by gender</CardDescription>
               </CardHeader>
-              <CardContent>
-                <figure aria-label="Gender distribution pie chart">
-                  <ResponsiveContainer width="100%" height={350}>
+              <CardContent className="p-6 flex-grow">
+                <figure aria-label="Gender distribution pie chart" className="h-full w-full">
+                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart accessibilityLayer>
                       <Pie
                         data={genderData}
@@ -456,14 +451,14 @@ export default function DashboardPage() {
 
         {/* Registration Trend Chart */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <Card>
+          <Card className="min-h-[500px] flex flex-col">
             <CardHeader>
               <CardTitle>Registration Trend</CardTitle>
               <CardDescription>Monthly user registrations over time</CardDescription>
             </CardHeader>
-            <CardContent>
-              <figure aria-label="Monthly registration trend line chart">
-                <ResponsiveContainer width="100%" height={350}>
+            <CardContent className="p-6 flex-grow">
+              <figure aria-label="Monthly registration trend line chart" className="h-full w-full">
+                <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={monthlyData} accessibilityLayer>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />

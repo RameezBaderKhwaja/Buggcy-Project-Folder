@@ -4,6 +4,8 @@ import { verifyToken } from "./auth"
 import { prisma } from "./prisma"
 import type { AuthUser } from "./types"
 
+export const runtime = "nodejs"
+
 export async function withAuth(request: NextRequest, handler: (req: NextRequest, user: AuthUser) => Promise<NextResponse>) {
   try {
     const token = request.cookies.get("auth-token")?.value

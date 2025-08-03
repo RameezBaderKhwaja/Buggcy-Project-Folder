@@ -8,6 +8,8 @@ import { profileUpdateSchema, type ProfileUpdateInput } from "@/lib/validators"
 import { expressWithAuth } from "@/lib/middleware"
 import { generalRateLimit, csrfProtection, sanitizeInputs } from "../middleware/security"
 
+export const runtime = "nodejs"
+
 const router = express.Router()
 
 // Apply security middlewares
@@ -67,7 +69,9 @@ router.put(
               deleteImage(publicId).catch(() => {}) // fire-and-forget
             }
           }
-          const result = await uploadImage(req.file.buffer, "profile-images")
+          // Convert buffer to base64 data URL for Cloudinary
+          const base64Data = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
+          const result = await uploadImage(base64Data, "profile-images")
           updateData.image = result.secure_url
         } catch (uploadError) {
           console.error(`Image upload error [user:${user.id}]:`, uploadError)
@@ -95,11 +99,18 @@ router.put(
       })
       res.json({ success: true, data: updatedUser, message: "Profile updated successfully" })
     } catch (error: unknown) {
-      console.error(`Profile update error [user:${req?.user?.id}]:`, error)
-      if (error && typeof error === 'object' && 'errors' in error) {
-        return res.status(400).json({ success: false, error: "Validation failed", details: (error as { errors: unknown }).errors })
+      const userId = req.user?.id || 'unknown';
+      console.error(`[PROFILE_UPDATE_ERROR] User: ${userId} - `, error);
+
+      if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Validation failed", 
+          details: (error as any).errors 
+        });
       }
-      res.status(500).json({ success: false, error: "Internal server error" })
+      
+      res.status(500).json({ success: false, error: "An internal server error occurred while updating the profile." })
     }
   }
 )

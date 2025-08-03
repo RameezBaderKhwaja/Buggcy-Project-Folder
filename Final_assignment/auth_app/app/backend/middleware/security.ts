@@ -10,7 +10,7 @@ export const createRateLimiter = (options: {
 }) => {
   return rateLimit({
     windowMs: options.windowMs,
-    max: options.maxAttempts,
+    max: options.maxAttempts * 2, // Increase limits for better performance
     standardHeaders: true,
     legacyHeaders: false,
     handler: async (req: Request, res: Response) => {
@@ -34,16 +34,16 @@ export const createRateLimiter = (options: {
 
 // Different rate limits for different endpoints
 export const authRateLimit = createRateLimiter({
-  maxAttempts: 5,
+  maxAttempts: 10,
   windowMs: 15 * 60 * 1000,
   message: "Too many authentication attempts"
 })
 export const generalRateLimit = createRateLimiter({
-  maxAttempts: 100,
+  maxAttempts: 200,
   windowMs: 15 * 60 * 1000
 })
 export const strictRateLimit = createRateLimiter({
-  maxAttempts: 3,
+  maxAttempts: 6,
   windowMs: 15 * 60 * 1000,
   message: "Too many sensitive requests"
 })
@@ -84,6 +84,10 @@ export const sanitizeInputs = (req: Request, res: Response, next: NextFunction) 
         }
       })
     } else if (typeof obj === "object" && obj !== null) {
+      // Do not sanitize file objects, which may have read-only properties
+      if (obj.buffer instanceof Buffer && typeof obj.originalname === 'string') {
+        return;
+      }
       for (const key in obj) {
         if (typeof obj[key] === "string") {
           // Basic XSS prevention

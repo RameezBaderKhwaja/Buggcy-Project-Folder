@@ -174,16 +174,17 @@ export default function RegisterPage() {
       if (!isMountedRef.current) return
       
       if (success) {
-        toast.success("Registration successful! Redirecting to dashboard...")
-        router.push(ROUTES.DASHBOARD)
+        // Don't show toast here as it's handled in AuthContext
+        const redirectUrl = "/dashboard" // Let middleware handle the actual redirect
+        router.push(redirectUrl)
       } else {
         setError(error || "Registration failed. Please try again.")
-        toast.error(error || "Registration failed. Please try again.")
+        // Don't show toast here as it's handled in AuthContext
       }
     } catch (err) {
       if (isMountedRef.current) {
         setError("An error occurred during registration")
-        toast.error("An error occurred during registration")
+        // Don't show toast here as it's handled in AuthContext
       }
     } finally {
       if (isMountedRef.current) {

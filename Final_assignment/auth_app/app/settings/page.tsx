@@ -1,14 +1,17 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/app/context/AuthContext"
 import ProtectedLayout from '@/components/ProtectedLayout'
 import { motion } from 'framer-motion'
-import { Bell, Shield, Palette, Globe, Save, Loader2, Check, AlertCircle } from 'lucide-react'
+import { Bell, Shield, Palette, Globe, Save, Loader2, Check, AlertCircle, LogOut } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
+
 
 // Types for settings
 interface UserSettings {
@@ -154,6 +157,21 @@ export default function SettingsPage() {
       setTheme(value as string)
     }
   }, [setTheme])
+
+  const { logout } = useAuth()
+  const router = useRouter()
+
+  const handleLogout = React.useCallback(async () => {
+    try {
+      await logout()
+      toast.success("Logged out successfully")
+      router.push("/login")
+    } catch (err) {
+      console.error("Logout failed:", err)
+      toast.error("Failed to log out — try again")
+    }
+  }, [logout, router])
+
 
   // Save settings
   const handleSave = useCallback(async () => {
@@ -424,6 +442,31 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
+          {/* Logout */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-3">
+                <LogOut className="w-5 h-5 text-red-600" />
+                <span>Account</span>
+              </CardTitle>
+              <CardDescription>
+                Manage your account settings and security
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Button 
+                  variant="destructive"
+                  onClick={handleLogout}
+                  className="w-full justify-center h-auto p-4 text-white flex items-center space-x-2"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span className="font-medium">Log Out</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
           {/* Save Button */}
           <div className="flex justify-end pt-4">
             <Button

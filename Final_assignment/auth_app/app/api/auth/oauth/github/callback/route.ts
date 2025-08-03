@@ -53,15 +53,33 @@ export async function GET(request: NextRequest) {
     const githubUser = (await userResponse.json()) as GitHubUser
 
     // Handle null email from GitHub
-    if (!githubUser.email) {
-      return NextResponse.redirect(new URL("/login?error=no_email_from_github", request.url))
-    }
+    let email = githubUser.email
+
+if (!email) {
+  // Try fetching user emails if email is null
+  const emailResponse = await fetch("https://api.github.com/user/emails", {
+    headers: {
+      Authorization: `Bearer ${tokenData.access_token}`,
+      Accept: "application/json",
+    },
+  })
+
+  const emails = (await emailResponse.json()) as { email: string; primary: boolean; verified: boolean }[]
+
+  const primaryEmail = emails.find((e) => e.primary && e.verified)
+  email = primaryEmail?.email ?? null
+}
+
+if (!email) {
+  return NextResponse.redirect(new URL("/login?error=no_email_from_github", request.url))
+}
+
 
     // Check if user exists by email or providerId
     let user = await prisma.user.findFirst({
       where: {
         OR: [
-          { email: githubUser.email },
+          { email },
           { providerId: githubUser.id.toString() },
         ],
       },
@@ -71,7 +89,7 @@ export async function GET(request: NextRequest) {
       // Create new user
       user = await prisma.user.create({
         data: {
-          email: githubUser.email,
+          email,
           name: githubUser.name || githubUser.login,
           image: githubUser.avatar_url,
           provider: "github",
@@ -86,10 +104,13 @@ export async function GET(request: NextRequest) {
 
     const response = NextResponse.redirect(new URL("/dashboard", request.url))
     // Set cookie using headers for Node.js runtime compatibility
-    response.headers.append(
-      "Set-Cookie",
-      `${cookie.name}=${cookie.value}; Path=${cookie.path}; HttpOnly; SameSite=${cookie.sameSite}; Max-Age=${cookie.maxAge};${cookie.secure ? " Secure;" : ""}`
-    )
+     response.cookies.set(cookie.name, cookie.value, {
+      path: cookie.path,
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: cookie.maxAge,
+      secure: process.env.NODE_ENV === "production",
+    })
 
     return response
   } catch (error: unknown) {

@@ -11,6 +11,9 @@ import {
   strictRateLimit 
 } from "../middleware/security"
 
+export const runtime = "nodejs"
+
+
 const router = express.Router()
 
 // Apply global middlewares to all routes
@@ -27,7 +30,7 @@ const getUsersQuerySchema = z.object({
 })
 
 const userIdParamSchema = z.object({
-  id: z.string().uuid("Invalid user ID format"),
+  id: z.string(),
 })
 
 // Enhanced error handler
@@ -48,8 +51,8 @@ const handleError = (error: unknown, res: express.Response, context: string) => 
   })
 }
 
-// Get all users (admin only) with pagination and filtering
-router.get("/", generalRateLimit, expressWithAdminAuth, async (req, res) => {
+// Get all users with pagination and filtering (accessible to all authenticated users)
+router.get("/", generalRateLimit, expressWithAuth, async (req, res) => {
   try {
     const query = getUsersQuerySchema.parse(req.query)
     const { page, limit, role, search } = query

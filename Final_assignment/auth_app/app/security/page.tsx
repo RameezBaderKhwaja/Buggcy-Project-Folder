@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo, useCallback } from "react"
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { useAuth } from "@/app/context/AuthContext"
 import ProtectedLayout from "@/components/ProtectedLayout"
 import { motion } from "framer-motion"
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Shield, AlertTriangle, Activity, Search, Eye, Clock, User, Globe, RefreshCw } from "lucide-react"
+import { toast } from "sonner"
 import { useSecurity } from "@/hooks/use-security"
 import { useDebounce } from "@/hooks/use-debounce"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
@@ -110,6 +111,24 @@ function SecurityPageContent() {
   const [filterType, setFilterType] = useState("all")
   const [isRefreshing, setIsRefreshing] = useState(false)
   const debouncedSearch = useDebounce(searchTerm, 300)
+  const isInitialLoad = useRef(true)
+
+  useEffect(() => {
+    const toastId = "fetch-security"
+    if (loading) {
+      if (isInitialLoad.current) {
+        toast.loading("Loading security data...", { id: toastId })
+      }
+    } else {
+      toast.dismiss(toastId)
+      if (error) {
+        toast.error(error, { id: toastId })
+      } else if (stats && isInitialLoad.current) {
+        toast.success("Security data loaded!", { id: toastId })
+        isInitialLoad.current = false
+      }
+    }
+  }, [loading, error, stats])
 
   // Stable refetch function
   const stableRefetch = useCallback(async () => {

@@ -4,6 +4,9 @@ import { User } from '@prisma/client'
 import { JWTPayload } from './types'
 import { JWT_SECRET, JWT_EXPIRES_IN } from './constants'
 
+export const runtime = "nodejs"
+
+
 // Type for token generation - only includes required fields
 interface TokenUser {
   id: string

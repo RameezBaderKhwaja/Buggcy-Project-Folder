@@ -8,6 +8,9 @@ import { strictRateLimit, sanitizeInputs } from "../middleware/security"
 import { authenticateToken, requireAdmin } from "@/lib/middleware"
 import { z } from "zod"
 
+export const runtime = "nodejs"
+
+
 const router = express.Router()
 
 // Helper: generate a strong reset token (not CSRF)

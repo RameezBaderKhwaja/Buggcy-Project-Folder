@@ -148,7 +148,7 @@ passport.use(
 const googleStrategyOptions: GoogleStrategyOptionsWithRequest = {
   clientID: process.env.GOOGLE_CLIENT_ID!,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  callbackURL: `${process.env.NEXT_PUBLIC_API_URL}/api/auth/oauth/google/callback`,
+  callbackURL: `${process.env.NEXT_PUBLIC_API_URL}/auth/oauth/google/callback`,
   scope: ["profile", "email"],
   passReqToCallback: true,
 };
@@ -253,7 +253,7 @@ passport.use(
 const githubStrategyOptions: GitHubStrategyOptionsWithRequest = {
   clientID: process.env.GITHUB_CLIENT_ID!,
   clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-  callbackURL: `${process.env.NEXT_PUBLIC_API_URL}/api/auth/oauth/github/callback`,
+  callbackURL: `${process.env.NEXT_PUBLIC_API_URL}/auth/oauth/github/callback`,
   scope: ["user:email"],
   passReqToCallback: true,
 };

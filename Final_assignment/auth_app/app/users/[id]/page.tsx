@@ -26,18 +26,6 @@ import type { AuthUser } from "@/lib/types"
 import { formatDate, capitalizeFirst } from "@/lib/utils"
 import { toast } from "sonner"
 
-// Enhanced API URL handling with proper error checking
-const getApiUrl = () => {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL
-  if (!apiUrl) {
-    console.warn("Missing NEXT_PUBLIC_API_URL environment variable. Defaulting to localhost.")
-    return "http://localhost:3000"
-  }
-  return apiUrl
-}
-
-const API_URL = getApiUrl()
-
 // Enhanced profile completion checker
 const isProfileComplete = (user: AuthUser): { isComplete: boolean; completionPercentage: number; missingFields: string[] } => {
   const requiredFields = [
@@ -174,6 +162,7 @@ const ErrorDisplay = ({
   </div>
 )
 
+
 export default function UserDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -192,7 +181,7 @@ export default function UserDetailPage() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/users/${id}`, {
+      const response = await fetch(`/api/users/${id}`, {
         credentials: "include",
         headers: {
           'Content-Type': 'application/json',
@@ -449,7 +438,7 @@ export default function UserDetailPage() {
                     <Badge variant={user.role === "ADMIN" ? "destructive" : "secondary"}>
                       {user.role === "ADMIN" ? "Administrator" : "Standard User"}
                     </Badge>
-                  </div>
+                    </div>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-600">Authentication Provider</label>

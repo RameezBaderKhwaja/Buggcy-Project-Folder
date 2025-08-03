@@ -16,12 +16,12 @@ export default function HomePage() {
       setRedirecting(true)
       
       // Use replace instead of push to avoid browser history pollution
-      const targetRoute = user ? "/dashboard" : "/home"
+      const targetRoute = user ? (user.role === "ADMIN" ? "/dashboard" : "/profile") : "/home"
       
       // Small delay to prevent flash and ensure smooth transition
       const timeoutId = setTimeout(() => {
         router.replace(targetRoute)
-      }, 100)
+      }, 50)
 
       // Cleanup timeout if component unmounts
       return () => clearTimeout(timeoutId)
@@ -76,7 +76,7 @@ export default function HomePage() {
             </h2>
             <p className="text-sm text-gray-600">
               {user 
-                ? "Redirecting you to your dashboard..." 
+                ? user.role === "ADMIN" ? "Redirecting to dashboard..." : "Redirecting to profile..."
                 : "Taking you to the home page..."
               }
             </p>
@@ -88,7 +88,7 @@ export default function HomePage() {
               className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
               initial={{ width: "0%" }}
               animate={{ width: "100%" }}
-              transition={{ duration: 1.5, ease: "easeInOut" }}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
             />
           </div>
         </motion.div>

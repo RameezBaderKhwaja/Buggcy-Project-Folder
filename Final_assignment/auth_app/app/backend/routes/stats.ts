@@ -59,18 +59,29 @@ router.get(
 
       // Get monthly registrations (last 12 months) - DB-level aggregation
       const last12Months = getLast12Months()
-      // Use raw query for efficient aggregation (Postgres example)
-      const rawMonthly = await prisma.$queryRawUnsafe<any[]>(
-        `SELECT to_char("createdAt", 'YYYY-MM') as month, COUNT(*) as count
-         FROM "User"
-         WHERE "createdAt" >= date_trunc('month', now()) - interval '11 months'
-         GROUP BY month
-         ORDER BY month ASC`
-      )
+      
+      // Get monthly registrations using Prisma aggregation
+      const monthlyRegistrations = await prisma.user.findMany({
+        select: {
+          createdAt: true,
+        },
+        where: {
+          createdAt: {
+            gte: new Date(new Date().getFullYear(), new Date().getMonth() - 11, 1),
+          },
+        },
+      })
+      
       const monthlyStats: Record<string, number> = {}
       last12Months.forEach((month) => {
-        const found = rawMonthly.find((row) => row.month === month)
-        monthlyStats[month] = found ? Number(found.count) : 0
+        monthlyStats[month] = 0
+      })
+      
+      monthlyRegistrations.forEach((user) => {
+        const month = user.createdAt.toISOString().substring(0, 7)
+        if (monthlyStats.hasOwnProperty(month)) {
+          monthlyStats[month]++
+        }
       })
 
       res.setHeader("Cache-Control", "no-store")

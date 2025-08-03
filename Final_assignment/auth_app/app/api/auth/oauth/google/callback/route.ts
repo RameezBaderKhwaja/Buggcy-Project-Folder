@@ -109,10 +109,13 @@ export async function GET(request: NextRequest) {
 
     const response = NextResponse.redirect(new URL("/dashboard", request.url))
     // Set cookie using headers for Node.js runtime compatibility
-    response.headers.append(
-      "Set-Cookie",
-      `${cookie.name}=${cookie.value}; Path=${cookie.path}; HttpOnly; SameSite=${cookie.sameSite}; Max-Age=${cookie.maxAge};${cookie.secure ? " Secure;" : ""}`
-    )
+     response.cookies.set(cookie.name, cookie.value, {
+      path: cookie.path,
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: cookie.maxAge,
+      secure: process.env.NODE_ENV === "production",
+    })
 
     return response
   } catch (error: unknown) {
