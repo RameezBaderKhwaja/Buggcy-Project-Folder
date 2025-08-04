@@ -59,6 +59,8 @@ const validateEnvironmentVariables = () => {
 // Validate environment on module load
 validateEnvironmentVariables();
 
+const callbackBaseUrl = process.env.NEXT_PUBLIC_VERCEL_URL || process.env.NEXT_PUBLIC_API_URL;
+
 // ==========================
 // Extended type for passport
 // ==========================
@@ -148,7 +150,7 @@ passport.use(
 const googleStrategyOptions: GoogleStrategyOptionsWithRequest = {
   clientID: process.env.GOOGLE_CLIENT_ID!,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-  callbackURL: `${process.env.NEXT_PUBLIC_API_URL}/auth/oauth/google/callback`,
+  callbackURL: `${callbackBaseUrl}/auth/oauth/google/callback`,
   scope: ["profile", "email"],
   passReqToCallback: true,
 };
@@ -253,7 +255,7 @@ passport.use(
 const githubStrategyOptions: GitHubStrategyOptionsWithRequest = {
   clientID: process.env.GITHUB_CLIENT_ID!,
   clientSecret: process.env.GITHUB_CLIENT_SECRET!,
-  callbackURL: `${process.env.NEXT_PUBLIC_API_URL}/auth/oauth/github/callback`,
+  callbackURL: `${callbackBaseUrl}/auth/oauth/github/callback`,
   scope: ["user:email"],
   passReqToCallback: true,
 };

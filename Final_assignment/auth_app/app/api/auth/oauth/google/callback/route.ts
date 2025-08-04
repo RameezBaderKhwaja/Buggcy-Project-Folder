@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { generateToken, createAuthCookie } from "@/lib/auth"
+import { GOOGLE_CONFIG, BASE_URL } from "@/lib/config"
 
 interface GoogleUser {
   id: string
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
     const state = searchParams.get("state")
 
     // Check for required env vars
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.NEXT_PUBLIC_API_URL) {
+    if (!GOOGLE_CONFIG.CLIENT_ID || !GOOGLE_CONFIG.CLIENT_SECRET || !BASE_URL) {
       console.error("Missing Google OAuth env vars")
       return NextResponse.redirect(new URL("/login?error=server_config", request.url))
     }
@@ -28,11 +29,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL("/login?error=no_code", request.url))
     }
 
-    // CSRF state verification (if state was set in initiation step)
+    // CSRF state verification
     const cookies = request.cookies
     const expectedState = cookies.get("google_oauth_state")?.value
     if (expectedState && state !== expectedState) {
       return NextResponse.redirect(new URL("/login?error=invalid_state", request.url))
+    }
+
+    // PKCE code_verifier verification
+    const code_verifier = cookies.get("google_pkce_verifier")?.value
+    if (!code_verifier) {
+        return NextResponse.redirect(new URL("/login?error=no_pkce_verifier", request.url))
     }
 
     // Exchange code for access token
@@ -42,11 +49,12 @@ export async function GET(request: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        client_id: GOOGLE_CONFIG.CLIENT_ID,
+        client_secret: GOOGLE_CONFIG.CLIENT_SECRET,
         code,
         grant_type: "authorization_code",
-        redirect_uri: `${process.env.NEXT_PUBLIC_API_URL}/api/auth/oauth/google/callback`,
+        redirect_uri: `${BASE_URL}/api/auth/oauth/google/callback`,
+        code_verifier,
       }),
     })
 
@@ -114,7 +122,7 @@ export async function GET(request: NextRequest) {
       httpOnly: true,
       sameSite: "lax",
       maxAge: cookie.maxAge,
-      secure: process.env.NODE_ENV === "production",
+      secure: BASE_URL?.startsWith("https://"),
     })
 
     return response

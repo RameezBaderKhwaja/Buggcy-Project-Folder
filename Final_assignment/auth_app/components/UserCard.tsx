@@ -20,9 +20,9 @@ export function UserCard({ user, index }: UserCardProps) {
       className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 hover:border-blue-300 hover:scale-[1.02]"
     >
       <Link href={`/users/${user.id}`}>
-        <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
           {/* Avatar */}
-          <div className="flex-shrink-0 mx-auto sm:mx-0">
+          <div className="flex-shrink-0 mx-auto sm:mx-0 col-span-1">
             {user.image ? (
               <img
                 src={user.image}
@@ -37,7 +37,7 @@ export function UserCard({ user, index }: UserCardProps) {
           </div>
 
           {/* User Info */}
-          <div className="flex-1 min-w-0 text-center sm:text-left">
+          <div className="flex-1 min-w-0 text-center sm:text-left col-span-2">
             <h3 className="text-xl sm:text-lg font-bold text-gray-900 truncate mb-1">
               {user.name || 'No name'}
             </h3>

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { usePasswordStrength } from '@/hooks/use-password-strength'
 import { toast } from 'sonner'
+import { useAuth } from '@/app/context/AuthContext'
 
 interface ChangePasswordFormProps {
   onSuccess?: () => void
@@ -22,6 +23,7 @@ interface FormErrors {
 }
 
 export function ChangePasswordForm({ onSuccess, onCancel }: ChangePasswordFormProps) {
+  const { changePassword } = useAuth()
   const [loading, setLoading] = useState(false)
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
@@ -84,16 +86,7 @@ export function ChangePasswordForm({ onSuccess, onCancel }: ChangePasswordFormPr
     setLoading(true)
 
     try {
-      const response = await fetch('/api/profile/change-password', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      })
-
-      const result = await response.json()
+      const result = await changePassword(formData)
 
       if (result.success) {
         toast.success('Password changed successfully!')
@@ -112,7 +105,7 @@ export function ChangePasswordForm({ onSuccess, onCancel }: ChangePasswordFormPr
     } finally {
       setLoading(false)
     }
-  }, [formData, validateForm, onSuccess])
+  }, [formData, validateForm, onSuccess, changePassword])
 
   const getPasswordStrengthColor = () => {
     if (passwordStrength.score <= 1) return "bg-red-500"

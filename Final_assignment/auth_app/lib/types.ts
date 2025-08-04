@@ -1,44 +1,42 @@
-export interface AuthUser {
-  id: string
-  email: string
-  name: string | null
-  role: "USER" | "ADMIN"
-  image: string | null
-  age: number | null
-  gender: string | null
-  provider: string
-  providerId: string | null
-  createdAt: Date
-  updatedAt: Date
-}
-export interface JWTPayload {
-  userId: string
-  email: string
-  role: "USER" | "ADMIN"
-  iat?: number
-  exp?: number
-}
+import type { User, Role } from "@prisma/client"
+import type { z } from "zod"
+import type {
+  loginSchema,
+  registerSchema,
+  profileUpdateSchema,
+  changePasswordSchema,
+} from "./validators"
 
-export interface SecurityEvent {
+// =================================
+// Database & Session
+// =================================
+
+// The user object stored in the session
+export type AuthUser = Omit<User, "password" | "resetToken" | "resetExpires">
+
+// The user object returned by the API
+export type PublicUser = Omit<AuthUser, "email" | "provider" | "providerId" | "updatedAt">
+
+// =================================
+// API Route Inputs
+// =================================
+
+export type LoginInput = z.infer<typeof loginSchema>
+export type RegisterInput = z.infer<typeof registerSchema>
+export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
+
+// =================================
+// Security & Stats
+// =================================
+
+export type SecurityEvent = {
   id: string
-  event: string
-  userId: string | null
+  type: string
+  details: Record<string, any>
   ipAddress: string
   userAgent: string
-  success: boolean
-  details: Record<string, unknown> | string
-  timestamp: string | Date
-  user?: {
-    email: string
-    name: string | null
-  }
-}
-
-export interface ApiResponse<T = unknown> {
-  success: boolean
-  data?: T
-  error?: string
-  message?: string
+  createdAt: Date
 }
 
 export interface UserStats {
@@ -48,23 +46,28 @@ export interface UserStats {
   monthlyRegistrations: Record<string, number>
 }
 
-export interface SecurityStats {
-  totalEvents: number
-  recentEvents: SecurityEvent[]
-  eventTypes: Record<string, number>
-  suspiciousActivity: number
+export type RegistrationStats = {
+  total: number
+  lastDay: number
+  lastWeek: number
+  lastMonth: number
 }
 
-export interface LoginInput {
+export type ActivityStats = {
+  logins: number
+  registrations: number
+  passwordResets: number
+  profileUpdates: number
+}
+
+export type Stats = {
+  users: UserStats
+  registrations: RegistrationStats
+  activity: ActivityStats
+}
+
+export interface JWTPayload {
+  userId: string
   email: string
-  password: string
+  role: Role
 }
-
-export interface RegisterInput {
-  name: string
-  email: string
-  password: string
-  age: number
-  gender: "male" | "female" | "other" | "prefer-not-to-say"
-}
-

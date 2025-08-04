@@ -1,61 +1,55 @@
 import { z } from "zod"
-import { PasswordSecurity, validateEmail } from "./security"
+
+// =================================
+// Auth Schemas
+// =================================
 
 export const loginSchema = z.object({
-  email: z
-    .string()
-    .email("Invalid email address")
-    .refine(
-      (email) => validateEmail(email).isValid,
-      { message: "Invalid email" },
-    ),
+  email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 })
 
 export const registerSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name too long"),
-  email: z
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z
     .string()
-    .email("Invalid email address")
-    .refine(
-      (email) => validateEmail(email).isValid,
-      { message: "Invalid email" },
-    ),
-  password: z.string().refine(
-    (password) => PasswordSecurity.validatePasswordStrength(password).isValid,
-    { message: "Password does not meet security requirements" },
-  ),
-  age: z.number().min(18, "Must be at least 18 years old").max(120, "Invalid age"),
-  gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
 })
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
+    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Password must contain at least one number"),
+  confirmPassword: z.string().min(1, "Please confirm your new password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+
+// =================================
+// Profile & User Schemas
+// =================================
 
 export const profileUpdateSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name too long").optional(),
-  age: z.number().min(18, "Must be at least 18 years old").max(120, "Invalid age").optional(),
+  name: z.string().min(2, "Name must be at least 2 characters").optional(),
+  age: z.number().int().min(13).max(120).optional(),
   gender: z.enum(["male", "female", "other", "prefer-not-to-say"]).optional(),
-  image: z.string().url().optional(),
+  image: z.string().url("Invalid image URL").optional(),
 })
-
-export const passwordResetSchema = z.object({
-  email: z
-    .string()
-    .email("Invalid email address")
-    .refine(
-      (email) => validateEmail(email).isValid,
-      { message: "Invalid email" },
-    ),
-})
-
-export const passwordChangeSchema = z.object({
-  token: z.string().min(1, "Reset token is required"),
-  password: z.string().refine(
-    (password) => PasswordSecurity.validatePasswordStrength(password).isValid,
-    { message: "Password does not meet security requirements" },
-  ),
-})
-
-export type LoginInput = z.infer<typeof loginSchema>
-export type RegisterInput = z.infer<typeof registerSchema>
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>
-export type PasswordResetInput = z.infer<typeof passwordResetSchema>
-export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>
+
+export const userUpdateSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters").optional(),
+  email: z.string().email("Invalid email address").optional(),
+  role: z.enum(["USER", "ADMIN"]).optional(),
+  isVerified: z.boolean().optional(),
+})

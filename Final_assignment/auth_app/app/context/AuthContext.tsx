@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from "react"
-import type { AuthUser, LoginInput, RegisterInput } from "@/lib/types"
+import type { AuthUser, LoginInput, RegisterInput, ChangePasswordInput, UserStats } from "@/lib/types"
 import { API_ROUTES } from "@/lib/constants"
 import { toast } from "sonner"
 
@@ -17,6 +17,17 @@ interface UpdateProfileResult {
   error?: string
 }
 
+interface ChangePasswordResult {
+  success: boolean
+  error?: string
+}
+
+interface DashboardStatsResult {
+  success: boolean
+  data?: UserStats
+  error?: string
+}
+
 interface AuthContextType {
   user: AuthUser | null
   loading: boolean
@@ -25,6 +36,8 @@ interface AuthContextType {
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
   updateProfile: (data: FormData) => Promise<UpdateProfileResult>
+  changePassword: (data: ChangePasswordInput) => Promise<ChangePasswordResult>
+  getDashboardStats: () => Promise<DashboardStatsResult>
 }
 
 // Constants for fetch options
@@ -73,17 +86,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const controller = new AbortController()
     abortControllerRef.current = controller
 
+    const headers = new Headers(options.headers)
+
+    // Add CSRF token for state-changing operations
+    if (csrfToken && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method || 'GET')) {
+      headers.set('X-CSRF-Token', csrfToken)
+    }
+    
+    // Do not set Content-Type for FormData, browser does it with boundary
+    if (options.body instanceof FormData) {
+      headers.delete('Content-Type')
+    }
+
     const fetchOptions: RequestInit = {
       ...FETCH_OPTIONS.DEFAULT_OPTIONS,
       ...options,
+      headers,
       signal: controller.signal,
-      headers: {
-        ...options.headers,
-        // Add CSRF token for state-changing operations
-        ...(csrfToken && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method || 'GET') 
-          ? { 'X-CSRF-Token': csrfToken } 
-          : {}),
-      },
     }
 
     for (let attempt = 1; attempt <= retries; attempt++) {
@@ -137,7 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false)
       }
     }
-  }, [])
+  }, [apiFetch])
 
   // Fetch CSRF token for secure requests
   const fetchCsrfToken = useCallback(async () => {
@@ -164,17 +183,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.success && isMountedRef.current) {
         setUser(data.data)
       } else if (isMountedRef.current) {
-        setUser(null) // <-- add this
+        setUser(null)
       }
     } else if (isMountedRef.current) {
-      setUser(null) // <-- add this for non-ok response
+      setUser(null)
     }
   } catch (error) {
     if (error instanceof Error && error.name !== 'AbortError') {
       console.error("Auth check failed:", error)
     }
     if (isMountedRef.current) {
-      setUser(null) // <-- even on error, set user to null
+      setUser(null)
     }
   } finally {
     if (isMountedRef.current) {
@@ -194,7 +213,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const result = await response.json()
 
-      if (result.success) {
+      if (response.ok) {
         if (isMountedRef.current) {
           setUser(result.data)
           toast.success("Login successful!", { id: "login" })
@@ -297,6 +316,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [apiFetch])
 
+  const changePassword = useCallback(async (data: ChangePasswordInput): Promise<ChangePasswordResult> => {
+    try {
+      toast.loading("Changing password...", { id: "change-password" })
+      const response = await apiFetch(API_ROUTES.CHANGE_PASSWORD, {
+        method: "PUT",
+        headers: FETCH_OPTIONS.JSON_HEADERS,
+        body: JSON.stringify(data),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success("Password changed successfully!", { id: "change-password" })
+        return { success: true }
+      }
+      toast.error(result.error || "Failed to change password", { id: "change-password" })
+      return { success: false, error: result.error || "Failed to change password" }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        toast.dismiss("change-password")
+        return { success: false, error: "Request cancelled" }
+      }
+      console.error("Password change failed:", error)
+      toast.error("Network or server error", { id: "change-password" })
+      return { success: false, error: "Network or server error" }
+    }
+  }, [apiFetch])
+
+  const getDashboardStats = useCallback(async (): Promise<DashboardStatsResult> => {
+    try {
+      const response = await apiFetch(API_ROUTES.STATS.DASHBOARD)
+      const result = await response.json()
+
+      if (result.success) {
+        return { success: true, data: result.data }
+      }
+      return { success: false, error: result.error || "Failed to fetch dashboard stats" }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        return { success: false, error: "Request cancelled" }
+      }
+      console.error("Dashboard stats error:", error)
+      return { success: false, error: "Network or server error" }
+    }
+  }, [apiFetch])
+
   const refreshUser = useCallback(async () => {
     await checkAuth()
   }, [checkAuth])
@@ -310,7 +375,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     refreshUser,
     updateProfile,
-  }), [user, loading, login, register, logout, refreshUser, updateProfile])
+    changePassword,
+    getDashboardStats,
+  }), [user, loading, login, register, logout, refreshUser, updateProfile, changePassword, getDashboardStats])
 
   return (
     <AuthContext.Provider value={contextValue}>

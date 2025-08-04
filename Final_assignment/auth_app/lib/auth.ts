@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { User } from '@prisma/client'
 import { JWTPayload } from './types'
-import { JWT_SECRET, JWT_EXPIRES_IN } from './constants'
+import { JWT_SECRET, JWT_EXPIRES_IN } from './config'
 
 export const runtime = "nodejs"
 
@@ -22,11 +22,18 @@ export function generateToken(user: TokenUser | Pick<User, 'id' | 'email' | 'rol
     role: user.role,
   }
 
+  if (!JWT_SECRET) {
+    throw new Error("JWT_SECRET is not defined");
+  }
+
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
 }
 
 export function verifyToken(token: string): JWTPayload | null {
   try {
+    if (!JWT_SECRET) {
+      throw new Error("JWT_SECRET is not defined");
+    }
     return jwt.verify(token, JWT_SECRET) as JWTPayload
   } catch (error) {
     console.error('Token verification failed:', error)

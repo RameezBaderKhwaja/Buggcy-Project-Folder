@@ -23,6 +23,7 @@ import {
   LineChart,
   Line,
 } from "recharts"
+import type { UserStats } from "@/lib/types"
 
 // Chart configuration constants
 const CHART_CONFIG = {
@@ -32,14 +33,6 @@ const CHART_CONFIG = {
   STROKE_WIDTH: 2,
   OUTER_RADIUS: 80,
 } as const
-
-// Enhanced interface with better typing
-interface UserStats {
-  totalUsers: number
-  genderStats: Array<{ gender: string; count: number }>
-  ageGroups: Record<string, number>
-  monthlyRegistrations: Record<string, number>
-}
 
 interface ChartDataPoint {
   name: string
@@ -60,7 +53,7 @@ const getUserLocale = (): string => {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth()
+  const { user, getDashboardStats } = useAuth()
   const [stats, setStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -68,7 +61,6 @@ export default function DashboardPage() {
   
   // Ref to track component mount status
   const isMountedRef = useRef(true)
-  const abortControllerRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
     isMountedRef.current = true
@@ -83,10 +75,6 @@ export default function DashboardPage() {
     
     return () => {
       isMountedRef.current = false
-      // Cancel any pending requests
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
     }
   }, [user])
 
@@ -104,39 +92,18 @@ export default function DashboardPage() {
         setLoading(true)
       }
 
-      // Create abort controller for this request
-      const controller = new AbortController()
-      abortControllerRef.current = controller
-
-      const response = await fetch(`/api/stats/dashboard`, {
-        credentials: "include",
-        signal: controller.signal,
-      })
+      const result = await getDashboardStats()
 
       if (!isMountedRef.current) return
 
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && isMountedRef.current) {
-          console.log("Dashboard Stats:", result.data)
-          setStats(result.data)
-        } else {
-          setError(result.error || "Failed to load dashboard data")
-        }
-      } else if (response.status === 403) {
-        setError("Access denied. Admin privileges required.")
-      } else if (response.status >= 500) {
-        setError("Server error. Please try again later.")
+      if (result.success && result.data) {
+        console.log("Dashboard Stats:", result.data)
+        setStats(result.data)
       } else {
-        setError("Failed to load dashboard data")
+        setError(result.error || "Failed to load dashboard data")
       }
     } catch (error) {
       if (!isMountedRef.current) return
-      
-      if (error instanceof Error && error.name === 'AbortError') {
-        // Request was cancelled, don't show error
-        return
-      }
       
       console.error("Failed to fetch stats:", error)
       setError("Network error. Please check your connection and try again.")
@@ -146,7 +113,7 @@ export default function DashboardPage() {
         setRetrying(false)
       }
     }
-  }, [user, retrying])
+  }, [user, retrying, getDashboardStats])
 
   const handleRetry = useCallback(() => {
     setRetrying(true)
@@ -340,7 +307,7 @@ export default function DashboardPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Male Users</CardTitle>
+                <CardTitle className="text-sm font--medium">Male Users</CardTitle>
                 <UserCheck className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -391,7 +358,7 @@ export default function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           {/* Age Groups Chart */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="col-span-full lg:col-span-4 min-h-[500px] flex flex-col">
+            <Card className="col-span-full lg:col-span-4 min-h-[500px] flex flex-col distribution-card">
               <CardHeader>
                 <CardTitle>Age Distribution</CardTitle>
                 <CardDescription>User distribution across age groups</CardDescription>
@@ -414,7 +381,7 @@ export default function DashboardPage() {
 
           {/* Gender Distribution Chart */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <Card className="col-span-full lg:col-span-3 min-h-[500px] flex flex-col">
+            <Card className="col-span-full lg:col-span-3 min-h-[500px] flex flex-col distribution-card">
               <CardHeader>
                 <CardTitle>Gender Distribution</CardTitle>
                 <CardDescription>User distribution by gender</CardDescription>

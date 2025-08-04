@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server"
+import { GITHUB_CONFIG, BASE_URL } from "@/lib/config"
 
 export const runtime = "edge"
 
 export async function GET() {
   // Check for required env vars
-  if (!process.env.GITHUB_CLIENT_ID || !process.env.NEXT_PUBLIC_API_URL) {
+  if (!GITHUB_CONFIG.CLIENT_ID || !BASE_URL) {
     console.error("Missing OAuth env vars");
     return NextResponse.json({ success: false, error: "Server misconfiguration" }, { status: 500 });
   }
@@ -13,8 +14,8 @@ export async function GET() {
   const state = crypto.randomUUID();
 
   const githubAuthUrl = new URL("https://github.com/login/oauth/authorize");
-  githubAuthUrl.searchParams.set("client_id", process.env.GITHUB_CLIENT_ID);
-  githubAuthUrl.searchParams.set("redirect_uri", `${process.env.NEXT_PUBLIC_API_URL}/api/auth/oauth/github/callback`);
+  githubAuthUrl.searchParams.set("client_id", GITHUB_CONFIG.CLIENT_ID);
+  githubAuthUrl.searchParams.set("redirect_uri", `${BASE_URL}/api/auth/oauth/github/callback`);
   githubAuthUrl.searchParams.set("scope", "user:email");
   githubAuthUrl.searchParams.set("state", state);
   githubAuthUrl.searchParams.set("allow_signup", "true");

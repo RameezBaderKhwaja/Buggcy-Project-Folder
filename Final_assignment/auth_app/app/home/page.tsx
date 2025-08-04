@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { motion } from 'framer-motion'
-import { Shield, LogIn, UserPlus, User, Settings, BarChart3, Users, Calendar, Clock } from 'lucide-react'
+import { Shield, LogIn, UserPlus, User, Settings, BarChart3, Users, Calendar, Clock, Activity, Link as LinkIcon } from 'lucide-react'
 
 export default function HomePage() {
   const { user } = useAuth()
@@ -218,43 +218,70 @@ export default function HomePage() {
             </Card>
           </motion.div>
 
-          {/* Quick Actions */}
+          {/* Recent Activity and Quick Links */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
-            className="mt-8 text-center"
+            className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8"
           >
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button
-                size="lg"
-                onClick={() => router.push('/profile')}
-                className="w-full sm:w-auto"
-              >
-                <User className="w-5 h-5 mr-2" />
-                Edit Profile
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                onClick={() => router.push('/settings')}
-                className="w-full sm:w-auto"
-              >
-                <Settings className="w-5 h-5 mr-2" />
-                Settings
-              </Button>
-              {isAdmin && (
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={() => router.push('/dashboard')}
-                  className="w-full sm:w-auto"
-                >
-                  <BarChart3 className="w-5 h-5 mr-2" />
-                  Dashboard
-                </Button>
-              )}
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Activity className="w-5 h-5 text-blue-600" />
+                  <span>Recent Activity</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-4">
+                  <li className="flex items-center space-x-4">
+                    <div className="p-2 bg-green-100 rounded-full">
+                      <LogIn className="w-5 h-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Successful login</p>
+                      <p className="text-sm text-gray-500">
+                        {new Date().toLocaleString()}
+                      </p>
+                    </div>
+                  </li>
+                  <li className="flex items-center space-x-4">
+                    <div className="p-2 bg-blue-100 rounded-full">
+                      <User className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium">Profile updated</p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(user.updatedAt).toLocaleString()}
+                      </p>
+                    </div>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <LinkIcon className="w-5 h-5 text-blue-600" />
+                  <span>Quick Links</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2">
+                  <li>
+                    <Button variant="link" onClick={() => router.push('/profile')}>My Profile</Button>
+                  </li>
+                  <li>
+                    <Button variant="link" onClick={() => router.push('/settings')}>Settings</Button>
+                  </li>
+                  {isAdmin && (
+                    <li>
+                      <Button variant="link" onClick={() => router.push('/dashboard')}>Dashboard</Button>
+                    </li>
+                  )}
+                </ul>
+              </CardContent>
+            </Card>
           </motion.div>
         </div>
       </div>

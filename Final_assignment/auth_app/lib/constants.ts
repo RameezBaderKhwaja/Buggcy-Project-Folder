@@ -1,10 +1,5 @@
-export const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-change-this-in-production"
-export const JWT_EXPIRES_IN = "7d"
-
-export const USER_ROLES = {
-  USER: "USER",
-  ADMIN: "ADMIN",
-} as const
+export const APP_NAME = "AuthApp"
+export const APP_DESCRIPTION = "A modern authentication app built with Next.js, Express, and Prisma."
 
 export const API_ROUTES = {
   AUTH: {
@@ -19,34 +14,28 @@ export const API_ROUTES = {
   },
   USERS: "/api/users",
   PROFILE: "/api/profile",
-  STATS: "/api/stats",
-  SECURITY: "/api/security",
+  CHANGE_PASSWORD: "/api/profile/change-password",
+  STATS: {
+    DASHBOARD: "/api/stats/dashboard",
+  },
 } as const
 
-export const CLOUDINARY_CONFIG = {
-  CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME || "",
-  API_KEY: process.env.CLOUDINARY_API_KEY || "",
-  API_SECRET: process.env.CLOUDINARY_API_SECRET || "",
-  UPLOAD_PRESET: "user_profiles",
+export const GENDER_OPTIONS = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "other", label: "Other" },
+  { value: "prefer-not-to-say", label: "Prefer not to say" },
+]
+
+export const ROLE_OPTIONS = [
+  { value: "USER", label: "User" },
+  { value: "ADMIN", label: "Admin" },
+]
+
+export const PASSWORD_STRENGTH = {
+  minLength: 8,
+  requireUppercase: true,
+  requireLowercase: true,
+  requireNumber: true,
+  requireSpecialChar: false,
 }
-
-export const DATABASE_URL = process.env.DATABASE_URL || "postgresql://user:password@localhost:5432/authapp"
-
-export const PAGINATION = {
-  DEFAULT_PAGE_SIZE: 10,
-  MAX_PAGE_SIZE: 100,
-} as const
-
-export const SECURITY = {
-  MAX_LOGIN_ATTEMPTS: 5,
-  LOCKOUT_DURATION: 15 * 60 * 1000, // 15 minutes
-  PASSWORD_MIN_LENGTH: 8,
-  SESSION_DURATION: 7 * 24 * 60 * 60 * 1000, // 7 days
-} as const
-
-export const VALIDATION = {
-  NAME_MIN_LENGTH: 2,
-  NAME_MAX_LENGTH: 50,
-  AGE_MIN: 18,
-  AGE_MAX: 120,
-} as const

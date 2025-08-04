@@ -1,11 +1,13 @@
 import { v2 as cloudinary } from "cloudinary"
-import { CLOUDINARY_CONFIG } from "./constants"
+import { CLOUDINARY_CONFIG } from "./config"
 
-cloudinary.config({
-  cloud_name: CLOUDINARY_CONFIG.CLOUD_NAME,
-  api_key: CLOUDINARY_CONFIG.API_KEY,
-  api_secret: CLOUDINARY_CONFIG.API_SECRET,
-})
+if (CLOUDINARY_CONFIG.CLOUD_NAME && CLOUDINARY_CONFIG.API_KEY && CLOUDINARY_CONFIG.API_SECRET) {
+  cloudinary.config({
+    cloud_name: CLOUDINARY_CONFIG.CLOUD_NAME,
+    api_key: CLOUDINARY_CONFIG.API_KEY,
+    api_secret: CLOUDINARY_CONFIG.API_SECRET,
+  })
+}
 
 export interface CloudinaryUploadResult {
   public_id: string

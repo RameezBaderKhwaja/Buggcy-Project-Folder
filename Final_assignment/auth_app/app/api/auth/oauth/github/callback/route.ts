@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { generateToken, createAuthCookie } from "@/lib/auth"
+import { GITHUB_CONFIG, BASE_URL } from "@/lib/config"
 
 interface GitHubUser {
   id: number
@@ -11,15 +12,16 @@ interface GitHubUser {
 }
 
 export const runtime = "nodejs"
-// TODO: Add CSRF state parameter handling for OAuth security
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const code = searchParams.get("code")
+    const state = searchParams.get("state")
+    const storedState = request.cookies.get("github_oauth_state")?.value
 
-    if (!code) {
-      return NextResponse.redirect(new URL("/login?error=no_code", request.url))
+    if (!code || !state || !storedState || state !== storedState) {
+      return NextResponse.redirect(new URL("/login?error=invalid_state", request.url))
     }
 
     // Exchange code for access token
@@ -30,8 +32,8 @@ export async function GET(request: NextRequest) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        client_id: process.env.GITHUB_CLIENT_ID,
-        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        client_id: GITHUB_CONFIG.CLIENT_ID,
+        client_secret: GITHUB_CONFIG.CLIENT_SECRET,
         code,
       }),
     })
@@ -109,7 +111,7 @@ if (!email) {
       httpOnly: true,
       sameSite: "lax",
       maxAge: cookie.maxAge,
-      secure: process.env.NODE_ENV === "production",
+      secure: BASE_URL?.startsWith("https://"),
     })
 
     return response

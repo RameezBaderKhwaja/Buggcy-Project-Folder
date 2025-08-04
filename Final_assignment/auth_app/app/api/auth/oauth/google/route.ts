@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { GOOGLE_CONFIG, BASE_URL } from "@/lib/config"
 
 export const runtime = "edge"
 
@@ -20,7 +21,7 @@ async function generatePKCE() {
 }
 
 export async function GET() {
-  if (!process.env.GOOGLE_CLIENT_ID || !process.env.NEXT_PUBLIC_API_URL) {
+  if (!GOOGLE_CONFIG.CLIENT_ID || !BASE_URL) {
     console.error("Missing Google OAuth env vars");
     return NextResponse.json({ success: false, error: "Server misconfiguration" }, { status: 500 });
   }
@@ -31,8 +32,8 @@ export async function GET() {
   const { code_verifier, code_challenge } = await generatePKCE();
 
   const googleAuthUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-  googleAuthUrl.searchParams.set("client_id", process.env.GOOGLE_CLIENT_ID);
-  googleAuthUrl.searchParams.set("redirect_uri", `${process.env.NEXT_PUBLIC_API_URL}/api/auth/oauth/google/callback`);
+  googleAuthUrl.searchParams.set("client_id", GOOGLE_CONFIG.CLIENT_ID);
+  googleAuthUrl.searchParams.set("redirect_uri", `${BASE_URL}/api/auth/oauth/google/callback`);
   googleAuthUrl.searchParams.set("response_type", "code");
   googleAuthUrl.searchParams.set("scope", "openid email profile");
   googleAuthUrl.searchParams.set("state", state);
@@ -44,13 +45,14 @@ export async function GET() {
 
   // Set state and code_verifier in cookies for later verification in callback
   const response = NextResponse.redirect(googleAuthUrl.toString());
+  const secure = BASE_URL.startsWith("https://");
   response.headers.append(
     "Set-Cookie",
-    `google_oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`
+    `google_oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600; ${secure ? "Secure;" : ""}`
   );
   response.headers.append(
     "Set-Cookie",
-    `google_pkce_verifier=${code_verifier}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`
+    `google_pkce_verifier=${code_verifier}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600; ${secure ? "Secure;" : ""}`
   );
   return response;
 }
