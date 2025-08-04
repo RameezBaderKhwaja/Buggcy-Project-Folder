@@ -11,7 +11,7 @@ import { logSecurityEvent } from "@/lib/security"
 const router = express.Router()
 
 // Apply security middlewares
-router.use(generalRateLimit, csrfProtection, sanitizeInputs)
+router.use(generalRateLimit, sanitizeInputs)
 
 // =================================
 // Login Route

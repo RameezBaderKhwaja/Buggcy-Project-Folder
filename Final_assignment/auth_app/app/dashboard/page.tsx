@@ -148,6 +148,9 @@ export default function DashboardPage() {
 
     const maleCount = stats.genderStats.find((s) => s.gender === "male")?.count || 0
     const femaleCount = stats.genderStats.find((s) => s.gender === "female")?.count || 0
+    const now = new Date()
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const thisMonthRegistrations = stats.monthlyRegistrations[currentMonth] || 0
 
     return {
       ageGroupData,
@@ -155,6 +158,7 @@ export default function DashboardPage() {
       monthlyData,
       maleCount,
       femaleCount,
+      thisMonthRegistrations,
     }
   }, [stats])
 
@@ -264,7 +268,7 @@ export default function DashboardPage() {
     )
   }
 
-  const { ageGroupData, genderData, monthlyData, maleCount, femaleCount } = chartData
+  const { ageGroupData, genderData, monthlyData, maleCount, femaleCount, thisMonthRegistrations } = chartData
 
   return (
     <ProtectedLayout>
@@ -341,12 +345,8 @@ export default function DashboardPage() {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold" aria-label={`This month registrations: ${Object.values(stats.monthlyRegistrations).slice(-1)[0] || 0}`}>
-                  {(() => {
-                    const currentMonth = new Date().toISOString().substring(0, 7)
-                    const currentMonthRegistrations = stats.monthlyRegistrations[currentMonth] || 0
-                    return currentMonthRegistrations.toLocaleString()
-                  })()}
+                <div className="text-2xl font-bold" aria-label={`This month registrations: ${thisMonthRegistrations}`}>
+                  {thisMonthRegistrations.toLocaleString()}
                 </div>
                 <p className="text-xs text-muted-foreground">New registrations</p>
               </CardContent>

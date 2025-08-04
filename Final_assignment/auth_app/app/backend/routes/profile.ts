@@ -14,7 +14,7 @@ export const runtime = "nodejs"
 const router = express.Router()
 
 // Apply security middlewares
-router.use(generalRateLimit, csrfProtection, sanitizeInputs)
+router.use(generalRateLimit, sanitizeInputs)
 
 // Configure multer for file uploads
 const upload = multer({
@@ -220,3 +220,4 @@ router.put(
 )
 
 export default router
+

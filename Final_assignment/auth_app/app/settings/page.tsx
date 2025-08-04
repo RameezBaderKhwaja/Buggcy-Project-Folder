@@ -164,7 +164,6 @@ export default function SettingsPage() {
   const handleLogout = React.useCallback(async () => {
     try {
       await logout()
-      toast.success("Logged out successfully")
       router.push("/login")
     } catch (err) {
       console.error("Logout failed:", err)
@@ -305,7 +304,7 @@ export default function SettingsPage() {
               <Button 
                 variant="outline" 
                 className="w-full justify-start h-auto p-4"
-                onClick={() => {/* TODO: Navigate to change password */}}
+                onClick={() => router.push('/settings/change-password')}
               >
                 <div className="text-left">
                   <h4 className="font-medium">Change Password</h4>

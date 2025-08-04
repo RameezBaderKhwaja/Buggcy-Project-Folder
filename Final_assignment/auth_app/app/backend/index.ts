@@ -2,6 +2,7 @@ import express from "express"
 import helmet from "helmet"
 import cors from "cors"
 import cookieParser from "cookie-parser"
+import session from "express-session"
 import passport from "passport"
 import "./passport"
 import authRoutes from "./routes/auth"
@@ -127,10 +128,22 @@ app.use(
 app.use(cookieParser())
 app.use(sanitizeInputs)
 
+// Express session configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}))
 // CSRF Protection for state-changing operations (disabled for better performance)
 // app.use(csrfProtection)
 
 app.use(passport.initialize())
+app.use(passport.session())
 
 // API Documentation endpoint - simple JSON documentation
 app.get("/api-docs", (req, res) => {
