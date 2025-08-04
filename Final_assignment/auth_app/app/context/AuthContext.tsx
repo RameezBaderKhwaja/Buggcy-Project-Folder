@@ -156,25 +156,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [apiFetch])
 
   const checkAuth = useCallback(async () => {
-    try {
-      const response = await apiFetch(API_ROUTES.AUTH.ME)
+  try {
+    const response = await apiFetch(API_ROUTES.AUTH.ME)
 
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && isMountedRef.current) {
-          setUser(data.data)
-        }
+    if (response.ok) {
+      const data = await response.json()
+      if (data.success && isMountedRef.current) {
+        setUser(data.data)
+      } else if (isMountedRef.current) {
+        setUser(null) // <-- add this
       }
-    } catch (error) {
-      if (error instanceof Error && error.name !== 'AbortError') {
-        console.error("Auth check failed:", error)
-      }
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false)
-      }
+    } else if (isMountedRef.current) {
+      setUser(null) // <-- add this for non-ok response
     }
-  }, [apiFetch])
+  } catch (error) {
+    if (error instanceof Error && error.name !== 'AbortError') {
+      console.error("Auth check failed:", error)
+    }
+    if (isMountedRef.current) {
+      setUser(null) // <-- even on error, set user to null
+    }
+  } finally {
+    if (isMountedRef.current) {
+      setLoading(false)
+    }
+  }
+}, [apiFetch])
 
   const login = useCallback(async (data: LoginInput): Promise<AuthResult> => {
     try {

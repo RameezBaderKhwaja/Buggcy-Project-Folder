@@ -3,7 +3,6 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from "react"
 import { useAuth } from "@/app/context/AuthContext"
 import ProtectedLayout from "@/components/ProtectedLayout"
-import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
