@@ -1,5 +1,4 @@
 import express from "express"
-import multer from "multer"
 import type { Request, Response, NextFunction } from "express"
 import { prisma } from "@/lib/prisma"
 import { uploadImage, deleteImage } from "@/lib/cloudinary"
@@ -8,13 +7,16 @@ import { expressWithAuth } from "@/lib/middleware"
 import { generalRateLimit, csrfProtection, sanitizeInputs } from "../middleware/security"
 import bcrypt from "bcryptjs"
 import { PasswordSecurity } from "@/lib/security"
+import multer from "multer"
+import streamifier from "streamifier"
+
 
 export const runtime = "nodejs"
 
 const router = express.Router()
 
 // Apply security middlewares
-router.use(generalRateLimit, sanitizeInputs)
+router.use(generalRateLimit)
 
 // Configure multer for file uploads
 const upload = multer({
@@ -40,10 +42,12 @@ function multerErrorHandler(err: unknown, req: Request, res: Response, next: Nex
 // Update user profile
 router.put(
   "/",
-  expressWithAuth,
-  upload.single("image"),
-  multerErrorHandler,
-  async (req: Request, res: Response) => {
+  expressWithAuth,         
+  upload.single("image"),   
+  multerErrorHandler,       
+  csrfProtection,           
+  sanitizeInputs,          
+  async (req: Request & { file?: Express.Multer.File }, res: Response) => {
     try {
       const user = req.user as { id: string } | undefined
       if (!user || !user.id) {
@@ -63,77 +67,103 @@ router.put(
 
       const oldUser = await prisma.user.findUnique({ where: { id: user.id }, select: { image: true } })
 
-      if (req.file) {
-        try {
-          const base64Data = `data:${req.file.mimetype};base64,${req.file.buffer.toString("base64")}`
-          const result = await uploadImage(base64Data, "profile-images")
-          updateData.image = result.secure_url
+      // Inside your route handler, after multerErrorHandler:
+if (req.file) {
+  // Narrow the type so TS knows `file` is defined
+  const file = req.file
 
-          // If upload is successful and there was an old image, delete it
-          if (oldUser?.image) {
-            const publicIdMatch = oldUser.image.match(/\/([^\/.]+)\.[a-zA-Z]+$/)
-            if (publicIdMatch && publicIdMatch[1]) {
-              // Fire-and-forget deletion
-              deleteImage(publicIdMatch[1]).catch(err => {
-                console.error(`Failed to delete old image [user:${user.id}, public_id:${publicIdMatch[1]}]:`, err)
-              })
-            }
+  // Streamify the buffer and upload via Cloudinary upload_stream
+  const streamUpload = (): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const cldUploadStream = (require('cloudinary').v2.uploader).upload_stream(
+        {
+          folder: 'profile-images',
+          transformation: {
+            width: 400,
+            height: 400,
+            crop: 'fill',
+            gravity: 'face',
+            quality: 'auto',
+            format: 'webp',
+          },
+        },
+        (error: any, result: any) => {
+          if (error) return reject(error)
+          resolve(result.secure_url)
+        }
+      )
+      streamifier.createReadStream(file.buffer).pipe(cldUploadStream)
+    })
+
+  try {
+    // Perform the upload and set the new image URL
+    updateData.image = await streamUpload()
+  } catch (uploadError) {
+    console.error(`Image upload error [user:${user.id}]:`, uploadError)
+    return res.status(400).json({ success: false, error: "Failed to upload image." })
+  }
+
+  // Delete old image if it exists
+        if (oldUser?.image) {
+          const publicId = oldUser.image.split('/').pop()?.split('.')[0]
+          if (publicId) {
+            deleteImage(publicId).catch(err =>
+              console.error(`Failed to delete old image [user:${user.id}, public_id:${publicId}]:`, err)
+            )
           }
-        } catch (uploadError) {
-          console.error(`Image upload error [user:${user.id}]:`, uploadError)
-          return res.status(400).json({ success: false, error: "Failed to upload image." })
         }
       }
 
-      // Do not allow unsetting fields, only updating
-      const finalUpdateData = Object.fromEntries(
-        Object.entries(updateData).filter(([, value]) => value !== undefined)
-      );
 
-      if (Object.keys(finalUpdateData).length === 0) {
-        return res.status(400).json({ success: false, error: "No update data provided." });
-      }
+            // Do not allow unsetting fields, only updating
+            const finalUpdateData = Object.fromEntries(
+              Object.entries(updateData).filter(([, value]) => value !== undefined)
+            );
 
-      const validatedData = profileUpdateSchema.parse(finalUpdateData)
+            if (Object.keys(finalUpdateData).length === 0) {
+              return res.status(400).json({ success: false, error: "No update data provided." });
+            }
 
-      const updatedUser = await prisma.user.update({
-        where: { id: user.id },
-        data: validatedData,
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          role: true,
-          image: true,
-          age: true,
-          gender: true,
-          provider: true,
-          providerId: true,
-          createdAt: true,
-          updatedAt: true,
-          failedLoginAttempts: true,
-          accountLockedUntil: true,
-          lastLogin: true,
-          lastFailedLogin: true,
-        },
-      })
-      res.json({ success: true, data: updatedUser, message: "Profile updated successfully" })
-    } catch (error: unknown) {
-      const userId = req.user?.id || "unknown"
-      console.error(`[PROFILE_UPDATE_ERROR] User: ${userId} - `, error)
+            const validatedData = profileUpdateSchema.parse(finalUpdateData)
 
-      if (error && typeof error === "object" && "name" in error && error.name === "ZodError") {
-        return res.status(400).json({
-          success: false,
-          error: "Validation failed",
-          details: (error as any).errors,
-        })
-      }
+            const updatedUser = await prisma.user.update({
+              where: { id: user.id },
+              data: validatedData,
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                role: true,
+                image: true,
+                age: true,
+                gender: true,
+                provider: true,
+                providerId: true,
+                createdAt: true,
+                updatedAt: true,
+                failedLoginAttempts: true,
+                accountLockedUntil: true,
+                lastLogin: true,
+                lastFailedLogin: true,
+              },
+            })
+            res.json({ success: true, data: updatedUser, message: "Profile updated successfully" })
+          } catch (error: unknown) {
+            const userId = req.user?.id || "unknown"
+            console.error(`[PROFILE_UPDATE_ERROR] User: ${userId} - `, error)
 
-      res.status(500).json({ success: false, error: "An internal server error occurred." })
-    }
-  }
-)
+            if (error && typeof error === "object" && "name" in error && error.name === "ZodError") {
+              return res.status(400).json({
+                success: false,
+                error: "Validation failed",
+                details: (error as any).errors,
+              })
+            }
+
+            res.status(500).json({ success: false, error: "An internal server error occurred." })
+          }
+        }
+      )
 
 // Change password endpoint
 router.put(

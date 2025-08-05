@@ -1,6 +1,3 @@
-// This file is for server-side configuration only.
-// Do not import this file in client-side code.
-
 if (typeof window !== "undefined") {
   throw new Error("Server-side config imported on the client.");
 }

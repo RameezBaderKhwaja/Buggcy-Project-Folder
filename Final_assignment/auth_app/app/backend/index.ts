@@ -1,3 +1,4 @@
+// app/backend/index.ts
 import express from "express"
 import helmet from "helmet"
 import cors from "cors"
@@ -128,6 +129,9 @@ app.use(
 app.use(cookieParser())
 app.use(sanitizeInputs)
 
+app.use(express.json({ /* … */ }))
+app.use(express.urlencoded({ /* … */ }))
+
 // Express session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
@@ -140,7 +144,7 @@ app.use(session({
   }
 }))
 // CSRF Protection for state-changing operations (disabled for better performance)
-// app.use(csrfProtection)
+app.use(csrfProtection)
 
 app.use(passport.initialize())
 app.use(passport.session())
@@ -246,7 +250,7 @@ app.use((req, res, next) => {
 // Enhanced global error handler with comprehensive logging
 app.use(
   (
-    err: Error & { status?: number; code?: string },
+    err: Error & {status?: number; code?: string },
     req: express.Request,
     res: express.Response,
     next: express.NextFunction,
@@ -310,4 +314,3 @@ app.use(
 )
 
 export { app }
-

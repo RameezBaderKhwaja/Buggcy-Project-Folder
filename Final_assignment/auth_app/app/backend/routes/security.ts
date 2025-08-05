@@ -4,7 +4,7 @@ import type { Request, Response, NextFunction } from "express"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/auth"
 import { logSecurityEvent, generateCSRFToken, SecurityLogger, PasswordSecurity } from "@/lib/security"
-import { strictRateLimit, sanitizeInputs } from "../middleware/security"
+import { strictRateLimit, csrfProtection, sanitizeInputs } from "../middleware/security"
 import { authenticateToken, requireAdmin } from "@/lib/middleware"
 import { z } from "zod"
 
@@ -22,7 +22,7 @@ function generateResetToken() {
 router.use(sanitizeInputs)
 
 // Get CSRF token (comment: store/verify in session/redis in production)
-router.get("/csrf-token", (req, res) => {
+router.get("/csrf-token", csrfProtection,(req, res) => {
   const token = generateCSRFToken()
   res.cookie("csrf-token", token, {
     httpOnly: true,
