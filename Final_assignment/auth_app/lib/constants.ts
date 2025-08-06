@@ -15,6 +15,7 @@ export const API_ROUTES = {
   USERS: "/api/users",
   PROFILE: "/api/auth/profile",
   CHANGE_PASSWORD: "/api/auth/profile/change-password",
+  SET_PASSWORD: "/api/auth/profile/set-password",
   STATS: {
     DASHBOARD: "/api/stats/dashboard",
   },

@@ -22,6 +22,11 @@ interface ChangePasswordResult {
   error?: string
 }
 
+interface SetPasswordResult {
+  success: boolean
+  error?: string
+}
+
 interface DashboardStatsResult {
   success: boolean
   data?: UserStats
@@ -38,6 +43,7 @@ interface AuthContextType {
   refreshUser: () => Promise<void>
   updateProfile: (data: FormData) => Promise<UpdateProfileResult>
   changePassword: (data: ChangePasswordInput) => Promise<ChangePasswordResult>
+  setPassword: (data: { newPassword: string; confirmPassword: string }) => Promise<SetPasswordResult>
   getDashboardStats: () => Promise<DashboardStatsResult>
 }
 
@@ -350,6 +356,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [apiFetch])
 
+  const setPassword = useCallback(async (data: { newPassword: string; confirmPassword: string }): Promise<SetPasswordResult> => {
+    try {
+      toast.loading("Setting password...", { id: "set-password" })
+      const response = await apiFetch(API_ROUTES.SET_PASSWORD, {
+        method: "POST",
+        headers: FETCH_OPTIONS.JSON_HEADERS,
+        body: JSON.stringify(data),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success("Password set successfully!", { id: "set-password" })
+        return { success: true }
+      }
+      toast.error(result.error || "Failed to set password", { id: "set-password" })
+      return { success: false, error: result.error || "Failed to set password" }
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        toast.dismiss("set-password")
+        return { success: false, error: "Request cancelled" }
+      }
+      console.error("Password setting failed:", error)
+      toast.error("Network or server error", { id: "set-password" })
+      return { success: false, error: "Network or server error" }
+    }
+  }, [apiFetch])
+
   const getDashboardStats = useCallback(async (): Promise<DashboardStatsResult> => {
     try {
       const response = await apiFetch(API_ROUTES.STATS.DASHBOARD)
@@ -383,8 +417,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshUser,
     updateProfile,
     changePassword,
+    setPassword,
     getDashboardStats,
-  }), [user, loading, csrfToken, login, register, logout, refreshUser, updateProfile, changePassword, getDashboardStats])
+  }), [user, loading, csrfToken, login, register, logout, refreshUser, updateProfile, changePassword, setPassword, getDashboardStats])
 
   return (
     <AuthContext.Provider value={contextValue}>
