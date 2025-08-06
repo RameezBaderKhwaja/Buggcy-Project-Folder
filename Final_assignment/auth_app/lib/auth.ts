@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import { User } from '@prisma/client'
+import { NextRequest } from 'next/server'
+import { prisma } from './prisma'
 import { JWTPayload } from './types'
 import { JWT_SECRET, JWT_EXPIRES_IN } from './config'
 
@@ -66,3 +68,45 @@ export function createAuthCookie(token: string) {
 
 // Export the TokenUser type for use in other files
 export type { TokenUser }
+
+// Verify authentication from request
+export async function verifyAuth(request: NextRequest) {
+  try {
+    const token = request.cookies.get('auth-token')?.value
+    
+    if (!token) {
+      return { success: false, error: 'No token provided' }
+    }
+
+    const payload = verifyToken(token)
+    if (!payload) {
+      return { success: false, error: 'Invalid token' }
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        image: true,
+        age: true,
+        gender: true,
+        provider: true,
+        providerId: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+    })
+
+    if (!user) {
+      return { success: false, error: 'User not found' }
+    }
+
+    return { success: true, user }
+  } catch (error) {
+    console.error('Auth verification error:', error)
+    return { success: false, error: 'Authentication failed' }
+  }
+}

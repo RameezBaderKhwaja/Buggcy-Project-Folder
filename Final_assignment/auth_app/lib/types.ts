@@ -44,6 +44,12 @@ export interface UserStats {
   genderStats: Array<{ gender: string; count: number }>
   ageGroups: Record<string, number>
   monthlyRegistrations: Record<string, number>
+  providerStats: Array<{ provider: string; count: number }>
+  recentRegistrations: number
+  usersWithPhotos: number
+  usersWithCompleteProfiles: number
+  profileCompletionPercentage: number
+  thisMonthRegistrations: number
 }
 
 export type RegistrationStats = {

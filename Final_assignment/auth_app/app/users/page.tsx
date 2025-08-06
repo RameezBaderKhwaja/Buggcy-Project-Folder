@@ -186,6 +186,8 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterProvider, setFilterProvider] = useState("all")
   const [isRetrying, setIsRetrying] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const usersPerPage = 6
 
   // Debounced search term for better performance
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
@@ -267,6 +269,17 @@ export default function UsersPage() {
 
     return filtered
   }, [users, debouncedSearchTerm, filterProvider])
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage)
+  const startIndex = (currentPage - 1) * usersPerPage
+  const endIndex = startIndex + usersPerPage
+  const currentUsers = filteredUsers.slice(startIndex, endIndex)
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedSearchTerm, filterProvider])
 
   // Initial fetch
   useEffect(() => {
@@ -451,7 +464,7 @@ export default function UsersPage() {
               
               {/* Users grid with staggered animation */}
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filteredUsers.map((user, index) => (
+                {currentUsers.map((user, index) => (
                   <motion.div
                     key={user.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -462,6 +475,50 @@ export default function UsersPage() {
                   </motion.div>
                 ))}
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center space-x-2 mt-8">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  
+                  <div className="flex items-center space-x-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className="w-10 h-10"
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+
+              {/* Page info */}
+              {totalPages > 1 && (
+                <div className="text-center text-sm text-gray-500 mt-4 font-medium">
+                  {filteredUsers.length} {filteredUsers.length === 1 ? 'Member' : 'Members'} Found • Page {currentPage} of {totalPages}
+                </div>
+              )}
             </div>
           )}
         </motion.div>

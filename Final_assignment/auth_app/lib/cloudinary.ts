@@ -55,6 +55,47 @@ export async function uploadImage(
   }
 }
 
+export async function uploadToCloudinary(
+  file: Buffer,
+  options?: {
+    folder?: string
+    transformation?: Record<string, unknown>
+  }
+): Promise<CloudinaryUploadResult> {
+  try {
+    // Convert Buffer to base64 data URL
+    const base64String = `data:image/jpeg;base64,${file.toString('base64')}`
+    
+    const result = await cloudinary.uploader.upload(base64String, {
+      folder: options?.folder || "user_profiles",
+      transformation: options?.transformation || {
+        width: 400,
+        height: 400,
+        crop: "fill",
+        gravity: "face",
+        quality: "auto",
+        format: "webp",
+      },
+    })
+
+    return {
+      public_id: result.public_id,
+      secure_url: result.secure_url,
+      width: result.width,
+      height: result.height,
+      format: result.format,
+      resource_type: result.resource_type,
+    }
+  } catch (error: unknown) {
+    console.error("Cloudinary upload error:", error)
+    throw new Error("Failed to upload image to Cloudinary")
+  }
+}
+
+export async function deleteFromCloudinary(publicId: string): Promise<void> {
+  return deleteImage(publicId)
+}
+
 export async function deleteImage(publicId: string): Promise<void> {
   try {
     await cloudinary.uploader.destroy(publicId)

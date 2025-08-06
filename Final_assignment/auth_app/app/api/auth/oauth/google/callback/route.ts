@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
     })
 
     if (!user) {
-      // Create new user
+      // Create new user with explicit USER role
       user = await prisma.user.create({
         data: {
           email: googleUser.email,
@@ -107,8 +107,23 @@ export async function GET(request: NextRequest) {
           image: googleUser.picture,
           provider: "google",
           providerId: googleUser.id,
+          role: "USER", // Explicitly set to USER role
         },
       })
+    } else {
+      // Update existing user to ensure they have USER role (not ADMIN)
+      if (user.role === "ADMIN") {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { 
+            role: "USER",
+            name: googleUser.name,
+            image: googleUser.picture,
+            provider: "google",
+            providerId: googleUser.id,
+          }
+        })
+      }
     }
 
     // Generate token with minimal payload

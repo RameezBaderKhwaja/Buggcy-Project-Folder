@@ -31,6 +31,7 @@ interface DashboardStatsResult {
 interface AuthContextType {
   user: AuthUser | null
   loading: boolean
+  csrfToken: string | null
   login: (data: LoginInput) => Promise<AuthResult>
   register: (data: RegisterInput) => Promise<AuthResult>
   logout: () => Promise<void>
@@ -143,25 +144,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     throw new Error('Max retries exceeded')
   }, [csrfToken])
 
-  // Initialize authentication and CSRF token
-  const initializeAuth = useCallback(async () => {
-    try {
-      // Fetch CSRF token first
-      await fetchCsrfToken()
-      // Then check authentication
-      await checkAuth()
-    } catch (error) {
-      console.error("Auth initialization failed:", error)
-      if (isMountedRef.current) {
-        setLoading(false)
-      }
-    }
-  }, [apiFetch])
-
   // Fetch CSRF token for secure requests
   const fetchCsrfToken = useCallback(async () => {
     try {
-      const response = await apiFetch('/api/security/csrf-token')
+      const response = await fetch('/api/security/csrf-token', {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
       if (response.ok) {
         const data = await response.json()
         if (data.success && isMountedRef.current) {
@@ -172,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // CSRF token is optional, don't fail initialization
       console.warn("CSRF token fetch failed:", error)
     }
-  }, [apiFetch])
+  }, [])
 
   const checkAuth = useCallback(async () => {
   try {
@@ -201,6 +192,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 }, [apiFetch])
+
+  // Initialize authentication and CSRF token
+  const initializeAuth = useCallback(async () => {
+    try {
+      // Fetch CSRF token first
+      await fetchCsrfToken()
+      // Then check authentication
+      await checkAuth()
+    } catch (error) {
+      console.error("Auth initialization failed:", error)
+      if (isMountedRef.current) {
+        setLoading(false)
+      }
+    }
+  }, [fetchCsrfToken, checkAuth])
 
   const login = useCallback(async (data: LoginInput): Promise<AuthResult> => {
     try {
@@ -370,6 +376,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const contextValue = useMemo(() => ({
     user,
     loading,
+    csrfToken,
     login,
     register,
     logout,
@@ -377,7 +384,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateProfile,
     changePassword,
     getDashboardStats,
-  }), [user, loading, login, register, logout, refreshUser, updateProfile, changePassword, getDashboardStats])
+  }), [user, loading, csrfToken, login, register, logout, refreshUser, updateProfile, changePassword, getDashboardStats])
 
   return (
     <AuthContext.Provider value={contextValue}>

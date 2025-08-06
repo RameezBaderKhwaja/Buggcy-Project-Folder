@@ -14,7 +14,7 @@ interface FormErrors {
 }
 
 export default function ProfilePage() {
-  const { user, updateProfile } = useAuth()
+  const { user, updateProfile, csrfToken } = useAuth()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState('')
@@ -167,6 +167,12 @@ export default function ProfilePage() {
       
       if (imageFile) {
         formDataToSend.append('image', imageFile)
+      }
+
+      // Use CSRF token from context
+      if (!csrfToken) {
+        setError('CSRF token not available. Please refresh the page and try again.')
+        return
       }
 
       const result = await updateProfile(formDataToSend)

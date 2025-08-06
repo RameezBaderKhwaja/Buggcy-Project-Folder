@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import type { Request, Response } from "express"
-import { app } from "@/app/backend"
+import { app } from "@/app/backend/index"
 
 type MockResponse = {
   statusCode: number

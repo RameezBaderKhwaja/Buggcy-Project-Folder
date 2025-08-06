@@ -88,7 +88,7 @@ if (!email) {
     })
 
     if (!user) {
-      // Create new user
+      // Create new user with explicit USER role
       user = await prisma.user.create({
         data: {
           email,
@@ -96,8 +96,23 @@ if (!email) {
           image: githubUser.avatar_url,
           provider: "github",
           providerId: githubUser.id.toString(),
+          role: "USER", // Explicitly set to USER role
         },
       })
+    } else {
+      // Update existing user to ensure they have USER role (not ADMIN)
+      if (user.role === "ADMIN") {
+        user = await prisma.user.update({
+          where: { id: user.id },
+          data: { 
+            role: "USER",
+            name: githubUser.name || githubUser.login,
+            image: githubUser.avatar_url,
+            provider: "github",
+            providerId: githubUser.id.toString(),
+          }
+        })
+      }
     }
 
     // Generate token with minimal payload

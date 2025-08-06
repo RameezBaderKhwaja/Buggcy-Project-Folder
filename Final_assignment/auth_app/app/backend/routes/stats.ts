@@ -64,37 +64,31 @@ router.get(
         }
       })
 
-      // Get monthly registrations with improved logic
+      // Get monthly registrations with correct logic
       const last12Months = getLast12Months()
-      const startDate = new Date(new Date().getFullYear(), new Date().getMonth() - 11, 1)
-      
-      const monthlyRegistrationsData = await prisma.user.findMany({
-        select: {
-          createdAt: true,
-        },
-        where: {
-          createdAt: {
-            gte: startDate,
-          },
-        },
-        orderBy: {
-          createdAt: 'asc'
-        }
-      })
+      const monthlyRegistrations: Record<string, number> = {}
       
       // Initialize all months with 0
-      const monthlyRegistrations: Record<string, number> = {}
       last12Months.forEach((month) => {
         monthlyRegistrations[month] = 0
       })
       
-      // Count registrations per month
-      monthlyRegistrationsData.forEach((user) => {
-        const month = user.createdAt.toISOString().substring(0, 7)
-        if (monthlyRegistrations.hasOwnProperty(month)) {
-          monthlyRegistrations[month]++
-        }
-      })
+      // Count registrations per month using proper date ranges
+      for (const monthKey of last12Months) {
+        const [year, month] = monthKey.split('-').map(Number)
+        
+        const count = await prisma.user.count({
+          where: {
+            createdAt: {
+              gte: new Date(year, month - 1, 1),
+              lt: new Date(year, month, 1)
+            }
+          }
+        })
+        
+        monthlyRegistrations[monthKey] = count
+        console.log(`Express Route - Month ${monthKey}: Found ${count} users`)
+      }
       
       // Get current month registrations for "This Month" card
       const currentMonth = new Date().toISOString().substring(0, 7)

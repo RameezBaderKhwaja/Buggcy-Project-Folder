@@ -125,33 +125,47 @@ export default function DashboardPage() {
   const chartData = useMemo(() => {
     if (!stats) return null
 
+    console.log('Dashboard Stats received:', stats) // Debug log
+
     const locale = getUserLocale()
     
-    const ageGroupData: ChartDataPoint[] = Object.entries(stats.ageGroups).map(([group, count]) => ({
+    const ageGroupData: ChartDataPoint[] = Object.entries(stats.ageGroups || {}).map(([group, count]) => ({
       name: group,
       value: count,
-    }))
+    })).map(item => ({ ...item, value: item.value || 0 })) // Ensure all groups are displayed
 
-    const genderData: ChartDataPoint[] = stats.genderStats.map((stat) => ({
+    const genderData: ChartDataPoint[] = (stats.genderStats || []).map((stat) => ({
       name: stat.gender.charAt(0).toUpperCase() + stat.gender.slice(1),
       value: stat.count,
-    }))
+    })).filter(item => item.value > 0) // Only show genders with data
 
-    const monthlyData: MonthlyDataPoint[] = Object.entries(stats.monthlyRegistrations)
+    console.log('Monthly Registrations:', stats.monthlyRegistrations);
+
+    // Correct data mapping logic
+    const monthlyData: MonthlyDataPoint[] = Object.entries(stats.monthlyRegistrations || {})
       .map(([month, count]) => ({
         month: new Intl.DateTimeFormat(locale, { 
           month: "short", 
           year: "2-digit" 
         }).format(new Date(month + "-01")),
-        registrations: count,
+        registrations: count || 0, // Ensure zero for months with no data
       }))
-      .slice(-12) // Last 12 months
+      .slice(-12); // Last 12 months
 
-    const maleCount = stats.genderStats.find((s) => s.gender === "male")?.count || 0
-    const femaleCount = stats.genderStats.find((s) => s.gender === "female")?.count || 0
+    // Verify data consistency
+    console.log('Corrected Monthly Data for Graph:', monthlyData);
+
+    // Remove artificial highlighting logic
+
+    console.log('Processed Monthly Data:', monthlyData);
+
+    const maleCount = stats.genderStats?.find((s) => s.gender === "male")?.count || 0
+    const femaleCount = stats.genderStats?.find((s) => s.gender === "female")?.count || 0
     const now = new Date()
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-    const thisMonthRegistrations = stats.monthlyRegistrations[currentMonth] || 0
+    const thisMonthRegistrations = stats.monthlyRegistrations?.[currentMonth] || 0
+
+    console.log('Chart data processed:', { ageGroupData, genderData, monthlyData }) // Debug log
 
     return {
       ageGroupData,
@@ -162,6 +176,11 @@ export default function DashboardPage() {
       thisMonthRegistrations,
     }
   }, [stats])
+
+  // Ensure charts handle empty data gracefully
+  const hasAgeData = chartData?.ageGroupData && chartData.ageGroupData.length > 0;
+  const hasGenderData = chartData?.genderData && chartData.genderData.length > 0;
+  const hasMonthlyData = chartData?.monthlyData && chartData.monthlyData.length > 0;
 
   // Loading skeleton component
   const LoadingSkeleton = () => (
@@ -312,7 +331,7 @@ export default function DashboardPage() {
 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font--medium">Male Users</CardTitle>
+                <CardTitle className="text-sm font-medium">Male Users</CardTitle>
                 <UserCheck className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
@@ -356,62 +375,74 @@ export default function DashboardPage() {
         </motion.div>
 
         {/* Charts Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
           {/* Age Groups Chart */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <Card className="col-span-full lg:col-span-4 min-h-[500px] flex flex-col distribution-card">
+            <Card className="w-full flex flex-col distribution-card">
               <CardHeader>
                 <CardTitle>Age Distribution</CardTitle>
                 <CardDescription>User distribution across age groups</CardDescription>
               </CardHeader>
               <CardContent className="p-4 sm:p-6 flex-grow">
-                <figure aria-label="Age distribution bar chart" className="h-full w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={ageGroupData} accessibilityLayer>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="value" fill={CHART_CONFIG.BAR_COLOR} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </figure>
+                {hasAgeData ? (
+                  <figure aria-label="Age distribution bar chart" className="h-full w-full">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={ageGroupData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} />
+                        <YAxis allowDecimals={false} domain={[0, 'dataMax + 3']} />
+                        <Tooltip />
+                        <Bar dataKey="value" fill={CHART_CONFIG.BAR_COLOR} barSize={20} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </figure>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-gray-500">No age data available</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
 
           {/* Gender Distribution Chart */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-            <Card className="col-span-full lg:col-span-3 min-h-[500px] flex flex-col distribution-card">
+            <Card className="col-span-full lg:col-span-2 min-h-[500px] flex flex-col distribution-card">
               <CardHeader>
                 <CardTitle>Gender Distribution</CardTitle>
                 <CardDescription>User distribution by gender</CardDescription>
               </CardHeader>
               <CardContent className="p-4 sm:p-6 flex-grow">
-                <figure aria-label="Gender distribution pie chart" className="h-full w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart accessibilityLayer>
-                      <Pie
-                        data={genderData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                        outerRadius={CHART_CONFIG.OUTER_RADIUS}
-                        fill={CHART_CONFIG.BAR_COLOR}
-                        dataKey="value"
-                      >
-                        {genderData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={CHART_CONFIG.COLORS[index % CHART_CONFIG.COLORS.length]} 
-                          />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </figure>
+                {hasGenderData ? (
+                  <figure aria-label="Gender distribution pie chart" className="h-full w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <Pie
+                          data={genderData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                          outerRadius={CHART_CONFIG.OUTER_RADIUS + 40} // Increase size
+                          fill={CHART_CONFIG.BAR_COLOR}
+                          dataKey="value"
+                        >
+                          {genderData.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={CHART_CONFIG.COLORS[index % CHART_CONFIG.COLORS.length]} 
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip wrapperStyle={{ backgroundColor: '#fff', border: '1px solid #ccc', borderRadius: '5px' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </figure>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-gray-500">No gender data available</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -425,22 +456,15 @@ export default function DashboardPage() {
               <CardDescription>Monthly user registrations over time</CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 flex-grow">
-              <figure aria-label="Monthly registration trend line chart" className="h-full w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyData} accessibilityLayer>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="registrations" 
-                      stroke={CHART_CONFIG.LINE_COLOR} 
-                      strokeWidth={CHART_CONFIG.STROKE_WIDTH} 
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </figure>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis allowDecimals={false} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="registrations" stroke="#8884d8" />
+                </LineChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </motion.div>

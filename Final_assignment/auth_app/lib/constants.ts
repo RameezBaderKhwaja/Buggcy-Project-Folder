@@ -13,8 +13,8 @@ export const API_ROUTES = {
     },
   },
   USERS: "/api/users",
-  PROFILE: "/api/profile",
-  CHANGE_PASSWORD: "/api/profile/change-password",
+  PROFILE: "/api/auth/profile",
+  CHANGE_PASSWORD: "/api/auth/profile/change-password",
   STATS: {
     DASHBOARD: "/api/stats/dashboard",
   },

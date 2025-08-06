@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import type { SecurityEvent } from "@/lib/types"
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+const API_URL = "http://localhost:3000"
 
 interface SecurityStats {
   totalEvents: number
@@ -20,7 +20,7 @@ export function useSecurity() {
   const fetchSecurityStats = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${API_URL}/api/security/stats`, {
+      const response = await fetch("/api/security/stats", {
         credentials: "include",
       })
 
