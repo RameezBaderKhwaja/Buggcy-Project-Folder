@@ -1,8 +1,5 @@
 import { z } from "zod"
 
-// =================================
-// Auth Schemas
-// =================================
 
 export const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -18,6 +15,8 @@ export const registerSchema = z.object({
     .regex(/[a-z]/, "Password must contain at least one lowercase letter")
     .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
     .regex(/[0-9]/, "Password must contain at least one number"),
+  age: z.number().int().min(13).max(120),
+  gender: z.enum(["male", "female", "other", "prefer-not-to-say"]),
 })
 
 export const changePasswordSchema = z.object({
@@ -47,9 +46,6 @@ export const setPasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
-// =================================
-// Profile & User Schemas
-// =================================
 
 export const profileUpdateSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters").optional(),

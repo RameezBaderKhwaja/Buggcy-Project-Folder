@@ -23,11 +23,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/home", request.url))
   }
 
-  // If user is authenticated and trying to access auth routes, redirect to dashboard
+
   if (isAuthRoute && token) {
-    // Instead of verifying the token, we just check if it exists
-    // The actual token verification will happen in the API routes
-    // For now, we'll redirect to a default dashboard page
+   
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 

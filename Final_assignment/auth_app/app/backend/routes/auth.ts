@@ -13,9 +13,7 @@ const router = express.Router()
 // Apply security middlewares
 router.use(generalRateLimit, sanitizeInputs)
 
-// =================================
 // Login Route
-// =================================
 router.post("/login", (req, res, next) => {
   passport.authenticate("local", (err: Error, user: Express.User, info: { message: string }) => {
     if (err) return next(err)
@@ -29,9 +27,9 @@ router.post("/login", (req, res, next) => {
   })(req, res, next)
 })
 
-// =================================
+
 // Logout Route
-// =================================
+
 router.post("/logout", expressWithAuth, (req, res) => {
   req.logout((err) => {
     if (err) {
@@ -50,13 +48,12 @@ router.post("/logout", expressWithAuth, (req, res) => {
   })
 })
 
-// =================================
 // Register Route
-// =================================
+
 router.post("/register", async (req, res) => {
   try {
     const validatedData = registerSchema.parse(req.body)
-    const { email, password, name } = validatedData
+    const { email, password, name, age, gender } = validatedData
 
     const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser) {
@@ -69,6 +66,9 @@ router.post("/register", async (req, res) => {
         email,
         password: hashedPassword,
         name,
+        age,
+        gender,
+        provider: "email",
       },
       select: {
         id: true,
@@ -89,7 +89,7 @@ router.post("/register", async (req, res) => {
       },
     })
 
-    req.logIn(newUser, (err) => {
+    req.logIn(newUser as any, (err) => {
       if (err) {
         console.error("Login after register error:", err)
         // Even if login fails, registration was successful
@@ -111,16 +111,13 @@ router.post("/register", async (req, res) => {
   }
 })
 
-// =================================
 // Get Current User (/me) Route
-// =================================
+
 router.get("/me", expressWithAuth, (req, res) => {
   res.json({ success: true, data: req.user })
 })
 
-// =================================
 // OAuth Routes
-// =================================
 
 // Google
 router.get("/oauth/google", passport.authenticate("google", { scope: ["profile", "email"] }))

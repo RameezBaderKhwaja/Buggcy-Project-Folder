@@ -18,14 +18,14 @@ export default function HomePage() {
     const isAdmin = user.role === 'ADMIN'
     
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
         <div className="max-w-6xl mx-auto">
           {/* Welcome Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-center mb-8"
+            className="text-center mb-4"
           >
             <div className="flex justify-center mb-4">
               <div className="p-4 bg-white rounded-full shadow-lg">
@@ -57,7 +57,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4"
           >
             {/* Profile Card */}
             <Card className="hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer" onClick={() => router.push('/profile')}>
@@ -223,7 +223,7 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.6 }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4"
           >
             <Card>
               <CardHeader>

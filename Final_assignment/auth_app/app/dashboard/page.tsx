@@ -414,8 +414,8 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent className="p-4 sm:p-6 flex-grow">
                 {hasGenderData ? (
-                  <figure aria-label="Gender distribution pie chart" className="h-full w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                                    <figure aria-label="Gender distribution pie chart" className="h-full w-full">
+                      <ResponsiveContainer width="100%" height={300}>
                       <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                         <Pie
                           data={genderData}
@@ -456,7 +456,7 @@ export default function DashboardPage() {
               <CardDescription>Monthly user registrations over time</CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 flex-grow">
-              <ResponsiveContainer width="100%" height={300}>
+                             <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={monthlyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />

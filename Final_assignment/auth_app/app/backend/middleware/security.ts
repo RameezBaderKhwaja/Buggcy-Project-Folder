@@ -121,14 +121,13 @@ export const securityHeaders = (req: Request, res: Response, next: NextFunction)
   res.setHeader('X-Frame-Options', 'DENY')
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()')
-  // Remove deprecated X-XSS-Protection
   // Add Content-Security-Policy (CSP)
   res.setHeader('Content-Security-Policy', "default-src 'self'; img-src *; script-src 'self'; style-src 'self';")
   next()
 }
 
 // CSRF protection middleware (basic implementation)
-// NOTE: For production, use express-session/cookie-session and a robust CSRF library like csurf or double-submit cookie pattern.
+
 export const csrfProtection = (req: Request & { session?: { csrfToken?: string } }, res: Response, next: NextFunction) => {
   if (["POST", "PUT", "DELETE", "PATCH"].includes(req.method)) {
     const token = req.headers["x-csrf-token"] || req.body._csrf

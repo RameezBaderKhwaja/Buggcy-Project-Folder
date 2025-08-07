@@ -16,8 +16,6 @@ export async function POST(request: NextRequest) {
     const { name, email, password, age, gender } = validatedData
     const normalizedEmail = email.toLowerCase()
 
-    // DUPLICATE CODE: User existence check pattern
-    // This user lookup logic is repeated in multiple auth routes
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     })
@@ -26,8 +24,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "User already exists with this email" }, { status: 400 })
     }
 
-    // DUPLICATE CODE: Password hashing pattern
-    // This password hashing logic is repeated in multiple auth routes
     const hashedPassword = await hashPassword(password)
 
     // Create new user in database
@@ -42,13 +38,9 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // DUPLICATE CODE: Token generation pattern
-    // This token generation logic is repeated in multiple auth routes
     const token = generateToken({ id: user.id, email: user.email, role: user.role })
     const cookie = createAuthCookie(token)
 
-    // DUPLICATE CODE: Response formatting pattern
-    // This response structure is repeated across multiple API routes
     const response = NextResponse.json(
       {
         success: true,
@@ -77,8 +69,6 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error("Registration error:", error)
 
-    // DUPLICATE CODE: Error handling pattern for validation errors
-    // This error handling pattern is repeated in multiple routes
     if (error instanceof ZodError) {
       return NextResponse.json({ success: false, error: "Validation failed", details: error.issues }, { status: 400 })
     }

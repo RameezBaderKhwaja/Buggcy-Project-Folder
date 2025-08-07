@@ -135,11 +135,7 @@ export default function SettingsPage() {
         }
       }
       
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/user/settings')
-      // const data = await response.json()
-      // setSettings(data)
-      // setInitialSettings(data)
+
     } catch (error) {
       console.error('Failed to load settings:', error)
       toast.error('Failed to load settings')
@@ -181,15 +177,7 @@ export default function SettingsPage() {
     try {
       // Save to localStorage
       localStorage.setItem('userSettings', JSON.stringify(settings))
-      
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/user/settings', {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(settings)
-      // })
-      // 
-      // if (!response.ok) throw new Error('Failed to save settings')
+
       
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -218,7 +206,7 @@ export default function SettingsPage() {
   }
   return (
     <ProtectedLayout>
-      <div className="p-8">
+      <div className="p-4">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">
@@ -235,7 +223,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="max-w-4xl space-y-6">
+        <div className="max-w-4xl space-y-4">
           {/* Notifications */}
           <Card>
             <CardHeader>
@@ -248,18 +236,18 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label 
-                    htmlFor="email-notifications"
-                    className="text-base font-medium"
-                  >
-                    Email Notifications
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive email updates about your account activity
-                  </p>
-                </div>
+                             <div className="flex items-center justify-between">
+                 <div className="space-y-0.5">
+                   <Label 
+                     htmlFor="email-notifications"
+                     className="text-sm font-medium"
+                   >
+                     Email Notifications
+                   </Label>
+                   <p className="text-xs text-muted-foreground">
+                     Receive email updates about your account activity
+                   </p>
+                 </div>
                 <Switch
                   id="email-notifications"
                   checked={settings.emailNotifications}
@@ -269,17 +257,17 @@ export default function SettingsPage() {
               </div>
               
               <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label 
-                    htmlFor="push-notifications"
-                    className="text-base font-medium"
-                  >
-                    Push Notifications
-                  </Label>
-                  <p className="text-sm text-muted-foreground">
-                    Receive push notifications in your browser
-                  </p>
-                </div>
+                                 <div className="space-y-0.5">
+                   <Label 
+                     htmlFor="push-notifications"
+                     className="text-sm font-medium"
+                   >
+                     Push Notifications
+                   </Label>
+                   <p className="text-xs text-muted-foreground">
+                     Receive push notifications in your browser
+                   </p>
+                 </div>
                 <Switch
                   id="push-notifications"
                   checked={settings.pushNotifications}

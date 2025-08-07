@@ -5,9 +5,7 @@ export async function GET(request: NextRequest) {
   try {
     // Generate a new CSRF token for security protection
     const token = CSRFProtection.generateToken()
-    
-    // DUPLICATE CODE: Response formatting pattern
-    // This response structure is repeated across multiple API routes
+
     const response = NextResponse.json({
       success: true,
       token

@@ -28,7 +28,7 @@ export class CSRFProtection {
       const token = formData.get('csrfToken')
       if (typeof token === 'string') return token
     } catch {
-      // Ignore form data parsing errors
+      
     }
 
     // Check JSON body
@@ -38,7 +38,7 @@ export class CSRFProtection {
         return body.csrfToken as string
       }
     } catch {
-      // Ignore JSON parsing errors
+      
     }
 
     return null

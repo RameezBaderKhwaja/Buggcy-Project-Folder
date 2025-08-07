@@ -272,7 +272,7 @@ export default function UserDetailPage() {
     )
   }
 
-  // User not found (shouldn't happen with proper error handling, but kept for safety)
+  // User not found 
   if (!user) {
     return (
       <ProtectedLayout>

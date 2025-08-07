@@ -37,7 +37,7 @@ async function handler(req: NextRequest) {
       Array.from(req.headers.entries()).map(([k, v]) => [k.toLowerCase(), v])
     );
 
-    // Extract params from pathname if needed (simple example, can be improved)
+    // Extract params from pathname if needed 
     const pathname = req.nextUrl ? req.nextUrl.pathname : req.url.replace(new URL(req.url).origin, "");
     // Example: /api/user/123 -> { id: "123" } for /api/user/[id]
     let params: Record<string, string> = {};
@@ -88,7 +88,7 @@ async function handler(req: NextRequest) {
         return this;
       },
       setHeader(name, value) {
-        // Support multi-value headers (e.g., Set-Cookie)
+        // Support multi-value headers 
         if (name.toLowerCase() === "set-cookie") {
           if (!Array.isArray(this.headers["Set-Cookie"])) this.headers["Set-Cookie"] = [];
           if (Array.isArray(value)) {

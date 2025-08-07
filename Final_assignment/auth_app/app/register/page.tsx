@@ -20,17 +20,8 @@ const ROUTES = {
   OAUTH: (provider: string) => `/api/auth/oauth/${provider}`,
 } as const
 
-// Form validation schema
-const registerSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  age: z.string().refine((val) => {
-    const num = Number(val)
-    return !isNaN(num) && num >= 18 && num <= 120
-  }, "Age must be between 18-120"),
-  gender: z.enum(["male", "female", "other", "prefer-not-to-say"])
-})
+// Import the registerSchema from validators
+import { registerSchema } from "@/lib/validators"
 
 // Google Icon Component
 const GoogleIcon = () => (
@@ -107,7 +98,12 @@ export default function RegisterPage() {
   // Form validation
   const validateForm = useCallback((): boolean => {
     try {
-      registerSchema.parse(formData)
+      // Convert age to number for validation
+      const dataToValidate = {
+        ...formData,
+        age: Number.parseInt(formData.age),
+      }
+      registerSchema.parse(dataToValidate)
       setFormErrors({})
       return true
     } catch (error) {
@@ -223,7 +219,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-2">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

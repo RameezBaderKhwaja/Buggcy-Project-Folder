@@ -6,7 +6,7 @@ import { strictRateLimit } from "../middleware/security"
 
 const router = express.Router()
 
-// Helper: get last 12 months as YYYY-MM
+// get last 12 months as YYYY-MM
 function getLast12Months(): string[] {
   const months: string[] = []
   const now = new Date()

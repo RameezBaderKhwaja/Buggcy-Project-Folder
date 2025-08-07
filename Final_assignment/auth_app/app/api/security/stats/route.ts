@@ -4,8 +4,7 @@ import { verifyAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    // DUPLICATE CODE: Authentication and admin role verification pattern
-    // This pattern is repeated in multiple API routes - consider creating a middleware
+
     const authResult = await verifyAuth(request)
     if (!authResult.success) {
       return NextResponse.json(
@@ -24,8 +23,6 @@ export async function GET(request: NextRequest) {
     // Fetch total security events count from database
     const totalEvents = await prisma.securityLog.count()
 
-    // DUPLICATE CODE: Event type aggregation pattern
-    // Similar to gender/provider stats aggregation in other routes
     const eventTypes = await prisma.securityLog.groupBy({
       by: ['event'],
       _count: {
@@ -71,8 +68,6 @@ export async function GET(request: NextRequest) {
       suspiciousActivity
     }
 
-    // DUPLICATE CODE: Response formatting pattern
-    // This response structure is repeated across multiple API routes
     return NextResponse.json({
       success: true,
       data: stats

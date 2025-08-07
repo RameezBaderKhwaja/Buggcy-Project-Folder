@@ -3,8 +3,6 @@ import { GOOGLE_CONFIG, BASE_URL } from "@/lib/config"
 
 export const runtime = "edge"
 
-// DUPLICATE CODE: Base64 URL encoding utility function
-// This encoding logic could be extracted to a shared utility file
 function base64URLEncode(str: ArrayBuffer) {
   return Buffer.from(str)
     .toString("base64")
@@ -13,8 +11,6 @@ function base64URLEncode(str: ArrayBuffer) {
     .replace(/=+$/, "");
 }
 
-// DUPLICATE CODE: PKCE generation pattern
-// This PKCE generation logic could be extracted to a shared utility function
 async function generatePKCE() {
   const code_verifier = crypto.randomUUID().replace(/-/g, "");
   const encoder = new TextEncoder();
@@ -25,22 +21,17 @@ async function generatePKCE() {
 }
 
 export async function GET() {
-  // DUPLICATE CODE: Environment variable validation pattern
-  // This validation pattern is repeated in multiple OAuth routes
+
   if (!GOOGLE_CONFIG.CLIENT_ID || !BASE_URL) {
     console.error("Missing Google OAuth env vars");
     return NextResponse.json({ success: false, error: "Server misconfiguration" }, { status: 500 });
   }
 
-  // DUPLICATE CODE: OAuth state generation pattern
-  // This state generation logic is repeated in multiple OAuth routes
   const state = crypto.randomUUID();
-  // DUPLICATE CODE: PKCE generation pattern
+
   // This PKCE generation logic is repeated in multiple OAuth routes
   const { code_verifier, code_challenge } = await generatePKCE();
 
-  // DUPLICATE CODE: OAuth URL construction pattern
-  // This URL construction logic is repeated in multiple OAuth routes
   const googleAuthUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   googleAuthUrl.searchParams.set("client_id", GOOGLE_CONFIG.CLIENT_ID);
   googleAuthUrl.searchParams.set("redirect_uri", `${BASE_URL}/api/auth/oauth/google/callback`);
@@ -53,8 +44,6 @@ export async function GET() {
 
   console.debug("Google OAuth URL:", googleAuthUrl.toString());
 
-  // DUPLICATE CODE: OAuth state cookie setting pattern
-  // This cookie setting logic is repeated in multiple OAuth routes
   const response = NextResponse.redirect(googleAuthUrl.toString());
   const secure = BASE_URL.startsWith("https://");
   response.headers.append(

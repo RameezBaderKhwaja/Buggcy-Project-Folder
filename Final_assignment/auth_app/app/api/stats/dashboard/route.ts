@@ -5,8 +5,7 @@ import type { UserStats } from '@/lib/types'
 
 export async function GET(request: NextRequest) {
   try {
-    // DUPLICATE CODE: Authentication and admin role verification pattern
-    // This pattern is repeated in multiple API routes - consider creating a middleware
+
     const authResult = await verifyAuth(request)
     if (!authResult.success) {
       return NextResponse.json(
@@ -15,7 +14,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    if (authResult.user.role !== 'ADMIN') {
+    if (!authResult.user || authResult.user.role !== 'ADMIN') {
       return NextResponse.json(
         { success: false, error: 'Admin access required' },
         { status: 403 }
@@ -31,8 +30,6 @@ export async function GET(request: NextRequest) {
     // Fetch total user count from database
     const totalUsers = await prisma.user.count()
 
-    // DUPLICATE CODE: Gender statistics aggregation pattern
-    // Similar aggregation patterns exist in other stats routes
     const genderStats = await prisma.user.groupBy({
       by: ['gender'],
       _count: {
@@ -57,8 +54,6 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // DUPLICATE CODE: Age group calculation logic
-    // This age grouping logic could be extracted to a utility function
     const ageGroups: Record<string, number> = {
       '18-25': 0,
       '26-35': 0,
@@ -78,8 +73,7 @@ export async function GET(request: NextRequest) {
       else if (age > 65) ageGroups['65+']++
     })
 
-    // DUPLICATE CODE: Monthly registration calculation pattern
-    // This monthly calculation logic is repeated in other stats routes
+
     const monthlyRegistrations: Record<string, number> = {}
     
     for (let i = 11; i >= 0; i--) {
@@ -101,8 +95,7 @@ export async function GET(request: NextRequest) {
       monthlyRegistrations[monthKey] = count
     }
 
-    // DUPLICATE CODE: Provider statistics aggregation pattern
-    // Similar to gender stats aggregation - could be generalized
+
     const providerStats = await prisma.user.groupBy({
       by: ['provider'],
       _count: {
@@ -129,8 +122,6 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // DUPLICATE CODE: Complete profile calculation pattern
-    // This profile completion logic could be extracted to a utility function
     const usersWithCompleteProfiles = await prisma.user.count({
       where: {
         name: {
@@ -153,8 +144,6 @@ export async function GET(request: NextRequest) {
       ? Math.round((usersWithCompleteProfiles / totalUsers) * 100)
       : 0
 
-    // DUPLICATE CODE: Gender stats formatting pattern
-    // This formatting logic is repeated in other stats routes
     const formattedGenderStats = genderStats.map(stat => ({
       gender: stat.gender || 'unknown',
       count: stat._count.gender
@@ -185,8 +174,6 @@ export async function GET(request: NextRequest) {
       thisMonthRegistrations: monthlyRegistrations[currentMonthKey] || 0
     }
 
-    // DUPLICATE CODE: Response formatting pattern
-    // This response structure is repeated across multiple API routes
     return NextResponse.json({
       success: true,
       data: stats

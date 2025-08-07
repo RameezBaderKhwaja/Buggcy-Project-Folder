@@ -6,9 +6,6 @@ import { ZodError } from "zod"
 
 export const runtime = "nodejs"
 
-// TODO: Add rate limiter middleware here for brute-force protection
-// TODO: Add CSRF protection if needed
-
 export async function POST(request: NextRequest) {
   try {
     // Parse and validate request body using schema
@@ -16,8 +13,6 @@ export async function POST(request: NextRequest) {
     const validatedData = loginSchema.parse(body)
     const { email, password } = validatedData
 
-    // DUPLICATE CODE: User lookup pattern
-    // This user lookup logic is repeated in multiple auth routes
     const user = await prisma.user.findUnique({
       where: { email },
     })
@@ -26,20 +21,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 })
     }
 
-    // DUPLICATE CODE: Password verification pattern
-    // This password verification logic is repeated in multiple auth routes
     const isValidPassword = await comparePassword(password, user.password)
     if (!isValidPassword) {
       return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 })
     }
 
-    // DUPLICATE CODE: Token generation pattern
-    // This token generation logic is repeated in multiple auth routes
     const token = generateToken({ id: user.id, email: user.email, role: user.role })
     const cookie = createAuthCookie(token)
 
-    // DUPLICATE CODE: Response formatting pattern
-    // This response structure is repeated across multiple API routes
     const response = NextResponse.json({
       success: true,
       data: {
@@ -65,8 +54,6 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error("Login error:", error)
 
-    // DUPLICATE CODE: Error handling pattern for validation errors
-    // This error handling pattern is repeated in multiple routes
     if (error instanceof ZodError) {
       return NextResponse.json({ success: false, error: "Validation failed", details: error.issues }, { status: 400 })
     }

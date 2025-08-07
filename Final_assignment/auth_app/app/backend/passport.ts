@@ -28,9 +28,8 @@ declare module "express-serve-static-core" {
   }
 }
 
-// ==========================
 // Environment validation
-// ==========================
+
 const validateEnvironmentVariables = () => {
   const requiredVars = {
     GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
@@ -61,22 +60,17 @@ validateEnvironmentVariables();
 
 const callbackBaseUrl = process.env.NEXT_PUBLIC_VERCEL_URL || process.env.NEXT_PUBLIC_API_URL;
 
-// ==========================
 // Extended type for passport
-// ==========================
 export interface PassportUser extends AuthUser {
   provider: string;
 }
 
-// Extend Express User interface using module augmentation (preferred over namespaces)
+// Extend Express User interface using module augmentation 
 declare module "express-serve-static-core" {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface User extends PassportUser {}
 }
 
-// ==============
-// Enhanced Helper: Clean and sanitize user data
-// ==============
+// Clean and sanitize user data
 const sanitizeUser = (user: Partial<AuthUser> & { 
   password?: string | null; 
   providerId?: string | null;
@@ -96,9 +90,7 @@ const sanitizeUser = (user: Partial<AuthUser> & {
   return sanitizedUser as PassportUser;
 };
 
-// ==============
 // State management for OAuth CSRF protection
-// ==============
 const generateState = (): string => {
   return Math.random().toString(36).substring(2, 15) + 
          Math.random().toString(36).substring(2, 15);
@@ -111,9 +103,7 @@ const validateState = (req: Request, state: string): boolean => {
   return sessionState === state;
 };
 
-// ===================
 // Local Strategy
-// ===================
 passport.use(
   new LocalStrategy(
     {
@@ -144,9 +134,7 @@ passport.use(
   )
 );
 
-// ===================
 // Google Strategy with enhanced security
-// ===================
 const googleStrategyOptions: GoogleStrategyOptionsWithRequest = {
   clientID: process.env.GOOGLE_CLIENT_ID!,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
@@ -249,9 +237,7 @@ passport.use(
   )
 );
 
-// ===================
 // GitHub Strategy with enhanced security
-// ===================
 const githubStrategyOptions: GitHubStrategyOptionsWithRequest = {
   clientID: process.env.GITHUB_CLIENT_ID!,
   clientSecret: process.env.GITHUB_CLIENT_SECRET!,
@@ -357,7 +343,6 @@ passport.use(
   )
 );
 
-// ===================
 // Serialize & Deserialize
 // ===================
 passport.serializeUser((user: Express.User, done) => {

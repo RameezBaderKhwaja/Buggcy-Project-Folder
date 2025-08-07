@@ -13,17 +13,16 @@ export default function HomePage() {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        // If the user is authenticated, redirect to their dashboard or profile
+        
         const targetRoute = user.role === "ADMIN" ? "/dashboard" : "/profile"
         router.replace(targetRoute)
       } else {
-        // If the user is not authenticated, redirect to the login page
+    
         router.replace("/login")
       }
     }
   }, [user, loading, router])
 
-  // While loading, show a spinner. The redirection will happen automatically
   // once loading is complete.
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50">

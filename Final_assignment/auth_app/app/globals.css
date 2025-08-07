@@ -122,78 +122,6 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   
-  /* Global spacing optimization - makes 100% zoom look like 90% zoom */
-  .p-8 {
-    padding: 0.75rem !important; /* Instead of 2rem - more aggressive */
-  }
-  
-  .p-6 {
-    padding: 0.5rem !important; /* Instead of 1.5rem */
-  }
-  
-  .mb-8 {
-    margin-bottom: 0.75rem !important; /* Instead of 2rem - more aggressive */
-  }
-  
-  .mb-6 {
-    margin-bottom: 0.5rem !important; /* Instead of 1.5rem */
-  }
-  
-  .space-y-6 > * + * {
-    margin-top: 0.75rem !important; /* Instead of 1.5rem - more aggressive */
-  }
-  
-  .space-y-8 > * + * {
-    margin-top: 1rem !important; /* Instead of 2rem - more aggressive */
-  }
-  
-  .space-y-4 > * + * {
-    margin-top: 0.5rem !important; /* Instead of 1rem */
-  }
-  
-  .gap-6 {
-    gap: 0.75rem !important; /* Instead of 1.5rem - more aggressive */
-  }
-  
-  .gap-8 {
-    gap: 1rem !important; /* Instead of 2rem - more aggressive */
-  }
-  
-  .gap-4 {
-    gap: 0.5rem !important; /* Instead of 1rem */
-  }
-  
-  /* Card content padding reduction */
-  .card-content {
-    padding: 0.75rem !important; /* Instead of 1.5rem - more aggressive */
-  }
-  
-  /* Grid spacing optimization */
-  .grid > * {
-    margin-bottom: 0.5rem !important; /* Reduced grid item spacing */
-  }
-  
-  /* Additional spacing reductions */
-  .py-6 {
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
-  }
-  
-  .py-8 {
-    padding-top: 0.75rem !important;
-    padding-bottom: 0.75rem !important;
-  }
-  
-  .px-6 {
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
-  }
-  
-  .px-8 {
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
-  }
-  
   /* Perfect centering for loading screens */
   .min-h-screen {
     display: flex !important;
@@ -205,6 +133,45 @@
   /* Loading spinner centering */
   .animate-spin {
     margin: 0 auto !important;
+  }
+  
+  /* Only height and button/field size reductions */
+  .h-9 {
+    height: 2rem !important;
+  }
+  
+  .h-10 {
+    height: 2.25rem !important;
+  }
+  
+  .h-12 {
+    height: 2.5rem !important;
+  }
+  
+  /* Input height reduction */
+  input.h-9, input.h-10 {
+    height: 2rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+  
+  /* Button height reduction */
+  button.h-9, button.h-10 {
+    height: 2rem !important;
+    padding: 0.25rem 0.75rem !important;
+  }
+  
+  /* Chart height reduction */
+  .h-\[250px\] {
+    height: 200px !important;
+  }
+  
+  .h-\[300px\] {
+    height: 200px !important;
+  }
+  
+  /* Card content padding reduction */
+  .card-content {
+    padding: 0.75rem !important;
   }
 }
 
@@ -335,7 +302,7 @@
 }
 
 *::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
+  display: none;
 }
 
 /* Responsive utilities */

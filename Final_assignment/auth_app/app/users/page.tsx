@@ -77,7 +77,7 @@ const UsersLoadingSkeleton = () => (
       <Skeleton className="h-10 w-40" />
     </div>
     
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {[1, 2, 3].map((i) => (
         <Card key={i}>
           <CardContent className="p-4">
@@ -376,7 +376,7 @@ export default function UsersPage() {
 
         {/* Enhanced Stats */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -463,7 +463,7 @@ export default function UsersPage() {
               </div>
               
               {/* Users grid with staggered animation */}
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {currentUsers.map((user, index) => (
                   <motion.div
                     key={user.id}
