@@ -11,13 +11,13 @@ export const runtime = "nodejs"
 
 export async function POST(request: NextRequest) {
   try {
+    // Parse and validate request body using schema
     const body = await request.json()
-
-    // Validate input
     const validatedData = loginSchema.parse(body)
     const { email, password } = validatedData
 
-    // Find user
+    // DUPLICATE CODE: User lookup pattern
+    // This user lookup logic is repeated in multiple auth routes
     const user = await prisma.user.findUnique({
       where: { email },
     })
@@ -26,17 +26,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 })
     }
 
-    // Verify password
+    // DUPLICATE CODE: Password verification pattern
+    // This password verification logic is repeated in multiple auth routes
     const isValidPassword = await comparePassword(password, user.password)
     if (!isValidPassword) {
       return NextResponse.json({ success: false, error: "Invalid credentials" }, { status: 401 })
     }
 
-    // Generate token with minimal payload
+    // DUPLICATE CODE: Token generation pattern
+    // This token generation logic is repeated in multiple auth routes
     const token = generateToken({ id: user.id, email: user.email, role: user.role })
     const cookie = createAuthCookie(token)
 
-    // Create response
+    // DUPLICATE CODE: Response formatting pattern
+    // This response structure is repeated across multiple API routes
     const response = NextResponse.json({
       success: true,
       data: {
@@ -52,7 +55,7 @@ export async function POST(request: NextRequest) {
       message: "Login successful",
     })
 
-    // Set cookie using headers for Node.js runtime compatibility
+    // Set authentication cookie using headers for Node.js runtime compatibility
     response.headers.append(
       "Set-Cookie",
       `${cookie.name}=${cookie.value}; Path=${cookie.path}; HttpOnly; SameSite=${cookie.sameSite}; Max-Age=${cookie.maxAge};${cookie.secure ? " Secure;" : ""}`
@@ -62,6 +65,8 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error("Login error:", error)
 
+    // DUPLICATE CODE: Error handling pattern for validation errors
+    // This error handling pattern is repeated in multiple routes
     if (error instanceof ZodError) {
       return NextResponse.json({ success: false, error: "Validation failed", details: error.issues }, { status: 400 })
     }

@@ -6,12 +6,16 @@ export const runtime = "nodejs"
 
 export async function GET(request: NextRequest) {
   try {
+    // DUPLICATE CODE: Token extraction pattern
+    // This token extraction logic is repeated in multiple auth routes
     const token = request.cookies.get("auth-token")?.value
 
     if (!token) {
       return NextResponse.json({ success: false, error: "No token provided" }, { status: 401 })
     }
 
+    // DUPLICATE CODE: Token verification pattern
+    // This verification logic is repeated in multiple auth routes
     let payload
     try {
       payload = verifyToken(token)
@@ -23,6 +27,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Invalid or expired token" }, { status: 401 })
     }
 
+    // DUPLICATE CODE: User lookup pattern
+    // This user lookup logic is repeated in multiple auth routes
     const user = await prisma.user.findUnique({
       where: { id: payload.userId },
       select: {
@@ -33,7 +39,11 @@ export async function GET(request: NextRequest) {
         image: true,
         age: true,
         gender: true,
+        provider: true,
+        providerId: true,
+        password: true,
         createdAt: true,
+        updatedAt: true,
       },
     })
 
@@ -41,6 +51,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "User not found" }, { status: 404 })
     }
 
+    // DUPLICATE CODE: Response formatting pattern
+    // This response structure is repeated across multiple API routes
     return NextResponse.json({
       success: true,
       data: user,

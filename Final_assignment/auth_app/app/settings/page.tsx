@@ -90,6 +90,7 @@ const Switch = ({
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme()
+  const { user } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [hasChanges, setHasChanges] = useState(false)

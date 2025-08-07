@@ -4,7 +4,8 @@ import { verifyAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
+    // DUPLICATE CODE: Authentication verification pattern
+    // This pattern is repeated in multiple API routes - consider creating a middleware
     const authResult = await verifyAuth(request)
     if (!authResult.success) {
       return NextResponse.json(
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get all users (no pagination for now, but we can add it later)
+    // Fetch all users with selected fields for user management interface
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -31,6 +32,8 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    // DUPLICATE CODE: Response formatting pattern
+    // This response structure is repeated across multiple API routes
     return NextResponse.json({
       success: true,
       data: users

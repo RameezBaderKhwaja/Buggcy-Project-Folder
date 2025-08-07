@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { useAuth } from "@/app/context/AuthContext"
 import ProtectedLayout from "@/components/ProtectedLayout"
 import { motion } from "framer-motion"
@@ -11,8 +11,8 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { useForm, SubmitHandler } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { changePasswordSchema } from "@/lib/validators"
-import type { ChangePasswordInput } from "@/lib/types"
+import { changePasswordSchema, setPasswordSchema } from "@/lib/validators"
+import type { ChangePasswordInput, SetPasswordInput } from "@/lib/types"
 import { Eye, EyeOff } from "lucide-react"
 
 export default function ChangePasswordPage() {
@@ -20,41 +20,53 @@ export default function ChangePasswordPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const { changePassword, setPassword, user } = useAuth()
+  const { changePassword, setPassword, user, refreshUser } = useAuth()
+
+  // Determine user type and what action to show
+  // OAuth providers: 'github', 'google', etc.
+  // Local providers: 'local', 'email'
+  const isOAuthUser = user && !['local', 'email'].includes(user.provider)
+  const hasPassword = user?.password !== null && user?.password !== undefined
+  const shouldShowSetPassword = isOAuthUser && !hasPassword
+  const shouldShowChangePassword = !isOAuthUser || hasPassword
+
+  // Use different schemas based on the action
+  const schema = shouldShowSetPassword ? setPasswordSchema : changePasswordSchema
+  const formType = shouldShowSetPassword ? 'setPassword' : 'changePassword'
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<ChangePasswordInput>({
-    resolver: zodResolver(changePasswordSchema),
+  } = useForm<ChangePasswordInput | SetPasswordInput>({
+    resolver: zodResolver(schema),
   })
 
-  // Determine user type and what action to show
-  const isOAuthUser = user && user.provider !== 'local' && user.provider !== 'email'
-  const hasPassword = user?.password !== null && user?.password !== undefined
-  const shouldShowSetPassword = isOAuthUser && !hasPassword
-  const shouldShowChangePassword = !isOAuthUser || hasPassword
-
-  const onSubmit: SubmitHandler<ChangePasswordInput> = async (data) => {
+  const onSubmit: SubmitHandler<ChangePasswordInput | SetPasswordInput> = async (data) => {
     setLoading(true)
     try {
       let result
       
       if (shouldShowSetPassword) {
         // OAuth user setting password for first time
+        const setPasswordData = data as SetPasswordInput
         result = await setPassword({
-          newPassword: data.newPassword,
-          confirmPassword: data.confirmPassword
+          newPassword: setPasswordData.newPassword,
+          confirmPassword: setPasswordData.confirmPassword
         })
       } else {
         // Regular password change
-        result = await changePassword(data)
+        const changePasswordData = data as ChangePasswordInput
+        result = await changePassword(changePasswordData)
       }
       
       if (result.success) {
         reset()
+        toast.success(shouldShowSetPassword ? "Password set successfully!" : "Password changed successfully!")
+        
+        // Refresh user data to update password status
+        await refreshUser()
       } else {
         toast.error(result.error || "Failed to process request. Please try again.")
       }
@@ -97,7 +109,7 @@ export default function ChangePasswordPage() {
                     <Input
                       id="currentPassword"
                       type={showCurrentPassword ? "text" : "password"}
-                      {...register("currentPassword")}
+                      {...register("currentPassword" as keyof (ChangePasswordInput | SetPasswordInput))}
                       disabled={loading}
                     />
                     <button

@@ -5,7 +5,8 @@ import type { UserStats } from '@/lib/types'
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication and admin role
+    // DUPLICATE CODE: Authentication and admin role verification pattern
+    // This pattern is repeated in multiple API routes - consider creating a middleware
     const authResult = await verifyAuth(request)
     if (!authResult.success) {
       return NextResponse.json(
@@ -21,16 +22,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get current date for calculations
+    // Calculate current date and month for statistics
     const now = new Date()
     const currentYear = now.getFullYear()
     const currentMonth = now.getMonth() + 1
     const currentMonthKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`
 
-    // Get total users
+    // Fetch total user count from database
     const totalUsers = await prisma.user.count()
 
-    // Get gender statistics
+    // DUPLICATE CODE: Gender statistics aggregation pattern
+    // Similar aggregation patterns exist in other stats routes
     const genderStats = await prisma.user.groupBy({
       by: ['gender'],
       _count: {
@@ -43,7 +45,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Get age groups
+    // Fetch users with age data for age group calculations
     const usersWithAge = await prisma.user.findMany({
       where: {
         age: {
@@ -55,7 +57,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Calculate age groups
+    // DUPLICATE CODE: Age group calculation logic
+    // This age grouping logic could be extracted to a utility function
     const ageGroups: Record<string, number> = {
       '18-25': 0,
       '26-35': 0,
@@ -75,7 +78,8 @@ export async function GET(request: NextRequest) {
       else if (age > 65) ageGroups['65+']++
     })
 
-    // Get monthly registrations for the last 12 months
+    // DUPLICATE CODE: Monthly registration calculation pattern
+    // This monthly calculation logic is repeated in other stats routes
     const monthlyRegistrations: Record<string, number> = {}
     
     for (let i = 11; i >= 0; i--) {
@@ -97,7 +101,8 @@ export async function GET(request: NextRequest) {
       monthlyRegistrations[monthKey] = count
     }
 
-    // Get provider statistics
+    // DUPLICATE CODE: Provider statistics aggregation pattern
+    // Similar to gender stats aggregation - could be generalized
     const providerStats = await prisma.user.groupBy({
       by: ['provider'],
       _count: {
@@ -105,7 +110,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Get recent activity (last 7 days)
+    // Calculate recent activity statistics (last 7 days)
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     const recentRegistrations = await prisma.user.count({
       where: {
@@ -115,7 +120,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Get users with profile pictures
+    // Count users with profile pictures
     const usersWithPhotos = await prisma.user.count({
       where: {
         image: {
@@ -124,7 +129,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Get users with complete profiles (name, age, gender, image)
+    // DUPLICATE CODE: Complete profile calculation pattern
+    // This profile completion logic could be extracted to a utility function
     const usersWithCompleteProfiles = await prisma.user.count({
       where: {
         name: {
@@ -147,13 +153,14 @@ export async function GET(request: NextRequest) {
       ? Math.round((usersWithCompleteProfiles / totalUsers) * 100)
       : 0
 
-    // Format gender stats for the frontend
+    // DUPLICATE CODE: Gender stats formatting pattern
+    // This formatting logic is repeated in other stats routes
     const formattedGenderStats = genderStats.map(stat => ({
       gender: stat.gender || 'unknown',
       count: stat._count.gender
     }))
 
-    // Add missing genders with 0 count
+    // Add missing genders with 0 count for consistent frontend display
     const allGenders = ['male', 'female', 'other', 'prefer-not-to-say']
     allGenders.forEach(gender => {
       if (!formattedGenderStats.find(stat => stat.gender === gender)) {
@@ -161,6 +168,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // Compile all statistics into the response object
     const stats: UserStats = {
       totalUsers,
       genderStats: formattedGenderStats,
@@ -177,6 +185,8 @@ export async function GET(request: NextRequest) {
       thisMonthRegistrations: monthlyRegistrations[currentMonthKey] || 0
     }
 
+    // DUPLICATE CODE: Response formatting pattern
+    // This response structure is repeated across multiple API routes
     return NextResponse.json({
       success: true,
       data: stats

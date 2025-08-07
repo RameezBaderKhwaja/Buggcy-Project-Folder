@@ -5,17 +5,18 @@ import type {
   registerSchema,
   profileUpdateSchema,
   changePasswordSchema,
+  setPasswordSchema,
 } from "./validators"
 
 // =================================
 // Database & Session
 // =================================
 
-// The user object stored in the session
-export type AuthUser = Omit<User, "password" | "resetToken" | "resetExpires">
+// The user object stored in the session (including password for password status checks)
+export type AuthUser = Omit<User, "resetToken" | "resetExpires">
 
 // The user object returned by the API
-export type PublicUser = Omit<AuthUser, "email" | "provider" | "providerId" | "updatedAt">
+export type PublicUser = Omit<AuthUser, "email" | "provider" | "providerId" | "updatedAt" | "password">
 
 // =================================
 // API Route Inputs
@@ -25,6 +26,7 @@ export type LoginInput = z.infer<typeof loginSchema>
 export type RegisterInput = z.infer<typeof registerSchema>
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>
+export type SetPasswordInput = z.infer<typeof setPasswordSchema>
 
 // =================================
 // Security & Stats

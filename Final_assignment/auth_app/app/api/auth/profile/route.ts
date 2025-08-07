@@ -8,7 +8,8 @@ import CSRFProtection from '@/lib/csrf'
 
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
+    // DUPLICATE CODE: Authentication verification pattern
+    // This pattern is repeated in multiple API routes - consider creating a middleware
     const authResult = await verifyAuth(request)
     if (!authResult.success) {
       return NextResponse.json(
@@ -19,7 +20,8 @@ export async function PUT(request: NextRequest) {
 
     const userId = authResult.user.id
 
-    // Validate CSRF token
+    // DUPLICATE CODE: CSRF token validation pattern
+    // This CSRF validation logic is repeated in multiple protected routes
     const csrfToken = request.headers.get('x-csrf-token')
     const storedToken = CSRFProtection.getCSRFTokenFromCookie(request)
     
@@ -30,14 +32,15 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Parse form data
+    // Parse form data from multipart request
     const formData = await request.formData()
     const name = formData.get('name') as string
     const age = formData.get('age') as string
     const gender = formData.get('gender') as string
     const imageFile = formData.get('image') as File | null
 
-    // Prepare update data
+    // DUPLICATE CODE: Form data validation and preparation pattern
+    // This validation logic could be extracted to a utility function
     const updateData: any = {}
     if (name) updateData.name = name.trim()
     if (age) {
@@ -52,10 +55,11 @@ export async function PUT(request: NextRequest) {
     }
     if (gender) updateData.gender = gender
 
-    // Handle image upload
+    // DUPLICATE CODE: Image upload and processing pattern
+    // This image handling logic could be extracted to a utility function
     if (imageFile) {
       try {
-        // Validate file
+        // Validate file size and type
         if (imageFile.size > 5 * 1024 * 1024) {
           return NextResponse.json(
             { success: false, error: 'Image file size must be less than 5MB' },
@@ -76,7 +80,7 @@ export async function PUT(request: NextRequest) {
           select: { image: true }
         })
 
-        // Upload new image
+        // Upload new image to cloudinary with transformations
         const arrayBuffer = await imageFile.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer)
         const uploadResult = await uploadToCloudinary(buffer, {
@@ -93,7 +97,7 @@ export async function PUT(request: NextRequest) {
 
         updateData.image = uploadResult.secure_url
 
-        // Delete old image if it exists
+        // Delete old image if it exists to save storage
         if (currentUser?.image) {
           try {
             const publicId = currentUser.image.split('/').pop()?.split('.')[0]
@@ -114,7 +118,7 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Validate update data
+    // Validate that at least one field is being updated
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
         { success: false, error: 'No update data provided' },
@@ -122,10 +126,11 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Validate with schema
+    // DUPLICATE CODE: Schema validation pattern
+    // This validation pattern is repeated in multiple routes
     const validatedData = profileUpdateSchema.parse(updateData)
 
-    // Update user
+    // Update user profile in database
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: validatedData,
@@ -144,13 +149,16 @@ export async function PUT(request: NextRequest) {
       }
     })
 
-    // Log security event
+    // DUPLICATE CODE: Security event logging pattern
+    // This logging pattern is repeated in multiple routes
     await logSecurityEvent({
       type: 'PROFILE_UPDATED',
       userId,
       details: { updatedFields: Object.keys(updateData) }
     })
 
+    // DUPLICATE CODE: Response formatting pattern
+    // This response structure is repeated across multiple API routes
     return NextResponse.json({
       success: true,
       data: updatedUser,
@@ -160,6 +168,8 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('Profile update error:', error)
 
+    // DUPLICATE CODE: Error handling pattern for validation errors
+    // This error handling pattern is repeated in multiple routes
     if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
       return NextResponse.json({
         success: false,
@@ -177,7 +187,8 @@ export async function PUT(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication
+    // DUPLICATE CODE: Authentication verification pattern
+    // This pattern is repeated in multiple API routes - consider creating a middleware
     const authResult = await verifyAuth(request)
     if (!authResult.success) {
       return NextResponse.json(
@@ -188,7 +199,8 @@ export async function GET(request: NextRequest) {
 
     const userId = authResult.user.id
 
-    // Get user profile
+    // DUPLICATE CODE: User lookup pattern
+    // This user lookup logic is repeated in multiple auth routes
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -213,6 +225,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // DUPLICATE CODE: Response formatting pattern
+    // This response structure is repeated across multiple API routes
     return NextResponse.json({
       success: true,
       data: user

@@ -8,7 +8,8 @@ import bcrypt from 'bcryptjs'
 
 export async function PUT(request: NextRequest) {
   try {
-    // Verify authentication
+    // DUPLICATE CODE: Authentication verification pattern
+    // This pattern is repeated in multiple API routes - consider creating a middleware
     const authResult = await verifyAuth(request)
     if (!authResult.success) {
       return NextResponse.json(
@@ -19,7 +20,8 @@ export async function PUT(request: NextRequest) {
 
     const userId = authResult.user.id
 
-    // Validate CSRF token
+    // DUPLICATE CODE: CSRF token validation pattern
+    // This CSRF validation logic is repeated in multiple protected routes
     const csrfToken = request.headers.get('x-csrf-token')
     const storedToken = CSRFProtection.getCSRFTokenFromCookie(request)
     
@@ -30,14 +32,13 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Parse request body
+    // Parse and validate request body using schema
     const body = await request.json()
-
-    // Validate with schema
     const validatedData = changePasswordSchema.parse(body)
     const { currentPassword, newPassword } = validatedData
 
-    // Get user with current password
+    // DUPLICATE CODE: User lookup pattern with password field
+    // This user lookup logic is repeated in password-related routes
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -63,10 +64,12 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Verify current password
+    // DUPLICATE CODE: Password verification pattern
+    // This password verification logic is repeated in multiple auth routes
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password)
     if (!isCurrentPasswordValid) {
-      // Log failed password change attempt
+      // DUPLICATE CODE: Security event logging pattern
+      // This logging pattern is repeated in multiple routes
       await logSecurityEvent({
         type: 'PASSWORD_CHANGE_FAILED',
         userId,
@@ -79,11 +82,12 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Hash new password
+    // DUPLICATE CODE: Password hashing pattern
+    // This password hashing logic is repeated in multiple auth routes
     const saltRounds = 12
     const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds)
 
-    // Update password
+    // Update user password in database
     await prisma.user.update({
       where: { id: userId },
       data: { 
@@ -92,13 +96,16 @@ export async function PUT(request: NextRequest) {
       }
     })
 
-    // Log successful password change
+    // DUPLICATE CODE: Security event logging pattern
+    // This logging pattern is repeated in multiple routes
     await logSecurityEvent({
       type: 'PASSWORD_CHANGED',
       userId,
       details: { success: true }
     })
 
+    // DUPLICATE CODE: Response formatting pattern
+    // This response structure is repeated across multiple API routes
     return NextResponse.json({
       success: true,
       message: 'Password changed successfully'
@@ -107,6 +114,8 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('Change password error:', error)
 
+    // DUPLICATE CODE: Error handling pattern for validation errors
+    // This error handling pattern is repeated in multiple routes
     if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
       return NextResponse.json({
         success: false,

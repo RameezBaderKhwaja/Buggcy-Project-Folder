@@ -10,14 +10,14 @@ export const runtime = "nodejs"
 
 export async function POST(request: NextRequest) {
   try {
+    // Parse and validate request body using schema
     const body = await request.json()
-
-    // Validate input
     const validatedData = registerSchema.parse(body)
     const { name, email, password, age, gender } = validatedData
     const normalizedEmail = email.toLowerCase()
 
-    // Check if user already exists (case-insensitive)
+    // DUPLICATE CODE: User existence check pattern
+    // This user lookup logic is repeated in multiple auth routes
     const existingUser = await prisma.user.findUnique({
       where: { email: normalizedEmail },
     })
@@ -26,10 +26,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "User already exists with this email" }, { status: 400 })
     }
 
-    // Hash password
+    // DUPLICATE CODE: Password hashing pattern
+    // This password hashing logic is repeated in multiple auth routes
     const hashedPassword = await hashPassword(password)
 
-    // Create user
+    // Create new user in database
     const user = await prisma.user.create({
       data: {
         name,
@@ -41,11 +42,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Generate token with minimal payload
+    // DUPLICATE CODE: Token generation pattern
+    // This token generation logic is repeated in multiple auth routes
     const token = generateToken({ id: user.id, email: user.email, role: user.role })
     const cookie = createAuthCookie(token)
 
-    // Create response
+    // DUPLICATE CODE: Response formatting pattern
+    // This response structure is repeated across multiple API routes
     const response = NextResponse.json(
       {
         success: true,
@@ -64,7 +67,7 @@ export async function POST(request: NextRequest) {
       { status: 201 },
     )
 
-    // Set cookie using headers for Node.js runtime compatibility
+    // Set authentication cookie using headers for Node.js runtime compatibility
     response.headers.append(
       "Set-Cookie",
       `${cookie.name}=${cookie.value}; Path=${cookie.path}; HttpOnly; SameSite=${cookie.sameSite}; Max-Age=${cookie.maxAge};${cookie.secure ? " Secure;" : ""}`
@@ -74,6 +77,8 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error("Registration error:", error)
 
+    // DUPLICATE CODE: Error handling pattern for validation errors
+    // This error handling pattern is repeated in multiple routes
     if (error instanceof ZodError) {
       return NextResponse.json({ success: false, error: "Validation failed", details: error.issues }, { status: 400 })
     }

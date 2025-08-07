@@ -4,7 +4,8 @@ import { verifyAuth } from '@/lib/auth'
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify authentication and admin role
+    // DUPLICATE CODE: Authentication and admin role verification pattern
+    // This pattern is repeated in multiple API routes - consider creating a middleware
     const authResult = await verifyAuth(request)
     if (!authResult.success) {
       return NextResponse.json(
@@ -20,10 +21,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get total security events
+    // Fetch total security events count from database
     const totalEvents = await prisma.securityLog.count()
 
-    // Get events by type
+    // DUPLICATE CODE: Event type aggregation pattern
+    // Similar to gender/provider stats aggregation in other routes
     const eventTypes = await prisma.securityLog.groupBy({
       by: ['event'],
       _count: {
@@ -31,13 +33,13 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Convert to object format
+    // Convert aggregated event types to object format for frontend
     const eventTypesMap: Record<string, number> = {}
     eventTypes.forEach(type => {
       eventTypesMap[type.event] = type._count.event
     })
 
-    // Get recent events (last 50)
+    // Fetch recent security events for monitoring dashboard
     const recentEvents = await prisma.securityLog.findMany({
       take: 50,
       orderBy: {
@@ -53,7 +55,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Count suspicious activity (failed logins)
+    // Count suspicious activity (failed login attempts)
     const suspiciousActivity = await prisma.securityLog.count({
       where: {
         event: 'FAILED_LOGIN',
@@ -61,6 +63,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    // Compile security statistics for response
     const stats = {
       totalEvents,
       eventTypes: eventTypesMap,
@@ -68,6 +71,8 @@ export async function GET(request: NextRequest) {
       suspiciousActivity
     }
 
+    // DUPLICATE CODE: Response formatting pattern
+    // This response structure is repeated across multiple API routes
     return NextResponse.json({
       success: true,
       data: stats

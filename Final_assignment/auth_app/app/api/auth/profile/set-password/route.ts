@@ -6,7 +6,8 @@ import CSRFProtection from '@/lib/csrf'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
 
-// Schema for setting password (no current password needed for OAuth users)
+// DUPLICATE CODE: Password validation schema pattern
+// This schema validation pattern is repeated in multiple password-related routes
 const setPasswordSchema = z.object({
   newPassword: z.string().min(8, 'Password must be at least 8 characters'),
   confirmPassword: z.string()
@@ -17,7 +18,8 @@ const setPasswordSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify authentication
+    // DUPLICATE CODE: Authentication verification pattern
+    // This pattern is repeated in multiple API routes - consider creating a middleware
     const authResult = await verifyAuth(request)
     if (!authResult.success) {
       return NextResponse.json(
@@ -28,7 +30,8 @@ export async function POST(request: NextRequest) {
 
     const userId = authResult.user.id
 
-    // Validate CSRF token
+    // DUPLICATE CODE: CSRF token validation pattern
+    // This CSRF validation logic is repeated in multiple protected routes
     const csrfToken = request.headers.get('x-csrf-token')
     const storedToken = CSRFProtection.getCSRFTokenFromCookie(request)
     
@@ -39,14 +42,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Parse request body
+    // Parse and validate request body using schema
     const body = await request.json()
-
-    // Validate with schema
     const validatedData = setPasswordSchema.parse(body)
     const { newPassword } = validatedData
 
-    // Get user details
+    // DUPLICATE CODE: User lookup pattern with password field
+    // This user lookup logic is repeated in password-related routes
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -82,11 +84,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Hash new password
+    // DUPLICATE CODE: Password hashing pattern
+    // This password hashing logic is repeated in multiple auth routes
     const saltRounds = 12
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds)
 
-    // Set password for OAuth user
+    // Set password for OAuth user in database
     await prisma.user.update({
       where: { id: userId },
       data: { 
@@ -95,13 +98,16 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Log successful password setting
+    // DUPLICATE CODE: Security event logging pattern
+    // This logging pattern is repeated in multiple routes
     await logSecurityEvent({
       type: 'PASSWORD_SET',
       userId,
       details: { provider: user.provider, success: true }
     })
 
+    // DUPLICATE CODE: Response formatting pattern
+    // This response structure is repeated across multiple API routes
     return NextResponse.json({
       success: true,
       message: 'Password set successfully. You can now use both OAuth and password login.'
@@ -110,6 +116,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Set password error:', error)
 
+    // DUPLICATE CODE: Error handling pattern for validation errors
+    // This error handling pattern is repeated in multiple routes
     if (error && typeof error === 'object' && 'name' in error && error.name === 'ZodError') {
       return NextResponse.json({
         success: false,
